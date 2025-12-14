@@ -1,0 +1,93 @@
+id: enemy_frigate
+name: Hostile Frigate
+mass: 200000
+max_speed: 300
+acceleration: 75
+turn_rate: 1.2
+
+engines:
+  - id: main_engine
+    type: main
+    thrust: 60000
+    health: 80
+    power_draw: 100
+  - id: maneuvering_thrust_port
+    type: maneuvering
+    thrust: 15000
+    health: 80
+    power_draw: 25
+  - id: maneuvering_thrust_starboard
+    type: maneuvering
+    thrust: 15000
+    health: 80
+    power_draw: 25
+
+weapons:
+  - id: phaser_1
+    type: phaser
+    damage: 20
+    range: 1800
+    cooldown_time: 2.5
+    health: 80
+    power_draw: 40
+    ammo_capacity: 0
+  - id: torpedo_bay_1
+    type: torpedo
+    damage: 80
+    range: 4000
+    cooldown_time: 6.0
+    health: 80
+    power_draw: 15
+    ammo_capacity: 10
+  - id: torpedo_bay_2
+    type: torpedo
+    damage: 80
+    range: 4000
+    cooldown_time: 6.0
+    health: 80
+    power_draw: 15
+    ammo_capacity: 10
+
+shields:
+  recharge_rate: 8
+  power_draw: 80
+  emitters:
+    - id: forward
+      facing: forward
+      strength: 300
+      health: 80
+    - id: aft
+      facing: aft
+      strength: 300
+      health: 80
+
+hull:
+  sections:
+    - id: forward
+      armor: 150
+      health: 300
+    - id: aft
+      armor: 150
+      health: 300
+    - id: port
+      armor: 100
+      health: 250
+    - id: starboard
+      armor: 100
+      health: 250
+
+subsystems:
+  - id: sensors
+    type: sensors
+    health: 80
+    power_draw: 25
+  - id: comms
+    type: communications
+    health: 80
+    power_draw: 15
+  - id: weapons_control
+    type: weapons_control
+    health: 80
+    power_draw: 20
+
+launch_bays: []

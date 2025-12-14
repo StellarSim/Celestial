@@ -1,0 +1,188 @@
+panels:
+  engineer_power_1:
+    id: engineer_power_1
+    role: engineer
+    actions:
+      breaker_1:
+        system: breaker_main_power
+        action: toggle_breaker
+      breaker_2:
+        system: breaker_weapons
+        action: toggle_breaker
+      breaker_3:
+        system: breaker_shields
+        action: toggle_breaker
+      breaker_4:
+        system: breaker_life_support
+        action: toggle_breaker
+
+  engineer_damage_1:
+    id: engineer_damage_1
+    role: engineer
+    actions:
+      repair_forward:
+        system: forward
+        action: repair
+      repair_aft:
+        system: aft
+        action: repair
+      extinguish_forward:
+        system: forward
+        action: extinguish_fire
+      extinguish_aft:
+        system: aft
+        action: extinguish_fire
+      seal_breach_forward:
+        system: forward
+        action: seal_breach
+
+  flight_controls_1:
+    id: flight_controls_1
+    role: flight
+    actions:
+      dock_release:
+        system: docking_clamps
+        action: release
+
+  weapons_torpedo_1:
+    id: weapons_torpedo_1
+    role: weapons
+    actions:
+      arm_bay_1:
+        system: torpedo_bay_1
+        action: arm
+      load_bay_1:
+        system: torpedo_bay_1
+        action: load
+      lock_bay_1:
+        system: torpedo_bay_1
+        action: lock
+      fire_bay_1:
+        system: torpedo_bay_1
+        action: fire
+
+  weapons_torpedo_2:
+    id: weapons_torpedo_2
+    role: weapons
+    actions:
+      arm_bay_2:
+        system: torpedo_bay_2
+        action: arm
+      load_bay_2:
+        system: torpedo_bay_2
+        action: load
+      lock_bay_2:
+        system: torpedo_bay_2
+        action: lock
+      fire_bay_2:
+        system: torpedo_bay_2
+        action: fire
+
+  weapons_torpedo_3:
+    id: weapons_torpedo_3
+    role: weapons
+    actions:
+      arm_bay_3:
+        system: torpedo_bay_3
+        action: arm
+      load_bay_3:
+        system: torpedo_bay_3
+        action: load
+      lock_bay_3:
+        system: torpedo_bay_3
+        action: lock
+      fire_bay_3:
+        system: torpedo_bay_3
+        action: fire
+
+  weapons_torpedo_4:
+    id: weapons_torpedo_4
+    role: weapons
+    actions:
+      arm_bay_4:
+        system: torpedo_bay_4
+        action: arm
+      load_bay_4:
+        system: torpedo_bay_4
+        action: load
+      lock_bay_4:
+        system: torpedo_bay_4
+        action: lock
+      fire_bay_4:
+        system: torpedo_bay_4
+        action: fire
+
+  weapons_phasers:
+    id: weapons_phasers
+    role: weapons
+    actions:
+      fire_phaser_1:
+        system: phaser_array_1
+        action: fire
+      fire_phaser_2:
+        system: phaser_array_2
+        action: fire
+
+  captain_alerts:
+    id: captain_alerts
+    role: captain
+    actions:
+      red_alert:
+        system: alert
+        action: set
+      yellow_alert:
+        system: alert
+        action: set
+      green_alert:
+        system: alert
+        action: set
+
+  comms_hailing:
+    id: comms_hailing
+    role: comms
+    actions:
+      hail:
+        system: hailing
+        action: send
+
+  operations_power:
+    id: operations_power
+    role: operations
+    actions:
+      route_power_weapons:
+        system: weapons
+        action: route_power
+      route_power_shields:
+        system: shields
+        action: route_power
+      route_power_engines:
+        system: engines
+        action: route_power
+      toggle_shields:
+        system: shields
+        action: toggle
+
+  relay_sensors:
+    id: relay_sensors
+    role: relay
+    actions:
+      scan_target:
+        system: scan
+        action: initiate
+      sensor_mode_tactical:
+        system: sensors
+        action: set_mode
+      sensor_mode_science:
+        system: sensors
+        action: set_mode
+
+  first_officer_misc:
+    id: first_officer_misc
+    role: first_officer
+    actions:
+      toggle_system_1:
+        system: navigation
+        action: toggle
+      toggle_system_2:
+        system: life_support
+        action: toggle

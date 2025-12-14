@@ -1,0 +1,35 @@
+[gd_scene load_steps=4 format=3 uid="uid://cship_instance_3d"]
+
+[ext_resource type="Script" path="res://scripts/3d/ship_instance.gd" id="1_ship"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_hull"]
+size = Vector3(2, 0.5, 4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hull"]
+albedo_color = Color(0.3, 0.3, 0.35, 1)
+metallic = 0.7
+roughness = 0.4
+emission_enabled = true
+emission = Color(0.2, 0.4, 0.6, 1)
+emission_energy_multiplier = 0.5
+
+[node name="ShipInstance" type="Node3D"]
+script = ExtResource("1_ship")
+
+[node name="HullMesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_hull")
+surface_material_override/0 = SubResource("StandardMaterial3D_hull")
+
+[node name="EnginePivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+
+[node name="EngineGlow" type="OmniLight3D" parent="EnginePivot"]
+light_color = Color(0.4, 0.6, 1, 1)
+light_energy = 2.0
+omni_range = 3.0
+
+[node name="ShieldMesh" type="MeshInstance3D" parent="."]
+visible = false
+
+[node name="SelectionIndicator" type="Node3D" parent="."]
+visible = false

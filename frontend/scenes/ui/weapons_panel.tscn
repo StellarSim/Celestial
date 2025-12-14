@@ -1,0 +1,322 @@
+[gd_scene load_steps=2 format=3 uid="uid://dxkwj8mp2r7at"]
+
+[ext_resource type="Script" path="res://scripts/ui/weapons_panel.gd" id="1_weapons"]
+
+[node name="WeaponsPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_weapons")
+
+[node name="MainSplit" type="HSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+split_offset = 450
+
+[node name="LeftSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TargetingSection" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TargetingContent" type="VBoxContainer" parent="MainSplit/LeftSection/TargetingSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TargetingHeader" type="Label" parent="MainSplit/LeftSection/TargetingSection/TargetingContent"]
+layout_mode = 2
+text = "TARGET SELECTION"
+horizontal_alignment = 1
+
+[node name="TargetList" type="ItemList" parent="MainSplit/LeftSection/TargetingSection/TargetingContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TargetActions" type="HBoxContainer" parent="MainSplit/LeftSection/TargetingSection/TargetingContent"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="LockTarget" type="Button" parent="MainSplit/LeftSection/TargetingSection/TargetingContent/TargetActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "LOCK TARGET"
+
+[node name="ClearTarget" type="Button" parent="MainSplit/LeftSection/TargetingSection/TargetingContent/TargetActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "CLEAR"
+
+[node name="NextTarget" type="Button" parent="MainSplit/LeftSection/TargetingSection/TargetingContent/TargetActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "NEXT ▶"
+
+[node name="TargetInfo" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+
+[node name="TargetInfoContent" type="VBoxContainer" parent="MainSplit/LeftSection/TargetInfo"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="TargetHeader" type="Label" parent="MainSplit/LeftSection/TargetInfo/TargetInfoContent"]
+layout_mode = 2
+text = "LOCKED TARGET"
+horizontal_alignment = 1
+
+[node name="TargetName" type="Label" parent="MainSplit/LeftSection/TargetInfo/TargetInfoContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "---"
+horizontal_alignment = 1
+
+[node name="TargetDetails" type="GridContainer" parent="MainSplit/LeftSection/TargetInfo/TargetInfoContent"]
+layout_mode = 2
+columns = 2
+
+[node name="RangeLabel" type="Label" parent="MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetDetails"]
+layout_mode = 2
+text = "Range:"
+
+[node name="RangeValue" type="Label" parent="MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetDetails"]
+layout_mode = 2
+text = "---"
+
+[node name="BearingLabel" type="Label" parent="MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetDetails"]
+layout_mode = 2
+text = "Bearing:"
+
+[node name="BearingValue" type="Label" parent="MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetDetails"]
+layout_mode = 2
+text = "---"
+
+[node name="ShieldLabel" type="Label" parent="MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetDetails"]
+layout_mode = 2
+text = "Shields:"
+
+[node name="ShieldValue" type="Label" parent="MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetDetails"]
+layout_mode = 2
+text = "---"
+
+[node name="HullLabel" type="Label" parent="MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetDetails"]
+layout_mode = 2
+text = "Hull:"
+
+[node name="HullValue" type="Label" parent="MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetDetails"]
+layout_mode = 2
+text = "---"
+
+[node name="RightSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="WeaponBanks" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WeaponContent" type="VBoxContainer" parent="MainSplit/RightSection/WeaponBanks"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="WeaponHeader" type="Label" parent="MainSplit/RightSection/WeaponBanks/WeaponContent"]
+layout_mode = 2
+text = "WEAPON BANKS"
+horizontal_alignment = 1
+
+[node name="BeamSection" type="VBoxContainer" parent="MainSplit/RightSection/WeaponBanks/WeaponContent"]
+layout_mode = 2
+
+[node name="BeamHeader" type="Label" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection"]
+layout_mode = 2
+text = "BEAM WEAPONS"
+
+[node name="BeamBanks" type="VBoxContainer" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection"]
+layout_mode = 2
+
+[node name="BeamBank1" type="HBoxContainer" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks"]
+layout_mode = 2
+
+[node name="Beam1Toggle" type="CheckButton" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks/BeamBank1"]
+layout_mode = 2
+
+[node name="Beam1Name" type="Label" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks/BeamBank1"]
+layout_mode = 2
+text = "Forward Beam Array"
+
+[node name="Beam1Charge" type="ProgressBar" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks/BeamBank1"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Beam1Fire" type="Button" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks/BeamBank1"]
+layout_mode = 2
+text = "FIRE"
+
+[node name="BeamBank2" type="HBoxContainer" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks"]
+layout_mode = 2
+
+[node name="Beam2Toggle" type="CheckButton" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks/BeamBank2"]
+layout_mode = 2
+
+[node name="Beam2Name" type="Label" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks/BeamBank2"]
+layout_mode = 2
+text = "Port Beam Array"
+
+[node name="Beam2Charge" type="ProgressBar" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks/BeamBank2"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Beam2Fire" type="Button" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks/BeamBank2"]
+layout_mode = 2
+text = "FIRE"
+
+[node name="BeamBank3" type="HBoxContainer" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks"]
+layout_mode = 2
+
+[node name="Beam3Toggle" type="CheckButton" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks/BeamBank3"]
+layout_mode = 2
+
+[node name="Beam3Name" type="Label" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks/BeamBank3"]
+layout_mode = 2
+text = "Starboard Beam Array"
+
+[node name="Beam3Charge" type="ProgressBar" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks/BeamBank3"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Beam3Fire" type="Button" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks/BeamBank3"]
+layout_mode = 2
+text = "FIRE"
+
+[node name="TorpedoSection" type="VBoxContainer" parent="MainSplit/RightSection/WeaponBanks/WeaponContent"]
+layout_mode = 2
+
+[node name="TorpedoHeader" type="Label" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection"]
+layout_mode = 2
+text = "TORPEDO TUBES"
+
+[node name="TorpedoTubes" type="VBoxContainer" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection"]
+layout_mode = 2
+
+[node name="Tube1" type="HBoxContainer" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection/TorpedoTubes"]
+layout_mode = 2
+
+[node name="Tube1Toggle" type="CheckButton" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection/TorpedoTubes/Tube1"]
+layout_mode = 2
+
+[node name="Tube1Name" type="Label" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection/TorpedoTubes/Tube1"]
+layout_mode = 2
+text = "Tube 1"
+
+[node name="Tube1Type" type="OptionButton" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection/TorpedoTubes/Tube1"]
+layout_mode = 2
+
+[node name="Tube1Status" type="Label" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection/TorpedoTubes/Tube1"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "READY"
+horizontal_alignment = 2
+
+[node name="Tube1Fire" type="Button" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection/TorpedoTubes/Tube1"]
+layout_mode = 2
+text = "FIRE"
+
+[node name="Tube2" type="HBoxContainer" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection/TorpedoTubes"]
+layout_mode = 2
+
+[node name="Tube2Toggle" type="CheckButton" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection/TorpedoTubes/Tube2"]
+layout_mode = 2
+
+[node name="Tube2Name" type="Label" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection/TorpedoTubes/Tube2"]
+layout_mode = 2
+text = "Tube 2"
+
+[node name="Tube2Type" type="OptionButton" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection/TorpedoTubes/Tube2"]
+layout_mode = 2
+
+[node name="Tube2Status" type="Label" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection/TorpedoTubes/Tube2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "READY"
+horizontal_alignment = 2
+
+[node name="Tube2Fire" type="Button" parent="MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection/TorpedoTubes/Tube2"]
+layout_mode = 2
+text = "FIRE"
+
+[node name="TorpedoInventory" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+
+[node name="InventoryContent" type="VBoxContainer" parent="MainSplit/RightSection/TorpedoInventory"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="InventoryHeader" type="Label" parent="MainSplit/RightSection/TorpedoInventory/InventoryContent"]
+layout_mode = 2
+text = "TORPEDO INVENTORY"
+horizontal_alignment = 1
+
+[node name="InventoryGrid" type="GridContainer" parent="MainSplit/RightSection/TorpedoInventory/InventoryContent"]
+layout_mode = 2
+columns = 2
+
+[node name="StandardLabel" type="Label" parent="MainSplit/RightSection/TorpedoInventory/InventoryContent/InventoryGrid"]
+layout_mode = 2
+text = "Standard:"
+
+[node name="StandardCount" type="Label" parent="MainSplit/RightSection/TorpedoInventory/InventoryContent/InventoryGrid"]
+layout_mode = 2
+text = "12"
+horizontal_alignment = 2
+
+[node name="EMPLabel" type="Label" parent="MainSplit/RightSection/TorpedoInventory/InventoryContent/InventoryGrid"]
+layout_mode = 2
+text = "EMP:"
+
+[node name="EMPCount" type="Label" parent="MainSplit/RightSection/TorpedoInventory/InventoryContent/InventoryGrid"]
+layout_mode = 2
+text = "4"
+horizontal_alignment = 2
+
+[node name="NuclearLabel" type="Label" parent="MainSplit/RightSection/TorpedoInventory/InventoryContent/InventoryGrid"]
+layout_mode = 2
+text = "Nuclear:"
+
+[node name="NuclearCount" type="Label" parent="MainSplit/RightSection/TorpedoInventory/InventoryContent/InventoryGrid"]
+layout_mode = 2
+text = "2"
+horizontal_alignment = 2
+
+[node name="MineLabel" type="Label" parent="MainSplit/RightSection/TorpedoInventory/InventoryContent/InventoryGrid"]
+layout_mode = 2
+text = "Mines:"
+
+[node name="MineCount" type="Label" parent="MainSplit/RightSection/TorpedoInventory/InventoryContent/InventoryGrid"]
+layout_mode = 2
+text = "6"
+horizontal_alignment = 2
+
+[node name="FireControls" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+
+[node name="FireContent" type="VBoxContainer" parent="MainSplit/RightSection/FireControls"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AutoFireToggle" type="CheckButton" parent="MainSplit/RightSection/FireControls/FireContent"]
+layout_mode = 2
+text = "AUTO-FIRE (Beams)"
+
+[node name="FireAll" type="Button" parent="MainSplit/RightSection/FireControls/FireContent"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "FIRE ALL WEAPONS"

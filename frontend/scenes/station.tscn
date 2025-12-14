@@ -1,0 +1,314 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Theme" path="res://resources/theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/station.gd" id="2_script"]
+
+[node name="Station" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.015, 0.025, 0.04, 1)
+
+[node name="MainLayout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopBar" type="PanelContainer" parent="MainLayout"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="TopBarContent" type="HBoxContainer" parent="MainLayout/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="AlertIndicator" type="ColorRect" parent="MainLayout/TopBar/TopBarContent"]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+color = Color(0.2, 0.7, 0.3, 1)
+
+[node name="ShipInfo" type="VBoxContainer" parent="MainLayout/TopBar/TopBarContent"]
+layout_mode = 2
+
+[node name="ShipName" type="Label" parent="MainLayout/TopBar/TopBarContent/ShipInfo"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "USS ENDEAVOUR"
+
+[node name="ShipClass" type="Label" parent="MainLayout/TopBar/TopBarContent/ShipInfo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "Heavy Cruiser"
+
+[node name="Spacer" type="Control" parent="MainLayout/TopBar/TopBarContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StationLabel" type="Label" parent="MainLayout/TopBar/TopBarContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 28
+text = "ENGINEER"
+
+[node name="Spacer2" type="Control" parent="MainLayout/TopBar/TopBarContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatusPanel" type="HBoxContainer" parent="MainLayout/TopBar/TopBarContent"]
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="HullStatus" type="VBoxContainer" parent="MainLayout/TopBar/TopBarContent/StatusPanel"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="MainLayout/TopBar/TopBarContent/StatusPanel/HullStatus"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "HULL"
+
+[node name="HullBar" type="ProgressBar" parent="MainLayout/TopBar/TopBarContent/StatusPanel/HullStatus"]
+custom_minimum_size = Vector2(120, 16)
+layout_mode = 2
+value = 95.0
+show_percentage = false
+
+[node name="ShieldsStatus" type="VBoxContainer" parent="MainLayout/TopBar/TopBarContent/StatusPanel"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="MainLayout/TopBar/TopBarContent/StatusPanel/ShieldsStatus"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "SHIELDS"
+
+[node name="ShieldsBar" type="ProgressBar" parent="MainLayout/TopBar/TopBarContent/StatusPanel/ShieldsStatus"]
+custom_minimum_size = Vector2(120, 16)
+layout_mode = 2
+value = 80.0
+show_percentage = false
+
+[node name="PowerStatus" type="VBoxContainer" parent="MainLayout/TopBar/TopBarContent/StatusPanel"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="MainLayout/TopBar/TopBarContent/StatusPanel/PowerStatus"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "POWER"
+
+[node name="PowerBar" type="ProgressBar" parent="MainLayout/TopBar/TopBarContent/StatusPanel/PowerStatus"]
+custom_minimum_size = Vector2(120, 16)
+layout_mode = 2
+value = 90.0
+show_percentage = false
+
+[node name="TimeLabel" type="Label" parent="MainLayout/TopBar/TopBarContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.5, 0.6, 1)
+text = "00:00:00"
+
+[node name="ContentArea" type="MarginContainer" parent="MainLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="StationContent" type="Control" parent="MainLayout/ContentArea"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="BottomBar" type="PanelContainer" parent="MainLayout"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="BottomBarContent" type="HBoxContainer" parent="MainLayout/BottomBar"]
+layout_mode = 2
+
+[node name="ConnectionStatus" type="HBoxContainer" parent="MainLayout/BottomBar/BottomBarContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatusDot" type="ColorRect" parent="MainLayout/BottomBar/BottomBarContent/ConnectionStatus"]
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 2
+color = Color(0.3, 0.8, 0.4, 1)
+
+[node name="StatusText" type="Label" parent="MainLayout/BottomBar/BottomBarContent/ConnectionStatus"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "Connected"
+
+[node name="Spacer" type="Control" parent="MainLayout/BottomBar/BottomBarContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AlertButtons" type="HBoxContainer" parent="MainLayout/BottomBar/BottomBarContent"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RedAlertBtn" type="Button" parent="MainLayout/BottomBar/BottomBarContent/AlertButtons"]
+custom_minimum_size = Vector2(100, 30)
+layout_mode = 2
+text = "RED ALERT"
+
+[node name="YellowAlertBtn" type="Button" parent="MainLayout/BottomBar/BottomBarContent/AlertButtons"]
+custom_minimum_size = Vector2(100, 30)
+layout_mode = 2
+text = "YELLOW ALERT"
+
+[node name="Spacer2" type="Control" parent="MainLayout/BottomBar/BottomBarContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BackButton" type="Button" parent="MainLayout/BottomBar/BottomBarContent"]
+custom_minimum_size = Vector2(80, 30)
+layout_mode = 2
+text = "MENU"
+
+[node name="AlertOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.5, 0.1, 0.1, 0)
+
+[node name="DamageEffects" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="DebugOverlay" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -200.0
+offset_top = 70.0
+offset_bottom = 190.0
+grow_horizontal = 0
+
+[node name="DebugContent" type="VBoxContainer" parent="DebugOverlay"]
+layout_mode = 2
+
+[node name="FPSLabel" type="Label" parent="DebugOverlay/DebugContent"]
+layout_mode = 2
+text = "FPS: 60"
+
+[node name="LatencyLabel" type="Label" parent="DebugOverlay/DebugContent"]
+layout_mode = 2
+text = "Latency: 0ms"
+
+[node name="ShipsLabel" type="Label" parent="DebugOverlay/DebugContent"]
+layout_mode = 2
+text = "Ships: 0"
+
+[node name="StateLabel" type="Label" parent="DebugOverlay/DebugContent"]
+layout_mode = 2
+text = "State: -"
+
+[node name="PausedLabel" type="Label" parent="DebugOverlay/DebugContent"]
+layout_mode = 2
+text = "Paused: No"
+
+[node name="DisconnectOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.05, 0.95)
+
+[node name="DisconnectContent" type="VBoxContainer" parent="DisconnectOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -60.0
+offset_right = 200.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="DisconnectLabel" type="Label" parent="DisconnectOverlay/DisconnectContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.3, 0.2, 1)
+theme_override_font_sizes/font_size = 28
+text = "CONNECTION LOST"
+horizontal_alignment = 1
+
+[node name="ReconnectLabel" type="Label" parent="DisconnectOverlay/DisconnectContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+text = "Attempting to reconnect..."
+horizontal_alignment = 1
+
+[node name="MenuButton" type="Button" parent="DisconnectOverlay/DisconnectContent"]
+layout_mode = 2
+text = "Return to Menu"
+
+[node name="PauseOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.04, 0.08, 0.7)
+
+[node name="PauseLabel" type="Label" parent="PauseOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -20.0
+offset_right = 100.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.6, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 32
+text = "SIMULATION PAUSED"
+horizontal_alignment = 1

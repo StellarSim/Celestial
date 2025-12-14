@@ -1,0 +1,265 @@
+[gd_scene load_steps=2 format=3 uid="uid://dk7mpw4r2q08a"]
+
+[ext_resource type="Script" path="res://scripts/ui/first_officer_panel.gd" id="1_xo"]
+
+[node name="FirstOfficerPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_xo")
+
+[node name="MainSplit" type="HSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+split_offset = 500
+
+[node name="LeftSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CrewSection" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CrewContent" type="VBoxContainer" parent="MainSplit/LeftSection/CrewSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CrewHeader" type="Label" parent="MainSplit/LeftSection/CrewSection/CrewContent"]
+layout_mode = 2
+text = "CREW MANIFEST"
+horizontal_alignment = 1
+
+[node name="CrewSummary" type="GridContainer" parent="MainSplit/LeftSection/CrewSection/CrewContent"]
+layout_mode = 2
+columns = 2
+
+[node name="TotalLabel" type="Label" parent="MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary"]
+layout_mode = 2
+text = "Total Crew:"
+
+[node name="TotalValue" type="Label" parent="MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary"]
+layout_mode = 2
+text = "150"
+horizontal_alignment = 2
+
+[node name="ActiveLabel" type="Label" parent="MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary"]
+layout_mode = 2
+text = "Active Duty:"
+
+[node name="ActiveValue" type="Label" parent="MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary"]
+layout_mode = 2
+text = "142"
+horizontal_alignment = 2
+
+[node name="InjuredLabel" type="Label" parent="MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary"]
+layout_mode = 2
+text = "Injured:"
+
+[node name="InjuredValue" type="Label" parent="MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary"]
+layout_mode = 2
+text = "5"
+horizontal_alignment = 2
+
+[node name="CasualtiesLabel" type="Label" parent="MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary"]
+layout_mode = 2
+text = "Casualties:"
+
+[node name="CasualtiesValue" type="Label" parent="MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary"]
+layout_mode = 2
+text = "3"
+horizontal_alignment = 2
+
+[node name="DepartmentList" type="ItemList" parent="MainSplit/LeftSection/CrewSection/CrewContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RepairTeams" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+
+[node name="RepairContent" type="VBoxContainer" parent="MainSplit/LeftSection/RepairTeams"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RepairHeader" type="Label" parent="MainSplit/LeftSection/RepairTeams/RepairContent"]
+layout_mode = 2
+text = "REPAIR TEAMS"
+horizontal_alignment = 1
+
+[node name="TeamList" type="VBoxContainer" parent="MainSplit/LeftSection/RepairTeams/RepairContent"]
+layout_mode = 2
+
+[node name="Team1" type="HBoxContainer" parent="MainSplit/LeftSection/RepairTeams/RepairContent/TeamList"]
+layout_mode = 2
+
+[node name="Team1Name" type="Label" parent="MainSplit/LeftSection/RepairTeams/RepairContent/TeamList/Team1"]
+layout_mode = 2
+custom_minimum_size = Vector2(100, 0)
+text = "Alpha Team"
+
+[node name="Team1Status" type="Label" parent="MainSplit/LeftSection/RepairTeams/RepairContent/TeamList/Team1"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "STANDING BY"
+horizontal_alignment = 1
+
+[node name="Team1Deploy" type="Button" parent="MainSplit/LeftSection/RepairTeams/RepairContent/TeamList/Team1"]
+layout_mode = 2
+text = "DEPLOY"
+
+[node name="Team2" type="HBoxContainer" parent="MainSplit/LeftSection/RepairTeams/RepairContent/TeamList"]
+layout_mode = 2
+
+[node name="Team2Name" type="Label" parent="MainSplit/LeftSection/RepairTeams/RepairContent/TeamList/Team2"]
+layout_mode = 2
+custom_minimum_size = Vector2(100, 0)
+text = "Beta Team"
+
+[node name="Team2Status" type="Label" parent="MainSplit/LeftSection/RepairTeams/RepairContent/TeamList/Team2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "STANDING BY"
+horizontal_alignment = 1
+
+[node name="Team2Deploy" type="Button" parent="MainSplit/LeftSection/RepairTeams/RepairContent/TeamList/Team2"]
+layout_mode = 2
+text = "DEPLOY"
+
+[node name="Team3" type="HBoxContainer" parent="MainSplit/LeftSection/RepairTeams/RepairContent/TeamList"]
+layout_mode = 2
+
+[node name="Team3Name" type="Label" parent="MainSplit/LeftSection/RepairTeams/RepairContent/TeamList/Team3"]
+layout_mode = 2
+custom_minimum_size = Vector2(100, 0)
+text = "Gamma Team"
+
+[node name="Team3Status" type="Label" parent="MainSplit/LeftSection/RepairTeams/RepairContent/TeamList/Team3"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "STANDING BY"
+horizontal_alignment = 1
+
+[node name="Team3Deploy" type="Button" parent="MainSplit/LeftSection/RepairTeams/RepairContent/TeamList/Team3"]
+layout_mode = 2
+text = "DEPLOY"
+
+[node name="RightSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StatusSection" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+
+[node name="StatusContent" type="VBoxContainer" parent="MainSplit/RightSection/StatusSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatusHeader" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent"]
+layout_mode = 2
+text = "SHIP STATUS OVERVIEW"
+horizontal_alignment = 1
+
+[node name="OverallStatus" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "OPERATIONAL"
+horizontal_alignment = 1
+
+[node name="StatusSummary" type="GridContainer" parent="MainSplit/RightSection/StatusSection/StatusContent"]
+layout_mode = 2
+columns = 2
+
+[node name="HullLabel" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent/StatusSummary"]
+layout_mode = 2
+text = "Hull:"
+
+[node name="HullValue" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent/StatusSummary"]
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="ShieldsLabel" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent/StatusSummary"]
+layout_mode = 2
+text = "Shields:"
+
+[node name="ShieldsValue" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent/StatusSummary"]
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="PowerLabel" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent/StatusSummary"]
+layout_mode = 2
+text = "Power:"
+
+[node name="PowerValue" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent/StatusSummary"]
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="AmmoLabel" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent/StatusSummary"]
+layout_mode = 2
+text = "Ammunition:"
+
+[node name="AmmoValue" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent/StatusSummary"]
+layout_mode = 2
+text = "FULL"
+horizontal_alignment = 2
+
+[node name="DamageReport" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DamageContent" type="VBoxContainer" parent="MainSplit/RightSection/DamageReport"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DamageHeader" type="Label" parent="MainSplit/RightSection/DamageReport/DamageContent"]
+layout_mode = 2
+text = "DAMAGE REPORT"
+horizontal_alignment = 1
+
+[node name="DamageList" type="ItemList" parent="MainSplit/RightSection/DamageReport/DamageContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LogSection" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LogContent" type="VBoxContainer" parent="MainSplit/RightSection/LogSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LogHeader" type="Label" parent="MainSplit/RightSection/LogSection/LogContent"]
+layout_mode = 2
+text = "CAPTAIN'S LOG"
+horizontal_alignment = 1
+
+[node name="LogText" type="RichTextLabel" parent="MainSplit/RightSection/LogSection/LogContent"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
+
+[node name="LogActions" type="HBoxContainer" parent="MainSplit/RightSection/LogSection/LogContent"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AddEntry" type="Button" parent="MainSplit/RightSection/LogSection/LogContent/LogActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ADD ENTRY"
+
+[node name="ExportLog" type="Button" parent="MainSplit/RightSection/LogSection/LogContent/LogActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "EXPORT"

@@ -1,0 +1,356 @@
+[gd_scene load_steps=7 format=3 uid="uid://bu1wbk6vkvvpj"]
+
+[ext_resource type="Theme" uid="uid://bfmjdh7ywmo2a" path="res://resources/theme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://drf5uttxrc20i" path="res://scripts/viewscreen.gd" id="2_script"]
+
+[sub_resource type="ProceduralSkyMaterial" id="1_sky"]
+sky_top_color = Color(0.01, 0.02, 0.04, 1)
+sky_horizon_color = Color(0.02, 0.03, 0.05, 1)
+ground_bottom_color = Color(0.01, 0.015, 0.02, 1)
+ground_horizon_color = Color(0.02, 0.03, 0.05, 1)
+
+[sub_resource type="Sky" id="2_sky"]
+sky_material = SubResource("1_sky")
+
+[sub_resource type="Environment" id="3_env"]
+background_mode = 2
+sky = SubResource("2_sky")
+ambient_light_source = 2
+ambient_light_color = Color(0.15, 0.18, 0.25, 1)
+ambient_light_energy = 0.3
+tonemap_mode = 2
+tonemap_exposure = 1.1
+glow_enabled = true
+glow_intensity = 0.5
+glow_strength = 0.8
+glow_bloom = 0.2
+fog_enabled = true
+fog_light_color = Color(0.1, 0.15, 0.25, 1)
+fog_density = 0.0001
+
+[sub_resource type="CameraAttributesPractical" id="4_cam_attr"]
+auto_exposure_enabled = true
+auto_exposure_min_sensitivity = 50.0
+auto_exposure_max_sensitivity = 400.0
+
+[node name="Viewscreen" type="Node3D"]
+script = ExtResource("2_script")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("3_env")
+
+[node name="PlayerCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 20)
+attributes = SubResource("4_cam_attr")
+current = true
+far = 50000.0
+
+[node name="CameraShake" type="Node3D" parent="PlayerCamera"]
+
+[node name="SunLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 100, 0)
+light_color = Color(1, 0.98, 0.95, 1)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="FillLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, 0.25, -0.433013, 0, 0.866025, 0.5, 0.5, -0.433013, 0.75, 0, -50, 0)
+light_color = Color(0.7, 0.8, 0.95, 1)
+light_energy = 0.3
+
+[node name="Ships" type="Node3D" parent="."]
+
+[node name="Projectiles" type="Node3D" parent="."]
+
+[node name="Effects" type="Node3D" parent="."]
+
+[node name="Starfield" type="Node3D" parent="."]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("1_theme")
+
+[node name="TopHUD" type="HBoxContainer" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 80.0
+grow_horizontal = 2
+theme_override_constants/separation = 20
+
+[node name="LeftInfo" type="VBoxContainer" parent="UI/HUD/TopHUD"]
+layout_mode = 2
+
+[node name="ShipName" type="Label" parent="UI/HUD/TopHUD/LeftInfo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "USS ENDEAVOUR"
+
+[node name="ShipClass" type="Label" parent="UI/HUD/TopHUD/LeftInfo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "Heavy Cruiser"
+
+[node name="Spacer" type="Control" parent="UI/HUD/TopHUD"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AlertStatus" type="Label" parent="UI/HUD/TopHUD"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+text = "CONDITION GREEN"
+
+[node name="Spacer2" type="Control" parent="UI/HUD/TopHUD"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RightInfo" type="VBoxContainer" parent="UI/HUD/TopHUD"]
+layout_mode = 2
+alignment = 2
+
+[node name="Heading" type="Label" parent="UI/HUD/TopHUD/RightInfo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 16
+text = "HDG: 000°"
+horizontal_alignment = 2
+
+[node name="Speed" type="Label" parent="UI/HUD/TopHUD/RightInfo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 16
+text = "SPD: 0 m/s"
+horizontal_alignment = 2
+
+[node name="BottomHUD" type="HBoxContainer" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -100.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 40
+alignment = 1
+
+[node name="ShieldsDisplay" type="VBoxContainer" parent="UI/HUD/BottomHUD"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="UI/HUD/BottomHUD/ShieldsDisplay"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+text = "SHIELDS"
+horizontal_alignment = 1
+
+[node name="ShieldGrid" type="GridContainer" parent="UI/HUD/BottomHUD/ShieldsDisplay"]
+layout_mode = 2
+columns = 3
+
+[node name="Empty1" type="Control" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid"]
+custom_minimum_size = Vector2(60, 20)
+layout_mode = 2
+
+[node name="ForeFacing" type="ProgressBar" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid"]
+custom_minimum_size = Vector2(60, 16)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="Empty2" type="Control" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid"]
+custom_minimum_size = Vector2(60, 20)
+layout_mode = 2
+
+[node name="PortFacing" type="ProgressBar" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid"]
+custom_minimum_size = Vector2(60, 16)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="HullDisplay" type="VBoxContainer" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid"]
+layout_mode = 2
+alignment = 1
+
+[node name="HullLabel" type="Label" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid/HullDisplay"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "HULL"
+horizontal_alignment = 1
+
+[node name="HullValue" type="Label" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid/HullDisplay"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "100%"
+horizontal_alignment = 1
+
+[node name="StarboardFacing" type="ProgressBar" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid"]
+custom_minimum_size = Vector2(60, 16)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="Empty3" type="Control" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid"]
+custom_minimum_size = Vector2(60, 20)
+layout_mode = 2
+
+[node name="AftFacing" type="ProgressBar" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid"]
+custom_minimum_size = Vector2(60, 16)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="Empty4" type="Control" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid"]
+custom_minimum_size = Vector2(60, 20)
+layout_mode = 2
+
+[node name="ShieldStatus" type="Label" parent="UI/HUD/BottomHUD/ShieldsDisplay"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 12
+text = "ONLINE"
+horizontal_alignment = 1
+
+[node name="TargetingReticle" type="Control" parent="UI/HUD"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -50.0
+offset_top = -50.0
+offset_right = 50.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ReticleOuter" type="ColorRect" parent="UI/HUD/TargetingReticle"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 0.3, 0.2, 0)
+
+[node name="AlertOverlay" type="ColorRect" parent="UI/HUD"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.6, 0.1, 0.1, 0.1)
+
+[node name="DamageOverlay" type="Control" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Cracks" type="TextureRect" parent="UI/HUD/DamageOverlay"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="VignetteEffect" type="ColorRect" parent="UI/HUD/DamageOverlay"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.5, 0.1, 0.1, 0.3)
+
+[node name="DebugOverlay" type="PanelContainer" parent="UI/HUD"]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -200.0
+offset_bottom = 150.0
+grow_horizontal = 0
+
+[node name="DebugContent" type="VBoxContainer" parent="UI/HUD/DebugOverlay"]
+layout_mode = 2
+
+[node name="FPSLabel" type="Label" parent="UI/HUD/DebugOverlay/DebugContent"]
+layout_mode = 2
+text = "FPS: 60"
+
+[node name="ShipsLabel" type="Label" parent="UI/HUD/DebugOverlay/DebugContent"]
+layout_mode = 2
+text = "Ships: 0"
+
+[node name="ProjectilesLabel" type="Label" parent="UI/HUD/DebugOverlay/DebugContent"]
+layout_mode = 2
+text = "Projectiles: 0"
+
+[node name="CameraLabel" type="Label" parent="UI/HUD/DebugOverlay/DebugContent"]
+layout_mode = 2
+text = "Camera: 0, 0, 0"
+
+[node name="DisconnectOverlay" type="ColorRect" parent="UI/HUD"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.05, 0.95)
+
+[node name="DisconnectContent" type="VBoxContainer" parent="UI/HUD/DisconnectOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -50.0
+offset_right = 150.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="UI/HUD/DisconnectOverlay/DisconnectContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.3, 0.2, 1)
+theme_override_font_sizes/font_size = 28
+text = "CONNECTION LOST"
+horizontal_alignment = 1
+
+[node name="SubLabel" type="Label" parent="UI/HUD/DisconnectOverlay/DisconnectContent"]
+layout_mode = 2
+text = "Attempting to reconnect..."
+horizontal_alignment = 1

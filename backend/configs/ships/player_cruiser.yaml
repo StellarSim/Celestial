@@ -1,0 +1,152 @@
+id: player_cruiser
+name: Federation Cruiser
+mass: 500000
+max_speed: 250
+acceleration: 50
+turn_rate: 0.8
+
+engines:
+  - id: main_engine_1
+    type: main
+    thrust: 100000
+    health: 100
+    power_draw: 150
+  - id: main_engine_2
+    type: main
+    thrust: 100000
+    health: 100
+    power_draw: 150
+  - id: maneuvering_thrust_port
+    type: maneuvering
+    thrust: 20000
+    health: 100
+    power_draw: 30
+  - id: maneuvering_thrust_starboard
+    type: maneuvering
+    thrust: 20000
+    health: 100
+    power_draw: 30
+
+weapons:
+  - id: phaser_array_1
+    type: phaser
+    damage: 25
+    range: 2000
+    cooldown_time: 2.0
+    health: 100
+    power_draw: 50
+    ammo_capacity: 0
+  - id: phaser_array_2
+    type: phaser
+    damage: 25
+    range: 2000
+    cooldown_time: 2.0
+    health: 100
+    power_draw: 50
+    ammo_capacity: 0
+  - id: torpedo_bay_1
+    type: torpedo
+    damage: 100
+    range: 5000
+    cooldown_time: 5.0
+    health: 100
+    power_draw: 20
+    ammo_capacity: 20
+  - id: torpedo_bay_2
+    type: torpedo
+    damage: 100
+    range: 5000
+    cooldown_time: 5.0
+    health: 100
+    power_draw: 20
+    ammo_capacity: 20
+  - id: torpedo_bay_3
+    type: torpedo
+    damage: 100
+    range: 5000
+    cooldown_time: 5.0
+    health: 100
+    power_draw: 20
+    ammo_capacity: 20
+  - id: torpedo_bay_4
+    type: torpedo
+    damage: 100
+    range: 5000
+    cooldown_time: 5.0
+    health: 100
+    power_draw: 20
+    ammo_capacity: 20
+
+shields:
+  recharge_rate: 10
+  power_draw: 100
+  emitters:
+    - id: forward
+      facing: forward
+      strength: 500
+      health: 100
+    - id: aft
+      facing: aft
+      strength: 500
+      health: 100
+    - id: port
+      facing: port
+      strength: 400
+      health: 100
+    - id: starboard
+      facing: starboard
+      strength: 400
+      health: 100
+
+hull:
+  sections:
+    - id: forward
+      armor: 200
+      health: 500
+    - id: aft
+      armor: 200
+      health: 500
+    - id: port
+      armor: 150
+      health: 400
+    - id: starboard
+      armor: 150
+      health: 400
+    - id: dorsal
+      armor: 100
+      health: 300
+    - id: ventral
+      armor: 100
+      health: 300
+    - id: bridge
+      armor: 80
+      health: 200
+    - id: engineering
+      armor: 150
+      health: 400
+
+subsystems:
+  - id: sensors
+    type: sensors
+    health: 100
+    power_draw: 30
+  - id: comms
+    type: communications
+    health: 100
+    power_draw: 20
+  - id: life_support
+    type: life_support
+    health: 100
+    power_draw: 50
+  - id: navigation
+    type: navigation
+    health: 100
+    power_draw: 25
+
+launch_bays:
+  - id: launch_bay_1
+    capacity: 4
+    health: 100
+  - id: launch_bay_2
+    capacity: 4
+    health: 100

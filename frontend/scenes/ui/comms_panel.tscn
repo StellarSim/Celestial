@@ -1,0 +1,217 @@
+[gd_scene load_steps=2 format=3 uid="uid://bsrk7mpw4r2q0"]
+
+[ext_resource type="Script" path="res://scripts/ui/comms_panel.gd" id="1_comms"]
+
+[node name="CommsPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_comms")
+
+[node name="MainSplit" type="HSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+split_offset = 400
+
+[node name="LeftSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ContactsSection" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ContactsContent" type="VBoxContainer" parent="MainSplit/LeftSection/ContactsSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ContactsHeader" type="Label" parent="MainSplit/LeftSection/ContactsSection/ContactsContent"]
+layout_mode = 2
+text = "CONTACTS"
+horizontal_alignment = 1
+
+[node name="ContactFilter" type="HBoxContainer" parent="MainSplit/LeftSection/ContactsSection/ContactsContent"]
+layout_mode = 2
+
+[node name="FilterLabel" type="Label" parent="MainSplit/LeftSection/ContactsSection/ContactsContent/ContactFilter"]
+layout_mode = 2
+text = "Filter:"
+
+[node name="FilterSelect" type="OptionButton" parent="MainSplit/LeftSection/ContactsSection/ContactsContent/ContactFilter"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ContactList" type="ItemList" parent="MainSplit/LeftSection/ContactsSection/ContactsContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ContactActions" type="HBoxContainer" parent="MainSplit/LeftSection/ContactsSection/ContactsContent"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="HailContact" type="Button" parent="MainSplit/LeftSection/ContactsSection/ContactsContent/ContactActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "HAIL"
+
+[node name="ScanContact" type="Button" parent="MainSplit/LeftSection/ContactsSection/ContactsContent/ContactActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SCAN"
+
+[node name="FrequencySection" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+
+[node name="FrequencyContent" type="VBoxContainer" parent="MainSplit/LeftSection/FrequencySection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FrequencyHeader" type="Label" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent"]
+layout_mode = 2
+text = "FREQUENCY CONTROL"
+horizontal_alignment = 1
+
+[node name="FrequencySlider" type="HSlider" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent"]
+layout_mode = 2
+min_value = 100.0
+max_value = 999.0
+step = 0.1
+value = 500.0
+
+[node name="FrequencyDisplay" type="HBoxContainer" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent"]
+layout_mode = 2
+
+[node name="FreqLabel" type="Label" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent/FrequencyDisplay"]
+layout_mode = 2
+text = "Frequency:"
+
+[node name="FreqValue" type="Label" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent/FrequencyDisplay"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "500.0 MHz"
+horizontal_alignment = 2
+
+[node name="PresetFrequencies" type="GridContainer" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent"]
+layout_mode = 2
+columns = 3
+
+[node name="EmergencyFreq" type="Button" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent/PresetFrequencies"]
+layout_mode = 2
+text = "EMERGENCY"
+
+[node name="MilitaryFreq" type="Button" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent/PresetFrequencies"]
+layout_mode = 2
+text = "MILITARY"
+
+[node name="CivilianFreq" type="Button" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent/PresetFrequencies"]
+layout_mode = 2
+text = "CIVILIAN"
+
+[node name="RightSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CommLog" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CommLogContent" type="VBoxContainer" parent="MainSplit/RightSection/CommLog"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CommLogHeader" type="Label" parent="MainSplit/RightSection/CommLog/CommLogContent"]
+layout_mode = 2
+text = "COMMUNICATIONS LOG"
+horizontal_alignment = 1
+
+[node name="CommLogText" type="RichTextLabel" parent="MainSplit/RightSection/CommLog/CommLogContent"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
+
+[node name="TransmitSection" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+
+[node name="TransmitContent" type="VBoxContainer" parent="MainSplit/RightSection/TransmitSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TransmitHeader" type="Label" parent="MainSplit/RightSection/TransmitSection/TransmitContent"]
+layout_mode = 2
+text = "TRANSMIT"
+horizontal_alignment = 1
+
+[node name="MessagePresets" type="GridContainer" parent="MainSplit/RightSection/TransmitSection/TransmitContent"]
+layout_mode = 2
+columns = 2
+
+[node name="IdentifyBtn" type="Button" parent="MainSplit/RightSection/TransmitSection/TransmitContent/MessagePresets"]
+layout_mode = 2
+text = "IDENTIFY"
+
+[node name="RequestDockBtn" type="Button" parent="MainSplit/RightSection/TransmitSection/TransmitContent/MessagePresets"]
+layout_mode = 2
+text = "REQUEST DOCK"
+
+[node name="MaydayBtn" type="Button" parent="MainSplit/RightSection/TransmitSection/TransmitContent/MessagePresets"]
+layout_mode = 2
+text = "MAYDAY"
+
+[node name="SurrenderBtn" type="Button" parent="MainSplit/RightSection/TransmitSection/TransmitContent/MessagePresets"]
+layout_mode = 2
+text = "SURRENDER"
+
+[node name="CustomMessage" type="HBoxContainer" parent="MainSplit/RightSection/TransmitSection/TransmitContent"]
+layout_mode = 2
+
+[node name="MessageInput" type="LineEdit" parent="MainSplit/RightSection/TransmitSection/TransmitContent/CustomMessage"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Enter message..."
+
+[node name="SendBtn" type="Button" parent="MainSplit/RightSection/TransmitSection/TransmitContent/CustomMessage"]
+layout_mode = 2
+text = "SEND"
+
+[node name="TransmitStatus" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+
+[node name="StatusContent" type="HBoxContainer" parent="MainSplit/RightSection/TransmitStatus"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="SignalStrength" type="VBoxContainer" parent="MainSplit/RightSection/TransmitStatus/StatusContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SignalLabel" type="Label" parent="MainSplit/RightSection/TransmitStatus/StatusContent/SignalStrength"]
+layout_mode = 2
+text = "Signal Strength"
+horizontal_alignment = 1
+
+[node name="SignalBar" type="ProgressBar" parent="MainSplit/RightSection/TransmitStatus/StatusContent/SignalStrength"]
+layout_mode = 2
+
+[node name="JammingStatus" type="VBoxContainer" parent="MainSplit/RightSection/TransmitStatus/StatusContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="JammingLabel" type="Label" parent="MainSplit/RightSection/TransmitStatus/StatusContent/JammingStatus"]
+layout_mode = 2
+text = "Jamming"
+horizontal_alignment = 1
+
+[node name="JammingValue" type="Label" parent="MainSplit/RightSection/TransmitStatus/StatusContent/JammingStatus"]
+layout_mode = 2
+text = "NONE DETECTED"
+horizontal_alignment = 1

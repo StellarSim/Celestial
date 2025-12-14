@@ -1,0 +1,4 @@
+tick_rate: 60
+websocket_port: 8080
+tcp_port: 9090
+snapshot_interval: 20

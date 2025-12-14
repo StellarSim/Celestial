@@ -1,0 +1,26 @@
+[gd_scene load_steps=3 format=3 uid="uid://cbeam_effect_3d"]
+
+[ext_resource type="Script" path="res://scripts/3d/beam_effect.gd" id="1_beam"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_beam"]
+transparency = 1
+albedo_color = Color(1, 0.3, 0.1, 0.8)
+emission_enabled = true
+emission = Color(1, 0.4, 0.2, 1)
+emission_energy_multiplier = 5.0
+
+[node name="BeamEffect" type="Node3D"]
+script = ExtResource("1_beam")
+
+[node name="BeamMesh" type="MeshInstance3D" parent="."]
+material_override = SubResource("StandardMaterial3D_beam")
+
+[node name="OriginLight" type="OmniLight3D" parent="."]
+light_color = Color(1, 0.4, 0.2, 1)
+light_energy = 3.0
+omni_range = 5.0
+
+[node name="ImpactLight" type="OmniLight3D" parent="."]
+light_color = Color(1, 0.4, 0.2, 1)
+light_energy = 5.0
+omni_range = 8.0

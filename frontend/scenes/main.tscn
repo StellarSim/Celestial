@@ -1,0 +1,349 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Theme" path="res://resources/theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/main.gd" id="2_script"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.02, 0.035, 0.06, 1)
+
+[node name="Stars" type="Control" parent="Background"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="MainContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Header" type="PanelContainer" parent="MainContainer"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+
+[node name="HeaderContent" type="HBoxContainer" parent="MainContainer/Header"]
+layout_mode = 2
+alignment = 1
+
+[node name="Logo" type="VBoxContainer" parent="MainContainer/Header/HeaderContent"]
+layout_mode = 2
+alignment = 1
+
+[node name="Title" type="Label" parent="MainContainer/Header/HeaderContent/Logo"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "CELESTIAL"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="MainContainer/Header/HeaderContent/Logo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 16
+text = "Bridge Simulator"
+horizontal_alignment = 1
+
+[node name="CenterContent" type="MarginContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 100
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 100
+theme_override_constants/margin_bottom = 40
+
+[node name="ContentSplit" type="HBoxContainer" parent="MainContainer/CenterContent"]
+layout_mode = 2
+theme_override_constants/separation = 60
+
+[node name="LeftPanel" type="PanelContainer" parent="MainContainer/CenterContent/ContentSplit"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LeftContent" type="VBoxContainer" parent="MainContainer/CenterContent/ContentSplit/LeftPanel"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="ConnectionSection" type="VBoxContainer" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ConnectionHeader" type="Label" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent/ConnectionSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 20
+text = "SERVER CONNECTION"
+
+[node name="ServerRow" type="HBoxContainer" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent/ConnectionSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ServerLabel" type="Label" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent/ConnectionSection/ServerRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Address:"
+
+[node name="ServerInput" type="LineEdit" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent/ConnectionSection/ServerRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "localhost"
+text = "localhost"
+
+[node name="PortRow" type="HBoxContainer" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent/ConnectionSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PortLabel" type="Label" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent/ConnectionSection/PortRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Port:"
+
+[node name="PortInput" type="LineEdit" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent/ConnectionSection/PortRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "8080"
+text = "8080"
+
+[node name="StatusRow" type="HBoxContainer" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent/ConnectionSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StatusLabel" type="Label" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent/ConnectionSection/StatusRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Status:"
+
+[node name="ConnectionStatus" type="Label" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent/ConnectionSection/StatusRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+text = "Disconnected"
+
+[node name="ConnectButton" type="Button" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent/ConnectionSection"]
+custom_minimum_size = Vector2(0, 45)
+layout_mode = 2
+text = "CONNECT"
+
+[node name="Spacer" type="Control" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RoleSection" type="VBoxContainer" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="RoleHeader" type="Label" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent/RoleSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 20
+text = "SELECT STATION"
+
+[node name="RoleGrid" type="GridContainer" parent="MainContainer/CenterContent/ContentSplit/LeftPanel/LeftContent/RoleSection"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+
+[node name="RightPanel" type="PanelContainer" parent="MainContainer/CenterContent/ContentSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RightContent" type="VBoxContainer" parent="MainContainer/CenterContent/ContentSplit/RightPanel"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="SettingsHeader" type="Label" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 20
+text = "SETTINGS"
+
+[node name="GraphicsSection" type="VBoxContainer" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="GraphicsLabel" type="Label" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/GraphicsSection"]
+layout_mode = 2
+text = "Graphics Quality"
+
+[node name="GraphicsOptions" type="HBoxContainer" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/GraphicsSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LowBtn" type="Button" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/GraphicsSection/GraphicsOptions"]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "Low"
+
+[node name="MedBtn" type="Button" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/GraphicsSection/GraphicsOptions"]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "Medium"
+
+[node name="HighBtn" type="Button" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/GraphicsSection/GraphicsOptions"]
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+button_pressed = true
+text = "High"
+
+[node name="DisplaySection" type="VBoxContainer" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FullscreenCheck" type="CheckButton" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/DisplaySection"]
+layout_mode = 2
+button_pressed = true
+text = "Fullscreen"
+
+[node name="VsyncCheck" type="CheckButton" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/DisplaySection"]
+layout_mode = 2
+button_pressed = true
+text = "V-Sync"
+
+[node name="AudioSection" type="VBoxContainer" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MasterRow" type="HBoxContainer" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/AudioSection"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/AudioSection/MasterRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Master"
+
+[node name="MasterSlider" type="HSlider" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/AudioSection/MasterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+value = 100.0
+
+[node name="SFXRow" type="HBoxContainer" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/AudioSection"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/AudioSection/SFXRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "SFX"
+
+[node name="SFXSlider" type="HSlider" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/AudioSection/SFXRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+value = 100.0
+
+[node name="MusicRow" type="HBoxContainer" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/AudioSection"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/AudioSection/MusicRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Music"
+
+[node name="MusicSlider" type="HSlider" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent/AudioSection/MusicRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+value = 100.0
+
+[node name="Spacer" type="Control" parent="MainContainer/CenterContent/ContentSplit/RightPanel/RightContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Footer" type="PanelContainer" parent="MainContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+
+[node name="FooterContent" type="HBoxContainer" parent="MainContainer/Footer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Version" type="Label" parent="MainContainer/Footer/FooterContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.5, 0.6, 1)
+text = "v1.0.0 | Celestial Bridge Simulator"
+
+[node name="DebugOverlay" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_bottom = 120.0
+grow_horizontal = 0
+
+[node name="DebugContent" type="VBoxContainer" parent="DebugOverlay"]
+layout_mode = 2
+
+[node name="FPSLabel" type="Label" parent="DebugOverlay/DebugContent"]
+layout_mode = 2
+text = "FPS: 60"
+
+[node name="LatencyLabel" type="Label" parent="DebugOverlay/DebugContent"]
+layout_mode = 2
+text = "Latency: 0ms"
+
+[node name="PacketsLabel" type="Label" parent="DebugOverlay/DebugContent"]
+layout_mode = 2
+text = "Packets: 0 / 0"
+
+[node name="StateLabel" type="Label" parent="DebugOverlay/DebugContent"]
+layout_mode = 2
+text = "State: Disconnected"
+
+[node name="ConnectionOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.05, 0.9)
+
+[node name="ConnectionContent" type="VBoxContainer" parent="ConnectionOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -50.0
+offset_right = 150.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="ConnectingLabel" type="Label" parent="ConnectionOverlay/ConnectionContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Connecting..."
+horizontal_alignment = 1
+
+[node name="ConnectingStatus" type="Label" parent="ConnectionOverlay/ConnectionContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+text = "Establishing connection to server"
+horizontal_alignment = 1
+
+[node name="CancelButton" type="Button" parent="ConnectionOverlay/ConnectionContent"]
+layout_mode = 2
+text = "Cancel"

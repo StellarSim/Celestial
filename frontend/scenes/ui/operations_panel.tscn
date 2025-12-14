@@ -1,0 +1,321 @@
+[gd_scene load_steps=2 format=3 uid="uid://dwk7mp4r2q08j"]
+
+[ext_resource type="Script" path="res://scripts/ui/operations_panel.gd" id="1_ops"]
+
+[node name="OperationsPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ops")
+
+[node name="MainSplit" type="HSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+split_offset = 500
+
+[node name="LeftSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SensorSection" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SensorContent" type="VBoxContainer" parent="MainSplit/LeftSection/SensorSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SensorHeader" type="Label" parent="MainSplit/LeftSection/SensorSection/SensorContent"]
+layout_mode = 2
+text = "SENSOR ARRAY"
+horizontal_alignment = 1
+
+[node name="SensorStatus" type="GridContainer" parent="MainSplit/LeftSection/SensorSection/SensorContent"]
+layout_mode = 2
+columns = 2
+
+[node name="ShortRangeLabel" type="Label" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorStatus"]
+layout_mode = 2
+text = "Short Range:"
+
+[node name="ShortRangeValue" type="Label" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorStatus"]
+layout_mode = 2
+text = "ONLINE"
+horizontal_alignment = 2
+
+[node name="LongRangeLabel" type="Label" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorStatus"]
+layout_mode = 2
+text = "Long Range:"
+
+[node name="LongRangeValue" type="Label" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorStatus"]
+layout_mode = 2
+text = "ONLINE"
+horizontal_alignment = 2
+
+[node name="ScanResolution" type="Label" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorStatus"]
+layout_mode = 2
+text = "Resolution:"
+
+[node name="ResolutionValue" type="Label" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorStatus"]
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="SensorModes" type="HBoxContainer" parent="MainSplit/LeftSection/SensorSection/SensorContent"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="PassiveBtn" type="Button" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorModes"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "PASSIVE"
+toggle_mode = true
+
+[node name="ActiveBtn" type="Button" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorModes"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ACTIVE"
+toggle_mode = true
+
+[node name="DeepScanBtn" type="Button" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorModes"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "DEEP SCAN"
+toggle_mode = true
+
+[node name="ScanProgress" type="ProgressBar" parent="MainSplit/LeftSection/SensorSection/SensorContent"]
+layout_mode = 2
+show_percentage = false
+
+[node name="ContactList" type="ItemList" parent="MainSplit/LeftSection/SensorSection/SensorContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ShieldSection" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+
+[node name="ShieldContent" type="VBoxContainer" parent="MainSplit/LeftSection/ShieldSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ShieldHeader" type="Label" parent="MainSplit/LeftSection/ShieldSection/ShieldContent"]
+layout_mode = 2
+text = "SHIELD CONTROL"
+horizontal_alignment = 1
+
+[node name="ShieldDiagram" type="Control" parent="MainSplit/LeftSection/ShieldSection/ShieldContent"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="ShieldControls" type="HBoxContainer" parent="MainSplit/LeftSection/ShieldSection/ShieldContent"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ShieldsUp" type="Button" parent="MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SHIELDS UP"
+
+[node name="ShieldsDown" type="Button" parent="MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SHIELDS DOWN"
+
+[node name="ShieldFrequency" type="HBoxContainer" parent="MainSplit/LeftSection/ShieldSection/ShieldContent"]
+layout_mode = 2
+
+[node name="FreqLabel" type="Label" parent="MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldFrequency"]
+layout_mode = 2
+text = "Frequency:"
+
+[node name="FreqSlider" type="HSlider" parent="MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldFrequency"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 999.0
+value = 500.0
+
+[node name="RotateBtn" type="Button" parent="MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldFrequency"]
+layout_mode = 2
+text = "ROTATE"
+
+[node name="RightSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SystemsSection" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SystemsContent" type="VBoxContainer" parent="MainSplit/RightSection/SystemsSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SystemsHeader" type="Label" parent="MainSplit/RightSection/SystemsSection/SystemsContent"]
+layout_mode = 2
+text = "SHIP SYSTEMS"
+horizontal_alignment = 1
+
+[node name="SystemsList" type="VBoxContainer" parent="MainSplit/RightSection/SystemsSection/SystemsContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ReactorSystem" type="HBoxContainer" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList"]
+layout_mode = 2
+
+[node name="ReactorLabel" type="Label" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/ReactorSystem"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+text = "Reactor"
+
+[node name="ReactorBar" type="ProgressBar" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/ReactorSystem"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ReactorValue" type="Label" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/ReactorSystem"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="EnginesSystem" type="HBoxContainer" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList"]
+layout_mode = 2
+
+[node name="EnginesLabel" type="Label" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/EnginesSystem"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+text = "Engines"
+
+[node name="EnginesBar" type="ProgressBar" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/EnginesSystem"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EnginesValue" type="Label" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/EnginesSystem"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="WeaponsSystem" type="HBoxContainer" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList"]
+layout_mode = 2
+
+[node name="WeaponsLabel" type="Label" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/WeaponsSystem"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+text = "Weapons"
+
+[node name="WeaponsBar" type="ProgressBar" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/WeaponsSystem"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="WeaponsValue" type="Label" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/WeaponsSystem"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="ShieldsSystem" type="HBoxContainer" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList"]
+layout_mode = 2
+
+[node name="ShieldsLabel" type="Label" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/ShieldsSystem"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+text = "Shields"
+
+[node name="ShieldsBar" type="ProgressBar" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/ShieldsSystem"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ShieldsValue" type="Label" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/ShieldsSystem"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="SensorsSystem" type="HBoxContainer" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList"]
+layout_mode = 2
+
+[node name="SensorsLabel" type="Label" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/SensorsSystem"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+text = "Sensors"
+
+[node name="SensorsBar" type="ProgressBar" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/SensorsSystem"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SensorsValue" type="Label" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/SensorsSystem"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="LifeSupportSystem" type="HBoxContainer" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList"]
+layout_mode = 2
+
+[node name="LifeSupportLabel" type="Label" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/LifeSupportSystem"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+text = "Life Support"
+
+[node name="LifeSupportBar" type="ProgressBar" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/LifeSupportSystem"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LifeSupportValue" type="Label" parent="MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList/LifeSupportSystem"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="TransporterSection" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+
+[node name="TransporterContent" type="VBoxContainer" parent="MainSplit/RightSection/TransporterSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TransporterHeader" type="Label" parent="MainSplit/RightSection/TransporterSection/TransporterContent"]
+layout_mode = 2
+text = "TRANSPORTER CONTROL"
+horizontal_alignment = 1
+
+[node name="TransporterStatus" type="HBoxContainer" parent="MainSplit/RightSection/TransporterSection/TransporterContent"]
+layout_mode = 2
+
+[node name="StatusLabel" type="Label" parent="MainSplit/RightSection/TransporterSection/TransporterContent/TransporterStatus"]
+layout_mode = 2
+text = "Status:"
+
+[node name="StatusValue" type="Label" parent="MainSplit/RightSection/TransporterSection/TransporterContent/TransporterStatus"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "READY"
+horizontal_alignment = 2
+
+[node name="TransporterControls" type="HBoxContainer" parent="MainSplit/RightSection/TransporterSection/TransporterContent"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BeamUpBtn" type="Button" parent="MainSplit/RightSection/TransporterSection/TransporterContent/TransporterControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "BEAM UP"
+
+[node name="BeamDownBtn" type="Button" parent="MainSplit/RightSection/TransporterSection/TransporterContent/TransporterControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "BEAM DOWN"
+
+[node name="EmergencyBtn" type="Button" parent="MainSplit/RightSection/TransporterSection/TransporterContent/TransporterControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "EMERGENCY"

@@ -1,0 +1,236 @@
+[gd_scene load_steps=2 format=3 uid="uid://cfqk2mwp7r8aj"]
+
+[ext_resource type="Script" path="res://scripts/ui/captain_panel.gd" id="1_captain"]
+
+[node name="CaptainPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_captain")
+
+[node name="MainSplit" type="HSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+split_offset = 500
+
+[node name="LeftSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ShipStatus" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+
+[node name="StatusContent" type="VBoxContainer" parent="MainSplit/LeftSection/ShipStatus"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="StatusHeader" type="Label" parent="MainSplit/LeftSection/ShipStatus/StatusContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "SHIP STATUS"
+horizontal_alignment = 1
+
+[node name="ShipName" type="Label" parent="MainSplit/LeftSection/ShipStatus/StatusContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "USS ENTERPRISE"
+horizontal_alignment = 1
+
+[node name="StatusGrid" type="GridContainer" parent="MainSplit/LeftSection/ShipStatus/StatusContent"]
+layout_mode = 2
+columns = 2
+
+[node name="HullLabel" type="Label" parent="MainSplit/LeftSection/ShipStatus/StatusContent/StatusGrid"]
+layout_mode = 2
+text = "Hull Integrity:"
+
+[node name="HullBar" type="ProgressBar" parent="MainSplit/LeftSection/ShipStatus/StatusContent/StatusGrid"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+max_value = 100.0
+
+[node name="ShieldsLabel" type="Label" parent="MainSplit/LeftSection/ShipStatus/StatusContent/StatusGrid"]
+layout_mode = 2
+text = "Shield Power:"
+
+[node name="ShieldsBar" type="ProgressBar" parent="MainSplit/LeftSection/ShipStatus/StatusContent/StatusGrid"]
+layout_mode = 2
+max_value = 100.0
+
+[node name="PowerLabel" type="Label" parent="MainSplit/LeftSection/ShipStatus/StatusContent/StatusGrid"]
+layout_mode = 2
+text = "Power Available:"
+
+[node name="PowerBar" type="ProgressBar" parent="MainSplit/LeftSection/ShipStatus/StatusContent/StatusGrid"]
+layout_mode = 2
+max_value = 100.0
+
+[node name="CrewLabel" type="Label" parent="MainSplit/LeftSection/ShipStatus/StatusContent/StatusGrid"]
+layout_mode = 2
+text = "Crew Status:"
+
+[node name="CrewValue" type="Label" parent="MainSplit/LeftSection/ShipStatus/StatusContent/StatusGrid"]
+layout_mode = 2
+text = "NOMINAL"
+
+[node name="AlertSection" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+
+[node name="AlertContent" type="VBoxContainer" parent="MainSplit/LeftSection/AlertSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AlertHeader" type="Label" parent="MainSplit/LeftSection/AlertSection/AlertContent"]
+layout_mode = 2
+text = "ALERT STATUS"
+horizontal_alignment = 1
+
+[node name="AlertButtons" type="HBoxContainer" parent="MainSplit/LeftSection/AlertSection/AlertContent"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GreenAlert" type="Button" parent="MainSplit/LeftSection/AlertSection/AlertContent/AlertButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "GREEN"
+toggle_mode = true
+button_group = SubResource("ButtonGroup_alert")
+
+[node name="YellowAlert" type="Button" parent="MainSplit/LeftSection/AlertSection/AlertContent/AlertButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "YELLOW"
+toggle_mode = true
+button_group = SubResource("ButtonGroup_alert")
+
+[node name="RedAlert" type="Button" parent="MainSplit/LeftSection/AlertSection/AlertContent/AlertButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "RED"
+toggle_mode = true
+button_group = SubResource("ButtonGroup_alert")
+
+[node name="CurrentAlert" type="Label" parent="MainSplit/LeftSection/AlertSection/AlertContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "CONDITION GREEN"
+horizontal_alignment = 1
+
+[node name="Orders" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="OrdersContent" type="VBoxContainer" parent="MainSplit/LeftSection/Orders"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="OrdersHeader" type="Label" parent="MainSplit/LeftSection/Orders/OrdersContent"]
+layout_mode = 2
+text = "STANDING ORDERS"
+horizontal_alignment = 1
+
+[node name="OrdersList" type="ItemList" parent="MainSplit/LeftSection/Orders/OrdersContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="OrderActions" type="HBoxContainer" parent="MainSplit/LeftSection/Orders/OrdersContent"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="AddOrder" type="Button" parent="MainSplit/LeftSection/Orders/OrdersContent/OrderActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ADD ORDER"
+
+[node name="ClearOrders" type="Button" parent="MainSplit/LeftSection/Orders/OrdersContent/OrderActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "CLEAR ALL"
+
+[node name="RightSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MissionSection" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MissionContent" type="VBoxContainer" parent="MainSplit/RightSection/MissionSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MissionHeader" type="Label" parent="MainSplit/RightSection/MissionSection/MissionContent"]
+layout_mode = 2
+text = "MISSION OBJECTIVES"
+horizontal_alignment = 1
+
+[node name="MissionName" type="Label" parent="MainSplit/RightSection/MissionSection/MissionContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Current Mission: ---"
+
+[node name="ObjectiveList" type="ItemList" parent="MainSplit/RightSection/MissionSection/MissionContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CommSection" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CommContent" type="VBoxContainer" parent="MainSplit/RightSection/CommSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CommHeader" type="Label" parent="MainSplit/RightSection/CommSection/CommContent"]
+layout_mode = 2
+text = "COMMUNICATIONS LOG"
+horizontal_alignment = 1
+
+[node name="CommLog" type="RichTextLabel" parent="MainSplit/RightSection/CommSection/CommContent"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
+
+[node name="QuickComm" type="HBoxContainer" parent="MainSplit/RightSection/CommSection/CommContent"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="HailBtn" type="Button" parent="MainSplit/RightSection/CommSection/CommContent/QuickComm"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "HAIL"
+
+[node name="BroadcastBtn" type="Button" parent="MainSplit/RightSection/CommSection/CommContent/QuickComm"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "BROADCAST"
+
+[node name="SelfDestruct" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+
+[node name="SelfDestructContent" type="HBoxContainer" parent="MainSplit/RightSection/SelfDestruct"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="SelfDestructBtn" type="Button" parent="MainSplit/RightSection/SelfDestruct/SelfDestructContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SELF DESTRUCT"
+
+[node name="AbortBtn" type="Button" parent="MainSplit/RightSection/SelfDestruct/SelfDestructContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "ABORT"
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_alert"]

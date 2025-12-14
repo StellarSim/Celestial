@@ -1,0 +1,37 @@
+[gd_scene load_steps=3 format=3 uid="uid://cexplosion_3d"]
+
+[ext_resource type="Script" path="res://scripts/3d/explosion.gd" id="1_explosion"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_explosion"]
+emission_shape = 1
+emission_sphere_radius = 0.5
+direction = Vector3(0, 0, 0)
+spread = 180.0
+initial_velocity_min = 10.0
+initial_velocity_max = 20.0
+gravity = Vector3(0, 0, 0)
+scale_min = 0.5
+scale_max = 2.0
+color = Color(1, 0.6, 0.2, 1)
+
+[node name="Explosion" type="Node3D"]
+script = ExtResource("1_explosion")
+
+[node name="CoreFlash" type="OmniLight3D" parent="."]
+light_color = Color(1, 0.7, 0.3, 1)
+light_energy = 10.0
+omni_range = 50.0
+omni_attenuation = 2.0
+
+[node name="Particles" type="GPUParticles3D" parent="."]
+emitting = true
+amount = 100
+lifetime = 1.0
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource("ParticleProcessMaterial_explosion")
+
+[node name="ShockwaveLight" type="OmniLight3D" parent="."]
+light_color = Color(1, 0.5, 0.2, 1)
+light_energy = 5.0
+omni_range = 10.0

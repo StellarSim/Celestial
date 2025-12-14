@@ -1,0 +1,398 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/engineer_panel.gd" id="1_script"]
+
+[node name="EngineerPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="MainSplit" type="HSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+split_offset = -450
+
+[node name="LeftSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 15
+
+[node name="DamageSection" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DamageContent" type="VBoxContainer" parent="MainSplit/LeftSection/DamageSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="Label" parent="MainSplit/LeftSection/DamageSection/DamageContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "DAMAGE CONTROL"
+
+[node name="ShipDiagram" type="Control" parent="MainSplit/LeftSection/DamageSection/DamageContent"]
+custom_minimum_size = Vector2(0, 300)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ShipOutline" type="ColorRect" parent="MainSplit/LeftSection/DamageSection/DamageContent/ShipDiagram"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -75.0
+offset_right = 150.0
+offset_bottom = 75.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.15, 0.2, 1)
+
+[node name="BowSection" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/ShipDiagram"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 80.0
+offset_top = -50.0
+offset_right = 180.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "BOW
+100%"
+
+[node name="SternSection" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/ShipDiagram"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -50.0
+offset_right = -80.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "STERN
+100%"
+
+[node name="PortSection" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/ShipDiagram"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -70.0
+offset_top = -80.0
+offset_right = 70.0
+offset_bottom = -30.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "PORT 100%"
+
+[node name="StarboardSection" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/ShipDiagram"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -70.0
+offset_top = 30.0
+offset_right = 70.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "STARBOARD 100%"
+
+[node name="RepairActions" type="HBoxContainer" parent="MainSplit/LeftSection/DamageSection/DamageContent"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="RepairBtn" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/RepairActions"]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "REPAIR"
+
+[node name="SealBreachBtn" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/RepairActions"]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SEAL BREACH"
+
+[node name="ExtinguishBtn" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/RepairActions"]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "EXTINGUISH"
+
+[node name="DamageLog" type="PanelContainer" parent="MainSplit/LeftSection"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="DamageLogContent" type="VBoxContainer" parent="MainSplit/LeftSection/DamageLog"]
+layout_mode = 2
+
+[node name="Header" type="Label" parent="MainSplit/LeftSection/DamageLog/DamageLogContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+text = "DAMAGE LOG"
+
+[node name="LogList" type="ItemList" parent="MainSplit/LeftSection/DamageLog/DamageLogContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RightSection" type="VBoxContainer" parent="MainSplit"]
+custom_minimum_size = Vector2(450, 0)
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="PowerSection" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PowerContent" type="VBoxContainer" parent="MainSplit/RightSection/PowerSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "POWER GRID"
+
+[node name="PowerOverview" type="HBoxContainer" parent="MainSplit/RightSection/PowerSection/PowerContent"]
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="GenerationPanel" type="VBoxContainer" parent="MainSplit/RightSection/PowerSection/PowerContent/PowerOverview"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/GenerationPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "GENERATION"
+
+[node name="GenerationValue" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/GenerationPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.5, 1)
+theme_override_font_sizes/font_size = 24
+text = "1000 MW"
+
+[node name="ConsumptionPanel" type="VBoxContainer" parent="MainSplit/RightSection/PowerSection/PowerContent/PowerOverview"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/ConsumptionPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "CONSUMPTION"
+
+[node name="ConsumptionValue" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/ConsumptionPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.7, 0.3, 1)
+theme_override_font_sizes/font_size = 24
+text = "850 MW"
+
+[node name="AvailablePanel" type="VBoxContainer" parent="MainSplit/RightSection/PowerSection/PowerContent/PowerOverview"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/AvailablePanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "AVAILABLE"
+
+[node name="AvailableValue" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/AvailablePanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 24
+text = "150 MW"
+
+[node name="BreakerGrid" type="GridContainer" parent="MainSplit/RightSection/PowerSection/PowerContent"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+
+[node name="ReactorBreaker" type="HBoxContainer" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Toggle" type="CheckButton" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/ReactorBreaker"]
+layout_mode = 2
+button_pressed = true
+text = "Reactor"
+
+[node name="Status" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/ReactorBreaker"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
+text = "ONLINE"
+
+[node name="EnginesBreaker" type="HBoxContainer" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Toggle" type="CheckButton" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/EnginesBreaker"]
+layout_mode = 2
+button_pressed = true
+text = "Engines"
+
+[node name="Status" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/EnginesBreaker"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
+text = "ONLINE"
+
+[node name="ShieldsBreaker" type="HBoxContainer" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Toggle" type="CheckButton" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/ShieldsBreaker"]
+layout_mode = 2
+button_pressed = true
+text = "Shields"
+
+[node name="Status" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/ShieldsBreaker"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
+text = "ONLINE"
+
+[node name="WeaponsBreaker" type="HBoxContainer" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Toggle" type="CheckButton" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/WeaponsBreaker"]
+layout_mode = 2
+button_pressed = true
+text = "Weapons"
+
+[node name="Status" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/WeaponsBreaker"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
+text = "ONLINE"
+
+[node name="SensorsBreaker" type="HBoxContainer" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Toggle" type="CheckButton" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/SensorsBreaker"]
+layout_mode = 2
+button_pressed = true
+text = "Sensors"
+
+[node name="Status" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/SensorsBreaker"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
+text = "ONLINE"
+
+[node name="CommsBreaker" type="HBoxContainer" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Toggle" type="CheckButton" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/CommsBreaker"]
+layout_mode = 2
+button_pressed = true
+text = "Comms"
+
+[node name="Status" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/CommsBreaker"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
+text = "ONLINE"
+
+[node name="LifeSupportBreaker" type="HBoxContainer" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Toggle" type="CheckButton" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/LifeSupportBreaker"]
+layout_mode = 2
+button_pressed = true
+text = "Life Support"
+
+[node name="Status" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/LifeSupportBreaker"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
+text = "ONLINE"
+
+[node name="NavigationBreaker" type="HBoxContainer" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Toggle" type="CheckButton" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/NavigationBreaker"]
+layout_mode = 2
+button_pressed = true
+text = "Navigation"
+
+[node name="Status" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid/NavigationBreaker"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
+text = "ONLINE"
+
+[node name="EngineSection" type="PanelContainer" parent="MainSplit/RightSection"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="EngineContent" type="VBoxContainer" parent="MainSplit/RightSection/EngineSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="MainSplit/RightSection/EngineSection/EngineContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+text = "ENGINE STATUS"
+
+[node name="EngineHealth" type="HBoxContainer" parent="MainSplit/RightSection/EngineSection/EngineContent"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainSplit/RightSection/EngineSection/EngineContent/EngineHealth"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Health"
+
+[node name="EngineHealthBar" type="ProgressBar" parent="MainSplit/RightSection/EngineSection/EngineContent/EngineHealth"]
+layout_mode = 2
+size_flags_horizontal = 3
+value = 100.0
+
+[node name="EngineTemp" type="HBoxContainer" parent="MainSplit/RightSection/EngineSection/EngineContent"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainSplit/RightSection/EngineSection/EngineContent/EngineTemp"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Temperature"
+
+[node name="EngineTempBar" type="ProgressBar" parent="MainSplit/RightSection/EngineSection/EngineContent/EngineTemp"]
+layout_mode = 2
+size_flags_horizontal = 3
+value = 45.0
+
+[node name="ThrustOutput" type="HBoxContainer" parent="MainSplit/RightSection/EngineSection/EngineContent"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainSplit/RightSection/EngineSection/EngineContent/ThrustOutput"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Thrust"
+
+[node name="ThrustValue" type="Label" parent="MainSplit/RightSection/EngineSection/EngineContent/ThrustOutput"]
+layout_mode = 2
+text = "0%"

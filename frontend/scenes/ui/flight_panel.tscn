@@ -1,0 +1,320 @@
+[gd_scene load_steps=2 format=3 uid="uid://bv8xmfl2qp7ew"]
+
+[ext_resource type="Script" path="res://scripts/ui/flight_panel.gd" id="1_flight"]
+
+[node name="FlightPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_flight")
+
+[node name="MainSplit" type="HSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+split_offset = 400
+
+[node name="LeftSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ThrottleSection" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ThrottleContent" type="VBoxContainer" parent="MainSplit/LeftSection/ThrottleSection"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="ThrottleHeader" type="Label" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent"]
+layout_mode = 2
+text = "THROTTLE CONTROL"
+horizontal_alignment = 1
+
+[node name="ThrottleSliderContainer" type="HBoxContainer" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="ThrottleSlider" type="VSlider" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+min_value = -100.0
+step = 5.0
+tick_count = 21
+ticks_on_borders = true
+
+[node name="ThrottleInfo" type="VBoxContainer" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ThrottleValue" type="Label" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer/ThrottleInfo"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "0%"
+horizontal_alignment = 1
+
+[node name="ThrottleMode" type="Label" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer/ThrottleInfo"]
+layout_mode = 2
+text = "ALL STOP"
+horizontal_alignment = 1
+
+[node name="SpeedDisplay" type="HBoxContainer" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer/ThrottleInfo"]
+layout_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer/ThrottleInfo/SpeedDisplay"]
+layout_mode = 2
+text = "Current Speed:"
+
+[node name="SpeedValue" type="Label" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer/ThrottleInfo/SpeedDisplay"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "0 m/s"
+horizontal_alignment = 2
+
+[node name="QuickThrottle" type="HBoxContainer" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="FullReverse" type="Button" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "FULL REV"
+
+[node name="HalfReverse" type="Button" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "½ REV"
+
+[node name="AllStop" type="Button" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "STOP"
+
+[node name="HalfForward" type="Button" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "½ FWD"
+
+[node name="FullForward" type="Button" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "FULL FWD"
+
+[node name="SteeringSection" type="PanelContainer" parent="MainSplit/LeftSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SteeringContent" type="VBoxContainer" parent="MainSplit/LeftSection/SteeringSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SteeringHeader" type="Label" parent="MainSplit/LeftSection/SteeringSection/SteeringContent"]
+layout_mode = 2
+text = "HEADING CONTROL"
+horizontal_alignment = 1
+
+[node name="CompassContainer" type="CenterContainer" parent="MainSplit/LeftSection/SteeringSection/SteeringContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Compass" type="Control" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/CompassContainer"]
+custom_minimum_size = Vector2(200, 200)
+layout_mode = 2
+
+[node name="HeadingInfo" type="HBoxContainer" parent="MainSplit/LeftSection/SteeringSection/SteeringContent"]
+layout_mode = 2
+
+[node name="CurrentHeading" type="VBoxContainer" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/HeadingInfo"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/HeadingInfo/CurrentHeading"]
+layout_mode = 2
+text = "CURRENT"
+horizontal_alignment = 1
+
+[node name="HeadingValue" type="Label" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/HeadingInfo/CurrentHeading"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "000°"
+horizontal_alignment = 1
+
+[node name="TargetHeading" type="VBoxContainer" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/HeadingInfo"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/HeadingInfo/TargetHeading"]
+layout_mode = 2
+text = "TARGET"
+horizontal_alignment = 1
+
+[node name="TargetValue" type="Label" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/HeadingInfo/TargetHeading"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "---°"
+horizontal_alignment = 1
+
+[node name="TurnControls" type="HBoxContainer" parent="MainSplit/LeftSection/SteeringSection/SteeringContent"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HardPort" type="Button" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "◀◀ PORT"
+
+[node name="Port" type="Button" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "◀ PORT"
+
+[node name="SteadyOn" type="Button" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "STEADY"
+
+[node name="Starboard" type="Button" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "STBD ▶"
+
+[node name="HardStarboard" type="Button" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "STBD ▶▶"
+
+[node name="RightSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="NavStatus" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+
+[node name="NavContent" type="VBoxContainer" parent="MainSplit/RightSection/NavStatus"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NavHeader" type="Label" parent="MainSplit/RightSection/NavStatus/NavContent"]
+layout_mode = 2
+text = "NAVIGATION STATUS"
+horizontal_alignment = 1
+
+[node name="Position" type="HBoxContainer" parent="MainSplit/RightSection/NavStatus/NavContent"]
+layout_mode = 2
+
+[node name="PosLabel" type="Label" parent="MainSplit/RightSection/NavStatus/NavContent/Position"]
+layout_mode = 2
+text = "Position:"
+
+[node name="PosValue" type="Label" parent="MainSplit/RightSection/NavStatus/NavContent/Position"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "X: 0 Y: 0 Z: 0"
+horizontal_alignment = 2
+
+[node name="Velocity" type="HBoxContainer" parent="MainSplit/RightSection/NavStatus/NavContent"]
+layout_mode = 2
+
+[node name="VelLabel" type="Label" parent="MainSplit/RightSection/NavStatus/NavContent/Velocity"]
+layout_mode = 2
+text = "Velocity:"
+
+[node name="VelValue" type="Label" parent="MainSplit/RightSection/NavStatus/NavContent/Velocity"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "0 m/s"
+horizontal_alignment = 2
+
+[node name="Bearing" type="HBoxContainer" parent="MainSplit/RightSection/NavStatus/NavContent"]
+layout_mode = 2
+
+[node name="BearingLabel" type="Label" parent="MainSplit/RightSection/NavStatus/NavContent/Bearing"]
+layout_mode = 2
+text = "Bearing:"
+
+[node name="BearingValue" type="Label" parent="MainSplit/RightSection/NavStatus/NavContent/Bearing"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "0°"
+horizontal_alignment = 2
+
+[node name="WaypointSection" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WaypointContent" type="VBoxContainer" parent="MainSplit/RightSection/WaypointSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="WaypointHeader" type="Label" parent="MainSplit/RightSection/WaypointSection/WaypointContent"]
+layout_mode = 2
+text = "WAYPOINTS"
+horizontal_alignment = 1
+
+[node name="WaypointList" type="ItemList" parent="MainSplit/RightSection/WaypointSection/WaypointContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WaypointActions" type="HBoxContainer" parent="MainSplit/RightSection/WaypointSection/WaypointContent"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="NavigateTo" type="Button" parent="MainSplit/RightSection/WaypointSection/WaypointContent/WaypointActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "NAVIGATE TO"
+
+[node name="ClearNav" type="Button" parent="MainSplit/RightSection/WaypointSection/WaypointContent/WaypointActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "CLEAR NAV"
+
+[node name="AutopilotSection" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+
+[node name="AutopilotContent" type="VBoxContainer" parent="MainSplit/RightSection/AutopilotSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AutopilotHeader" type="Label" parent="MainSplit/RightSection/AutopilotSection/AutopilotContent"]
+layout_mode = 2
+text = "AUTOPILOT"
+horizontal_alignment = 1
+
+[node name="AutopilotStatus" type="HBoxContainer" parent="MainSplit/RightSection/AutopilotSection/AutopilotContent"]
+layout_mode = 2
+
+[node name="StatusLabel" type="Label" parent="MainSplit/RightSection/AutopilotSection/AutopilotContent/AutopilotStatus"]
+layout_mode = 2
+text = "Status:"
+
+[node name="StatusValue" type="Label" parent="MainSplit/RightSection/AutopilotSection/AutopilotContent/AutopilotStatus"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "DISENGAGED"
+horizontal_alignment = 2
+
+[node name="AutopilotControls" type="HBoxContainer" parent="MainSplit/RightSection/AutopilotSection/AutopilotContent"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="EngageBtn" type="Button" parent="MainSplit/RightSection/AutopilotSection/AutopilotContent/AutopilotControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ENGAGE"
+toggle_mode = true
+
+[node name="ModeSelect" type="OptionButton" parent="MainSplit/RightSection/AutopilotSection/AutopilotContent/AutopilotControls"]
+layout_mode = 2
+size_flags_horizontal = 3

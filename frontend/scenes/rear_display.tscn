@@ -1,0 +1,345 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Theme" path="res://resources/theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/rear_display.gd" id="2_script"]
+
+[node name="RearDisplay" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.015, 0.025, 0.04, 1)
+
+[node name="MainLayout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Header" type="PanelContainer" parent="MainLayout"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+
+[node name="HeaderContent" type="HBoxContainer" parent="MainLayout/Header"]
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="AlertIndicator" type="ColorRect" parent="MainLayout/Header/HeaderContent"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+color = Color(0.2, 0.8, 0.4, 1)
+
+[node name="ShipInfo" type="VBoxContainer" parent="MainLayout/Header/HeaderContent"]
+layout_mode = 2
+
+[node name="ShipName" type="Label" parent="MainLayout/Header/HeaderContent/ShipInfo"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "USS ENDEAVOUR"
+
+[node name="ShipClass" type="Label" parent="MainLayout/Header/HeaderContent/ShipInfo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "Heavy Cruiser"
+
+[node name="Spacer" type="Control" parent="MainLayout/Header/HeaderContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Title" type="Label" parent="MainLayout/Header/HeaderContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 32
+text = "TACTICAL OVERVIEW"
+
+[node name="Spacer2" type="Control" parent="MainLayout/Header/HeaderContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TimeLabel" type="Label" parent="MainLayout/Header/HeaderContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "00:00:00"
+
+[node name="ContentArea" type="HSplitContainer" parent="MainLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = -400
+
+[node name="TacticalMap" type="Control" parent="MainLayout/ContentArea"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MapBackground" type="ColorRect" parent="MainLayout/ContentArea/TacticalMap"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.05, 1)
+
+[node name="GridOverlay" type="Control" parent="MainLayout/ContentArea/TacticalMap"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ShipsLayer" type="Control" parent="MainLayout/ContentArea/TacticalMap"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RangeCircles" type="Control" parent="MainLayout/ContentArea/TacticalMap"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MapControls" type="HBoxContainer" parent="MainLayout/ContentArea/TacticalMap"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -50.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="ZoomOutBtn" type="Button" parent="MainLayout/ContentArea/TacticalMap/MapControls"]
+layout_mode = 2
+text = "-"
+
+[node name="ZoomLabel" type="Label" parent="MainLayout/ContentArea/TacticalMap/MapControls"]
+layout_mode = 2
+text = "1x"
+
+[node name="ZoomInBtn" type="Button" parent="MainLayout/ContentArea/TacticalMap/MapControls"]
+layout_mode = 2
+text = "+"
+
+[node name="SidePanel" type="PanelContainer" parent="MainLayout/ContentArea"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+
+[node name="SidePanelContent" type="VBoxContainer" parent="MainLayout/ContentArea/SidePanel"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="StatusSection" type="VBoxContainer" parent="MainLayout/ContentArea/SidePanel/SidePanelContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionHeader" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 16
+text = "SHIP STATUS"
+
+[node name="HullRow" type="HBoxContainer" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection/HullRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Hull"
+
+[node name="HullBar" type="ProgressBar" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection/HullRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+value = 95.0
+
+[node name="ShieldsRow" type="HBoxContainer" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection/ShieldsRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Shields"
+
+[node name="ShieldsBar" type="ProgressBar" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection/ShieldsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+value = 80.0
+
+[node name="PowerRow" type="HBoxContainer" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection/PowerRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Power"
+
+[node name="PowerBar" type="ProgressBar" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection/PowerRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+value = 90.0
+
+[node name="ContactsSection" type="VBoxContainer" parent="MainLayout/ContentArea/SidePanel/SidePanelContent"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="SectionHeader" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/ContactsSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 16
+text = "CONTACTS"
+
+[node name="ContactsList" type="ItemList" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/ContactsSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DamageSection" type="VBoxContainer" parent="MainLayout/ContentArea/SidePanel/SidePanelContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionHeader" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 16
+text = "DAMAGE REPORT"
+
+[node name="DamageGrid" type="GridContainer" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection"]
+layout_mode = 2
+columns = 2
+
+[node name="BowLabel" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid"]
+layout_mode = 2
+text = "Bow:"
+
+[node name="BowStatus" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
+text = "100%"
+
+[node name="SternLabel" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid"]
+layout_mode = 2
+text = "Stern:"
+
+[node name="SternStatus" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
+text = "100%"
+
+[node name="PortLabel" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid"]
+layout_mode = 2
+text = "Port:"
+
+[node name="PortStatus" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
+text = "100%"
+
+[node name="StarboardLabel" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid"]
+layout_mode = 2
+text = "Starboard:"
+
+[node name="StarboardStatus" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
+text = "100%"
+
+[node name="Footer" type="PanelContainer" parent="MainLayout"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="FooterContent" type="HBoxContainer" parent="MainLayout/Footer"]
+layout_mode = 2
+
+[node name="ConnectionStatus" type="HBoxContainer" parent="MainLayout/Footer/FooterContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatusDot" type="ColorRect" parent="MainLayout/Footer/FooterContent/ConnectionStatus"]
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 2
+color = Color(0.3, 0.8, 0.4, 1)
+
+[node name="StatusText" type="Label" parent="MainLayout/Footer/FooterContent/ConnectionStatus"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "Connected"
+
+[node name="Spacer" type="Control" parent="MainLayout/Footer/FooterContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DisplayModeLabel" type="Label" parent="MainLayout/Footer/FooterContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+text = "Mode: Tactical"
+
+[node name="Spacer2" type="Control" parent="MainLayout/Footer/FooterContent"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BackButton" type="Button" parent="MainLayout/Footer/FooterContent"]
+layout_mode = 2
+text = "MENU"
+
+[node name="AlertOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.5, 0.1, 0.1, 0.1)
+
+[node name="DisconnectOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.05, 0.95)
+
+[node name="DisconnectContent" type="VBoxContainer" parent="DisconnectOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -50.0
+offset_right = 150.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="DisconnectOverlay/DisconnectContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.3, 0.2, 1)
+theme_override_font_sizes/font_size = 28
+text = "CONNECTION LOST"
+horizontal_alignment = 1

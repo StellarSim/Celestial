@@ -1,0 +1,141 @@
+id: enemy_dreadnought
+name: Hostile Dreadnought
+mass: 1000000
+max_speed: 150
+acceleration: 30
+turn_rate: 0.4
+
+engines:
+  - id: main_engine_1
+    type: main
+    thrust: 150000
+    health: 150
+    power_draw: 200
+  - id: main_engine_2
+    type: main
+    thrust: 150000
+    health: 150
+    power_draw: 200
+  - id: main_engine_3
+    type: main
+    thrust: 150000
+    health: 150
+    power_draw: 200
+
+weapons:
+  - id: heavy_phaser_1
+    type: phaser
+    damage: 40
+    range: 2500
+    cooldown_time: 1.5
+    health: 150
+    power_draw: 75
+    ammo_capacity: 0
+  - id: heavy_phaser_2
+    type: phaser
+    damage: 40
+    range: 2500
+    cooldown_time: 1.5
+    health: 150
+    power_draw: 75
+    ammo_capacity: 0
+  - id: heavy_phaser_3
+    type: phaser
+    damage: 40
+    range: 2500
+    cooldown_time: 1.5
+    health: 150
+    power_draw: 75
+    ammo_capacity: 0
+  - id: torpedo_bay_1
+    type: torpedo
+    damage: 150
+    range: 6000
+    cooldown_time: 4.0
+    health: 150
+    power_draw: 30
+    ammo_capacity: 30
+  - id: torpedo_bay_2
+    type: torpedo
+    damage: 150
+    range: 6000
+    cooldown_time: 4.0
+    health: 150
+    power_draw: 30
+    ammo_capacity: 30
+
+shields:
+  recharge_rate: 15
+  power_draw: 150
+  emitters:
+    - id: forward
+      facing: forward
+      strength: 800
+      health: 150
+    - id: aft
+      facing: aft
+      strength: 800
+      health: 150
+    - id: port
+      facing: port
+      strength: 600
+      health: 150
+    - id: starboard
+      facing: starboard
+      strength: 600
+      health: 150
+    - id: dorsal
+      facing: dorsal
+      strength: 500
+      health: 150
+    - id: ventral
+      facing: ventral
+      strength: 500
+      health: 150
+
+hull:
+  sections:
+    - id: forward
+      armor: 400
+      health: 1000
+    - id: aft
+      armor: 400
+      health: 1000
+    - id: port
+      armor: 300
+      health: 800
+    - id: starboard
+      armor: 300
+      health: 800
+    - id: dorsal
+      armor: 250
+      health: 600
+    - id: ventral
+      armor: 250
+      health: 600
+
+subsystems:
+  - id: sensors
+    type: sensors
+    health: 150
+    power_draw: 40
+  - id: comms
+    type: communications
+    health: 150
+    power_draw: 30
+  - id: weapons_control
+    type: weapons_control
+    health: 150
+    power_draw: 50
+  - id: tactical_systems
+    type: tactical
+    health: 150
+    power_draw: 35
+
+launch_bays:
+  - id: fighter_bay_1
+    capacity: 8
+    health: 150
+  - id: fighter_bay_2
+    capacity: 8
+    health: 150

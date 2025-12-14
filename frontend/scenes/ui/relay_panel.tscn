@@ -1,0 +1,213 @@
+[gd_scene load_steps=2 format=3 uid="uid://cxk7mpw4r2q08"]
+
+[ext_resource type="Script" path="res://scripts/ui/relay_panel.gd" id="1_relay"]
+
+[node name="RelayPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_relay")
+
+[node name="MainSplit" type="HSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+split_offset = 600
+
+[node name="MapSection" type="PanelContainer" parent="MainSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MapContent" type="VBoxContainer" parent="MainSplit/MapSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MapHeader" type="HBoxContainer" parent="MainSplit/MapSection/MapContent"]
+layout_mode = 2
+
+[node name="MapTitle" type="Label" parent="MainSplit/MapSection/MapContent/MapHeader"]
+layout_mode = 2
+text = "SECTOR MAP"
+
+[node name="Spacer" type="Control" parent="MainSplit/MapSection/MapContent/MapHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ZoomOut" type="Button" parent="MainSplit/MapSection/MapContent/MapHeader"]
+layout_mode = 2
+text = "-"
+
+[node name="ZoomLevel" type="Label" parent="MainSplit/MapSection/MapContent/MapHeader"]
+layout_mode = 2
+text = "100%"
+
+[node name="ZoomIn" type="Button" parent="MainSplit/MapSection/MapContent/MapHeader"]
+layout_mode = 2
+text = "+"
+
+[node name="TacticalMap" type="Control" parent="MainSplit/MapSection/MapContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MapControls" type="HBoxContainer" parent="MainSplit/MapSection/MapContent"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CenterPlayer" type="Button" parent="MainSplit/MapSection/MapContent/MapControls"]
+layout_mode = 2
+text = "CENTER ON SHIP"
+
+[node name="ShowWaypoints" type="CheckButton" parent="MainSplit/MapSection/MapContent/MapControls"]
+layout_mode = 2
+button_pressed = true
+text = "WAYPOINTS"
+
+[node name="ShowGrid" type="CheckButton" parent="MainSplit/MapSection/MapContent/MapControls"]
+layout_mode = 2
+button_pressed = true
+text = "GRID"
+
+[node name="RightSection" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="WaypointSection" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WaypointContent" type="VBoxContainer" parent="MainSplit/RightSection/WaypointSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="WaypointHeader" type="Label" parent="MainSplit/RightSection/WaypointSection/WaypointContent"]
+layout_mode = 2
+text = "WAYPOINT MANAGEMENT"
+horizontal_alignment = 1
+
+[node name="WaypointList" type="ItemList" parent="MainSplit/RightSection/WaypointSection/WaypointContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WaypointActions" type="HBoxContainer" parent="MainSplit/RightSection/WaypointSection/WaypointContent"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="AddWaypoint" type="Button" parent="MainSplit/RightSection/WaypointSection/WaypointContent/WaypointActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ADD"
+
+[node name="RemoveWaypoint" type="Button" parent="MainSplit/RightSection/WaypointSection/WaypointContent/WaypointActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "REMOVE"
+
+[node name="SendToFlight" type="Button" parent="MainSplit/RightSection/WaypointSection/WaypointContent/WaypointActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "→ FLIGHT"
+
+[node name="SelectedInfo" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+
+[node name="SelectedContent" type="VBoxContainer" parent="MainSplit/RightSection/SelectedInfo"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="SelectedHeader" type="Label" parent="MainSplit/RightSection/SelectedInfo/SelectedContent"]
+layout_mode = 2
+text = "SELECTED CONTACT"
+horizontal_alignment = 1
+
+[node name="SelectedName" type="Label" parent="MainSplit/RightSection/SelectedInfo/SelectedContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "---"
+horizontal_alignment = 1
+
+[node name="SelectedDetails" type="GridContainer" parent="MainSplit/RightSection/SelectedInfo/SelectedContent"]
+layout_mode = 2
+columns = 2
+
+[node name="DistLabel" type="Label" parent="MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedDetails"]
+layout_mode = 2
+text = "Distance:"
+
+[node name="DistValue" type="Label" parent="MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedDetails"]
+layout_mode = 2
+text = "---"
+
+[node name="BearingLabel" type="Label" parent="MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedDetails"]
+layout_mode = 2
+text = "Bearing:"
+
+[node name="BearingValue" type="Label" parent="MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedDetails"]
+layout_mode = 2
+text = "---"
+
+[node name="TypeLabel" type="Label" parent="MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedDetails"]
+layout_mode = 2
+text = "Type:"
+
+[node name="TypeValue" type="Label" parent="MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedDetails"]
+layout_mode = 2
+text = "---"
+
+[node name="FactionLabel" type="Label" parent="MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedDetails"]
+layout_mode = 2
+text = "Faction:"
+
+[node name="FactionValue" type="Label" parent="MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedDetails"]
+layout_mode = 2
+text = "---"
+
+[node name="SelectedActions" type="HBoxContainer" parent="MainSplit/RightSection/SelectedInfo/SelectedContent"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="MarkTarget" type="Button" parent="MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "MARK TARGET"
+
+[node name="SetWaypoint" type="Button" parent="MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SET WAYPOINT"
+
+[node name="ProbeSection" type="PanelContainer" parent="MainSplit/RightSection"]
+layout_mode = 2
+
+[node name="ProbeContent" type="VBoxContainer" parent="MainSplit/RightSection/ProbeSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ProbeHeader" type="Label" parent="MainSplit/RightSection/ProbeSection/ProbeContent"]
+layout_mode = 2
+text = "PROBE CONTROL"
+horizontal_alignment = 1
+
+[node name="ProbeInventory" type="HBoxContainer" parent="MainSplit/RightSection/ProbeSection/ProbeContent"]
+layout_mode = 2
+
+[node name="ProbeLabel" type="Label" parent="MainSplit/RightSection/ProbeSection/ProbeContent/ProbeInventory"]
+layout_mode = 2
+text = "Probes Available:"
+
+[node name="ProbeCount" type="Label" parent="MainSplit/RightSection/ProbeSection/ProbeContent/ProbeInventory"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "5"
+horizontal_alignment = 2
+
+[node name="LaunchProbe" type="Button" parent="MainSplit/RightSection/ProbeSection/ProbeContent"]
+layout_mode = 2
+text = "LAUNCH PROBE"

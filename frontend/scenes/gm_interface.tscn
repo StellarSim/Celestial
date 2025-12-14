@@ -1,0 +1,329 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Theme" path="res://resources/theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/gm_interface.gd" id="2_script"]
+
+[node name="GMInterface" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="MainSplit" type="HSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+split_offset = -400
+
+[node name="ViewportContainer" type="SubViewportContainer" parent="MainSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="MainSplit/ViewportContainer"]
+handle_input_locally = false
+size = Vector2i(1280, 720)
+render_target_update_mode = 4
+
+[node name="World" type="Node3D" parent="MainSplit/ViewportContainer/SubViewport"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="MainSplit/ViewportContainer/SubViewport/World"]
+
+[node name="GMCamera" type="Camera3D" parent="MainSplit/ViewportContainer/SubViewport/World"]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 500, 1000)
+current = true
+fov = 60.0
+far = 100000.0
+
+[node name="Ships" type="Node3D" parent="MainSplit/ViewportContainer/SubViewport/World"]
+
+[node name="GridHelper" type="Node3D" parent="MainSplit/ViewportContainer/SubViewport/World"]
+
+[node name="ControlPanel" type="PanelContainer" parent="MainSplit"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+
+[node name="PanelScroll" type="ScrollContainer" parent="MainSplit/ControlPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="PanelContent" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 15
+
+[node name="Header" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 24
+text = "GAME MASTER"
+
+[node name="Spacer" type="Control" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ConnectionDot" type="ColorRect" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/Header"]
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+color = Color(0.3, 0.8, 0.4, 1)
+
+[node name="SimulationSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "SIMULATION CONTROL"
+
+[node name="TimeDisplay" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection"]
+layout_mode = 2
+
+[node name="TimeLabel" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection/TimeDisplay"]
+layout_mode = 2
+text = "Time:"
+
+[node name="TimeValue" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection/TimeDisplay"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+text = "00:00:00"
+
+[node name="Spacer" type="Control" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection/TimeDisplay"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PausedLabel" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection/TimeDisplay"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.7, 0.2, 1)
+text = "PAUSED"
+
+[node name="ControlButtons" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PauseBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection/ControlButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "PAUSE"
+
+[node name="ResumeBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection/ControlButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "RESUME"
+
+[node name="SnapshotSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SnapshotSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "TIME ROLLBACK"
+
+[node name="SnapshotList" type="ItemList" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SnapshotSection"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+allow_reselect = true
+
+[node name="RestoreBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SnapshotSection"]
+layout_mode = 2
+disabled = true
+text = "RESTORE SELECTED"
+
+[node name="ShipsSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/ShipsSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "SHIPS"
+
+[node name="ShipsList" type="Tree" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/ShipsSection"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+hide_root = true
+
+[node name="ShipActions" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/ShipsSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DamageBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/ShipsSection/ShipActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "DAMAGE"
+
+[node name="HealBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/ShipsSection/ShipActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "HEAL"
+
+[node name="DestroyBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/ShipsSection/ShipActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "DESTROY"
+
+[node name="SpawnSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SpawnSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "SPAWN"
+
+[node name="SpawnRow" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SpawnSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ShipClassSelect" type="OptionButton" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SpawnSection/SpawnRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SpawnBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SpawnSection/SpawnRow"]
+layout_mode = 2
+text = "SPAWN"
+
+[node name="AlertSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/AlertSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "ALERTS"
+
+[node name="AlertButtons" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/AlertSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GreenBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/AlertSection/AlertButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "GREEN"
+
+[node name="YellowBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/AlertSection/AlertButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "YELLOW"
+
+[node name="RedBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/AlertSection/AlertButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "RED"
+
+[node name="MissionSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "MISSION"
+
+[node name="MissionInfo" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection"]
+layout_mode = 2
+text = "No mission loaded"
+
+[node name="MissionButtons" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="WinBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "WIN"
+
+[node name="LoseBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "LOSE"
+
+[node name="RestartBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "RESTART"
+
+[node name="Spacer" type="Control" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BackButton" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
+layout_mode = 2
+text = "RETURN TO MENU"
+
+[node name="CameraControls" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -90.0
+offset_right = 310.0
+offset_bottom = -10.0
+grow_vertical = 0
+
+[node name="CameraContent" type="VBoxContainer" parent="CameraControls"]
+layout_mode = 2
+
+[node name="CameraLabel" type="Label" parent="CameraControls/CameraContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Camera: Free Fly"
+
+[node name="Instructions" type="Label" parent="CameraControls/CameraContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "WASD: Move | QE: Up/Down
+Mouse: Look | Scroll: Speed"
+
+[node name="DisconnectOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.05, 0.95)
+
+[node name="DisconnectContent" type="VBoxContainer" parent="DisconnectOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -50.0
+offset_right = 150.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="DisconnectOverlay/DisconnectContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.3, 0.2, 1)
+theme_override_font_sizes/font_size = 28
+text = "CONNECTION LOST"
+horizontal_alignment = 1
