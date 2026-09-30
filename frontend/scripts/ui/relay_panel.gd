@@ -34,7 +34,6 @@ var _selected_contact_id: String = ""
 var _dragging: bool = false
 var _drag_start: Vector2 = Vector2.ZERO
 var _waypoints: Array[Dictionary] = []
-var _probes_available: int = 5
 
 
 func _ready() -> void:
@@ -43,15 +42,12 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_update_display()
-	queue_redraw()
-
-
-func _draw() -> void:
-	_draw_tactical_map()
+	tactical_map.queue_redraw()
 
 
 func _connect_signals() -> void:
 	GameState.state_updated.connect(_on_state_updated)
+	tactical_map.draw.connect(_draw_tactical_map)
 	
 	zoom_out_btn.pressed.connect(_on_zoom_out)
 	zoom_in_btn.pressed.connect(_on_zoom_in)
@@ -94,16 +90,16 @@ func _update_waypoint_list() -> void:
 	waypoint_list.clear()
 	var player_pos := player_ship.position.to_vector3()
 	
-	var waypoints: Array = GameState.get_mission_waypoints()
-	for wp in waypoints:
+	for wp in GameState.get_mission_waypoints():
 		var wp_pos := Vector3(wp.get("x", 0), wp.get("y", 0), wp.get("z", 0))
 		var dist := player_pos.distance_to(wp_pos)
 		waypoint_list.add_item("%s (%.1f km)" % [wp.get("name", "Unknown"), dist / 1000.0])
 	
+	# Draft waypoints relay has drawn but not yet handed to Flight.
 	for wp in _waypoints:
 		var wp_pos := Vector3(wp.get("x", 0), wp.get("y", 0), wp.get("z", 0))
 		var dist := player_pos.distance_to(wp_pos)
-		waypoint_list.add_item("📍 %s (%.1f km)" % [wp.get("name", "Custom"), dist / 1000.0])
+		waypoint_list.add_item("%s (%.1f km)" % [wp.get("name", "Draft"), dist / 1000.0])
 
 
 func _update_selected_info() -> void:
@@ -134,7 +130,7 @@ func _update_selected_info() -> void:
 	var bearing := rad_to_deg(atan2(dir.x, dir.z))
 	bearing = fmod(bearing + 360, 360)
 	
-	selected_name.text = contact.display_name
+	selected_name.text = contact.name
 	selected_name.add_theme_color_override("font_color", Colors.get_faction_color(contact.faction))
 	dist_value.text = "%.1f km" % (dist / 1000.0)
 	bearing_value.text = "%03.0f°" % bearing
@@ -148,8 +144,9 @@ func _update_selected_info() -> void:
 
 
 func _update_probe_count() -> void:
-	probe_count.text = str(_probes_available)
-	launch_probe_btn.disabled = _probes_available <= 0
+	# The server owns the probe count.
+	probe_count.text = str(GameState.probes)
+	launch_probe_btn.disabled = GameState.probes <= 0
 
 
 func _draw_tactical_map() -> void:
@@ -196,22 +193,21 @@ func _draw_waypoints(center: Vector2) -> void:
 	var player_ship := GameState.get_player_ship()
 	if player_ship == null:
 		return
-	
+
 	var player_pos := player_ship.position.to_vector3()
-	
-	# Draw mission waypoints
+
 	for wp in GameState.get_mission_waypoints():
 		var wp_pos := Vector3(wp.get("x", 0), wp.get("y", 0), wp.get("z", 0))
 		var screen_pos := _world_to_screen(wp_pos, player_pos, center)
-		
+
 		tactical_map.draw_circle(screen_pos, 8, Color(Colors.ALERT_YELLOW, 0.3))
 		tactical_map.draw_arc(screen_pos, 8, 0, TAU, 16, Colors.ALERT_YELLOW, 2.0)
-	
-	# Draw custom waypoints
+
+	# Draft waypoints relay has drawn but not yet handed over.
 	for wp in _waypoints:
 		var wp_pos := Vector3(wp.get("x", 0), wp.get("y", 0), wp.get("z", 0))
 		var screen_pos := _world_to_screen(wp_pos, player_pos, center)
-		
+
 		tactical_map.draw_circle(screen_pos, 6, Color(Colors.PRIMARY, 0.3))
 		tactical_map.draw_arc(screen_pos, 6, 0, TAU, 16, Colors.PRIMARY, 2.0)
 
@@ -239,8 +235,9 @@ func _draw_contacts(center: Vector2) -> void:
 			tactical_map.draw_arc(screen_pos, 15, 0, TAU, 16, color, 2.0)
 		
 		# Draw as triangle pointing in direction of movement
-		var ship_rotation: Vector3 = ship.rotation.to_vector3()
-		var ship_heading: float = ship_rotation.y
+		var ship_quat := ship.rotation.to_quaternion()
+		var ship_fwd: Vector3 = ship_quat * Vector3.FORWARD
+		var ship_heading: float = atan2(ship_fwd.x, -ship_fwd.z)
 		var points := PackedVector2Array([
 			screen_pos + Vector2(0, -size).rotated(ship_heading),
 			screen_pos + Vector2(-size * 0.6, size * 0.6).rotated(ship_heading),
@@ -254,8 +251,9 @@ func _draw_player_ship(center: Vector2) -> void:
 	if player_ship == null:
 		return
 	
-	var player_rotation: Vector3 = player_ship.rotation.to_vector3()
-	var heading: float = player_rotation.y
+	var player_quat := player_ship.rotation.to_quaternion()
+	var player_fwd: Vector3 = player_quat * Vector3.FORWARD
+	var heading: float = atan2(player_fwd.x, -player_fwd.z)
 	
 	# Draw player ship in center
 	var size := 10.0
@@ -378,25 +376,23 @@ func _on_waypoint_selected(_idx: int) -> void:
 
 
 func _on_send_to_flight() -> void:
-	var selected := waypoint_list.get_selected_items()
-	if selected.is_empty():
+	# Hand every draft waypoint to the server; it owns the route from here.
+	if _waypoints.is_empty():
 		return
-	
-	var waypoints: Array = GameState.get_mission_waypoints() + _waypoints
-	if selected[0] < waypoints.size():
-		var wp = waypoints[selected[0]]
-		NetworkClient.send_action("relay", "send_waypoint", {
+	for wp in _waypoints:
+		NetworkClient.send_action("navigation", "set_waypoint", {
 			"name": wp.get("name", ""),
 			"x": wp.get("x", 0),
 			"y": wp.get("y", 0),
 			"z": wp.get("z", 0)
 		})
+	_waypoints.clear()
 
 
 func _on_mark_target() -> void:
 	if _selected_contact_id.is_empty():
 		return
-	NetworkClient.send_action("relay", "mark_target", {"target_id": _selected_contact_id})
+	NetworkClient.send_action("sensors", "mark_target", {"target_id": _selected_contact_id})
 
 
 func _on_set_waypoint_from_contact() -> void:
@@ -409,7 +405,7 @@ func _on_set_waypoint_from_contact() -> void:
 	
 	var pos := contact.position.to_vector3()
 	_waypoints.append({
-		"name": contact.display_name,
+		"name": contact.name,
 		"x": pos.x,
 		"y": pos.y,
 		"z": pos.z
@@ -417,11 +413,7 @@ func _on_set_waypoint_from_contact() -> void:
 
 
 func _on_launch_probe() -> void:
-	if _probes_available <= 0:
-		return
-	
-	_probes_available -= 1
-	NetworkClient.send_action("relay", "launch_probe", {})
+	NetworkClient.send_action("sensors", "launch_probe", {})
 
 
 func _on_state_updated() -> void:

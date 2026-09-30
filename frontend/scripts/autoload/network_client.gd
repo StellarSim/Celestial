@@ -103,7 +103,7 @@ func register(role: String, client_id: String = "") -> void:
 	
 	GameState.client_role = role
 	GameState.is_gm = role == "gm"
-	GameState.is_display = role in ["tactical_display", "rear_display", "viewscreen"]
+	GameState.is_display = role in ["viewscreen", "rear_display"]
 
 
 func send_message(data: Dictionary) -> bool:

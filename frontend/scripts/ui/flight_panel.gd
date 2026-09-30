@@ -46,11 +46,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_update_display()
-	queue_redraw()
-
-
-func _draw() -> void:
-	_draw_compass()
+	compass.queue_redraw()
 
 
 func _setup_controls() -> void:
@@ -78,10 +74,10 @@ func _connect_signals() -> void:
 	steady_btn.pressed.connect(func(): _set_turn_rate(0.0))
 	starboard_btn.pressed.connect(func(): _set_turn_rate(1.0))
 	hard_starboard_btn.pressed.connect(func(): _set_turn_rate(2.0))
+	compass.draw.connect(_draw_compass)
 	
 	# Waypoint controls
 	navigate_btn.pressed.connect(_on_navigate_pressed)
-	clear_nav_btn.pressed.connect(_on_clear_nav_pressed)
 	
 	# Autopilot
 	autopilot_engage_btn.toggled.connect(_on_autopilot_toggled)
@@ -129,8 +125,9 @@ func _update_nav_display(ship: GameState.ShipState) -> void:
 	vel_value.text = "%.0f m/s" % vel.length()
 	
 	# Calculate heading from rotation
-	var rotation: Vector3 = ship.rotation.to_vector3()
-	var heading := fmod(rad_to_deg(rotation.y) + 360, 360)
+	var quat := ship.rotation.to_quaternion()
+	var fwd: Vector3 = quat * Vector3.FORWARD
+	var heading := fmod(rad_to_deg(atan2(fwd.x, -fwd.z)) + 360.0, 360.0)
 	heading_value.text = "%03.0f°" % heading
 	
 	if _target_heading >= 0:
@@ -175,11 +172,14 @@ func _draw_compass() -> void:
 	compass.draw_arc(center, radius, 0, TAU, 64, Colors.PRIMARY, 2.0)
 	
 	# Draw cardinal directions
-	var cardinals := ["N", "E", "S", "W"]
+	var cardinals: Array[String] = ["N", "E", "S", "W"]
+	var font := ThemeDB.fallback_font
+	var font_size := 14
 	for i in range(4):
 		var angle := i * PI / 2 - PI / 2
-		var pos := center + Vector2(cos(angle), sin(angle)) * (radius - 20)
-		# Note: draw_string requires font, use Label nodes in actual implementation
+		var pos := center + Vector2(cos(angle), sin(angle)) * (radius - 24)
+		var text_size := font.get_string_size(cardinals[i], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+		compass.draw_string(font, pos - text_size / 2, cardinals[i], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Colors.PRIMARY)
 	
 	# Draw tick marks
 	for i in range(36):
@@ -190,8 +190,9 @@ func _draw_compass() -> void:
 		compass.draw_line(inner, outer, Colors.PRIMARY, 1.0)
 	
 	# Draw heading indicator (ship)
-	var ship_rotation: Vector3 = ship.rotation.to_vector3()
-	var heading_rad: float = ship_rotation.y
+	var ship_quat := ship.rotation.to_quaternion()
+	var ship_fwd: Vector3 = ship_quat * Vector3.FORWARD
+	var heading_rad: float = atan2(ship_fwd.x, -ship_fwd.z)
 	var indicator_points := PackedVector2Array([
 		center + Vector2(0, -radius * 0.6).rotated(heading_rad),
 		center + Vector2(-10, 10).rotated(heading_rad),
@@ -230,7 +231,7 @@ func _on_navigate_pressed() -> void:
 	var waypoints: Array = GameState.get_mission_waypoints()
 	if selected[0] < waypoints.size():
 		var wp = waypoints[selected[0]]
-		NetworkClient.send_action("flight", "navigate_to", {
+		NetworkClient.send_action("navigation", "set_waypoint", {
 			"waypoint_id": wp.get("id", ""),
 			"x": wp.get("x", 0),
 			"y": wp.get("y", 0),
@@ -240,15 +241,12 @@ func _on_navigate_pressed() -> void:
 
 func _on_clear_nav_pressed() -> void:
 	_target_heading = -1.0
-	NetworkClient.send_action("flight", "clear_navigation", {})
+	NetworkClient.send_action("navigation", "clear_waypoint", {})
 
 
 func _on_autopilot_toggled(enabled: bool) -> void:
-	var mode_idx := autopilot_mode.selected
-	NetworkClient.send_action("flight", "autopilot", {
-		"enabled": enabled,
-		"mode": mode_idx
-	})
+	var verb := "engage" if enabled else "disengage"
+	NetworkClient.send_action("navigation", verb, {"mode": autopilot_mode.selected})
 	
 	if enabled:
 		autopilot_status.text = "ENGAGED"

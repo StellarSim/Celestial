@@ -156,6 +156,10 @@ func (c *Controller) TriggerEvent(eventName string, params map[string]interface{
 	log.Printf("GM: Triggered event %s", eventName)
 }
 
+func (c *Controller) GetActiveMission() *mission.Mission {
+	return c.missionEngine.GetActiveMission()
+}
+
 func (c *Controller) GetSimulationState() map[string]interface{} {
 	ships := c.simulator.GetAllShips()
 	shipData := make(map[string]interface{})

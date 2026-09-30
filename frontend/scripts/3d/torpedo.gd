@@ -93,7 +93,7 @@ func _update_rotation() -> void:
 
 func update_from_state(state: GameState.ProjectileState) -> void:
 	projectile_id = state.id
-	torpedo_type = state.projectile_type
+	torpedo_type = state.type
 	
 	set_target_position(state.position.to_vector3())
 	set_velocity(state.velocity.to_vector3())

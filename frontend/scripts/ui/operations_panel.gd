@@ -27,8 +27,6 @@ const SYSTEMS := ["reactor", "engines", "weapons", "shields", "sensors", "life_s
 @onready var emergency_btn: Button = $MainSplit/RightSection/TransporterSection/TransporterContent/TransporterControls/EmergencyBtn
 
 var _sensor_mode: String = "passive"
-var _scan_target_id: String = ""
-var _scan_timer: float = 0.0
 var _shields_enabled: bool = true
 var _system_bars: Dictionary = {}
 
@@ -39,13 +37,9 @@ func _ready() -> void:
 	passive_btn.button_pressed = true
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	_update_display()
-	_update_scan_progress(delta)
-
-
-func _draw() -> void:
-	_draw_shield_diagram()
+	shield_diagram.queue_redraw()
 
 
 func _setup_system_bars() -> void:
@@ -80,6 +74,7 @@ func _connect_signals() -> void:
 	emergency_btn.pressed.connect(_on_emergency_transport)
 	
 	contact_list.item_selected.connect(_on_contact_selected)
+	shield_diagram.draw.connect(_draw_shield_diagram)
 
 
 func _update_display() -> void:
@@ -91,13 +86,11 @@ func _update_display() -> void:
 	_update_contact_list()
 	_update_systems(ship)
 	_update_transporter_status(ship)
-	queue_redraw()
+	_update_scan_progress(ship)
 
 
 func _update_sensor_status(ship: GameState.ShipState) -> void:
-	var sensors_enabled: bool = ship.power_breakers.get("sensors", true)
-	
-	if sensors_enabled:
+	if ship.sensors.enabled and ship.power_breakers.get("sensors", true):
 		short_range_value.text = "ONLINE"
 		short_range_value.add_theme_color_override("font_color", Colors.STATUS_ONLINE)
 		long_range_value.text = "ONLINE"
@@ -137,7 +130,7 @@ func _update_contact_list() -> void:
 		var faction_color: Color = Colors.get_faction_color(ship.faction)
 		var bearing := _calculate_bearing(player_ship, ship)
 		
-		var display := "%s | %.1f km | %03.0f°" % [ship.display_name, dist / 1000.0, bearing]
+		var display := "%s | %.1f km | %03.0f°" % [ship.name, dist / 1000.0, bearing]
 		var idx := contact_list.add_item(display)
 		contact_list.set_item_custom_fg_color(idx, faction_color)
 		contact_list.set_item_metadata(idx, entry.id)
@@ -151,30 +144,19 @@ func _calculate_bearing(from_ship: GameState.ShipState, to_ship: GameState.ShipS
 	return fmod(bearing + 360, 360)
 
 
-func _update_scan_progress(delta: float) -> void:
-	if _sensor_mode == "deep_scan" and not _scan_target_id.is_empty():
-		_scan_timer += delta
-		scan_progress.value = (_scan_timer / 10.0) * 100  # 10 second scan
-		
-		if _scan_timer >= 10.0:
-			_complete_scan()
-	else:
-		scan_progress.value = 0
+func _update_scan_progress(ship: GameState.ShipState) -> void:
+	# Scan progress is server owned; the client only renders it.
+	scan_progress.value = ship.sensors.scan_progress * 100.0
+	scan_progress.modulate = Colors.get_health_color(ship.sensors.scan_progress)
 
 
 func _update_systems(ship: GameState.ShipState) -> void:
-	# Update each system's health bar
 	for system_name in _system_bars:
 		var bar: ProgressBar = _system_bars[system_name].bar
 		var value: Label = _system_bars[system_name].value
 		
-		var health: float = 100.0
+		var health := _system_health(ship, system_name)
 		var enabled: bool = ship.power_breakers.get(system_name, true)
-		
-		# Get health from damage sections (simplified)
-		for section in ship.damage_sections:
-			var sec = ship.damage_sections[section]
-			health = min(health, sec.health)
 		
 		if not enabled:
 			health = 0
@@ -190,15 +172,54 @@ func _update_systems(ship: GameState.ShipState) -> void:
 			value.add_theme_color_override("font_color", Colors.get_health_color(health / 100.0))
 
 
+func _system_health(ship: GameState.ShipState, system_name: String) -> float:
+	match system_name:
+		"sensors":
+			return ship.sensors.health
+		"shields":
+			var total := 0.0
+			for facing in ship.shield_facings:
+				total += float(ship.shield_facings[facing])
+			return total / max(ship.shield_facings.size(), 1) / 2.0
+		"life_support":
+			return ship.life_support.oxygen_level
+		"reactor":
+			return ship.power_total
+		"weapons", "engines":
+			var worst := 100.0
+			if system_name == "weapons":
+				for bay in ship.weapons.torpedo_bays:
+					worst = minf(worst, 100.0)
+			else:
+				for engine in ship.engines_list:
+					worst = minf(worst, engine.health)
+			return worst
+	# Anything without a dedicated reading falls back to the worst hull section.
+	var worst_section := 100.0
+	for section in ship.damage_sections:
+		worst_section = minf(worst_section, ship.damage_sections[section].health)
+	return worst_section
+
+
 func _update_transporter_status(ship: GameState.ShipState) -> void:
-	var shields_up := _shields_enabled
-	var power_ok := ship.power_breakers.get("life_support", true)
+	var power_ok: bool = ship.power_breakers.get("life_support", true)
+	var shields_up := ship.shields_enabled
 	
 	if not power_ok:
 		transporter_status.text = "NO POWER"
 		transporter_status.add_theme_color_override("font_color", Colors.STATUS_OFFLINE)
 		beam_up_btn.disabled = true
 		beam_down_btn.disabled = true
+	elif ship.transporter_emergency:
+		transporter_status.text = "EMERGENCY"
+		transporter_status.add_theme_color_override("font_color", Colors.ALERT_RED)
+		beam_up_btn.disabled = true
+		beam_down_btn.disabled = false
+	elif ship.transporter_active:
+		transporter_status.text = "BEAM ACTIVE"
+		transporter_status.add_theme_color_override("font_color", Colors.ALERT_YELLOW)
+		beam_up_btn.disabled = true
+		beam_down_btn.disabled = false
 	elif shields_up:
 		transporter_status.text = "SHIELDS UP"
 		transporter_status.add_theme_color_override("font_color", Colors.ALERT_YELLOW)
@@ -237,10 +258,11 @@ func _draw_shield_diagram() -> void:
 		var facing: String = facings[i]
 		var angle: float = angles[i]
 		var shield_val: float = ship.shield_facings.get(facing, 100.0)
-		var strength: float = shield_val / 100.0
+		var max_per_facing := ship.max_shields / 4.0 if ship.max_shields > 0 else 250.0
+		var strength: float = clampf(shield_val / max_per_facing, 0.0, 1.0)
 		
 		var color := Colors.get_shield_color(strength)
-		if not _shields_enabled:
+		if not ship.shields_enabled:
 			color = Color(0.3, 0.3, 0.3, 0.5)
 		
 		shield_diagram.draw_arc(center, radius, angle - arc_span/2, angle + arc_span/2, 16, color, 8.0 * strength + 2.0)
@@ -248,7 +270,6 @@ func _draw_shield_diagram() -> void:
 
 func _set_sensor_mode(mode: String) -> void:
 	_sensor_mode = mode
-	_scan_timer = 0.0
 	
 	passive_btn.button_pressed = mode == "passive"
 	active_btn.button_pressed = mode == "active"
@@ -258,24 +279,18 @@ func _set_sensor_mode(mode: String) -> void:
 
 
 func _on_contact_selected(idx: int) -> void:
-	_scan_target_id = contact_list.get_item_metadata(idx)
+	var target_id: String = contact_list.get_item_metadata(idx)
 	if _sensor_mode == "deep_scan":
-		_scan_timer = 0.0
-		NetworkClient.send_action("sensors", "deep_scan", {"target_id": _scan_target_id})
-
-
-func _complete_scan() -> void:
-	_scan_timer = 0.0
-	NetworkClient.send_action("sensors", "scan_complete", {"target_id": _scan_target_id})
+		NetworkClient.send_action("sensors", "deep_scan", {"target_id": target_id})
+	else:
+		NetworkClient.send_action("sensors", "initiate_scan", {"target_id": target_id})
 
 
 func _on_shields_up() -> void:
-	_shields_enabled = true
 	NetworkClient.send_action("shields", "raise", {})
 
 
 func _on_shields_down() -> void:
-	_shields_enabled = false
 	NetworkClient.send_action("shields", "lower", {})
 
 

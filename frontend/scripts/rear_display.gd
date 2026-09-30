@@ -26,6 +26,7 @@ extends Control
 @onready var connection_dot: ColorRect = $MainLayout/Footer/FooterContent/ConnectionStatus/StatusDot
 @onready var connection_text: Label = $MainLayout/Footer/FooterContent/ConnectionStatus/StatusText
 @onready var alert_overlay: ColorRect = $AlertOverlay
+@onready var scanline_overlay: ColorRect = $ScanlineOverlay
 @onready var disconnect_overlay: ColorRect = $DisconnectOverlay
 
 # Map settings
@@ -42,6 +43,7 @@ var _alert_tween: Tween = null
 func _ready() -> void:
 	_connect_signals()
 	_setup_map()
+	_setup_scanlines()
 
 
 func _process(_delta: float) -> void:
@@ -61,6 +63,16 @@ func _connect_signals() -> void:
 	$MainLayout/ContentArea/TacticalMap/MapControls/ZoomInBtn.pressed.connect(_on_zoom_in)
 	$MainLayout/ContentArea/TacticalMap/MapControls/ZoomOutBtn.pressed.connect(_on_zoom_out)
 	$MainLayout/Footer/FooterContent/BackButton.pressed.connect(_on_back_pressed)
+
+
+func _setup_scanlines() -> void:
+	# CRT treatment for the room-wide display.
+	var mat := ShaderMaterial.new()
+	mat.shader = preload("res://shaders/scanline_overlay.gdshader")
+	mat.set_shader_parameter("scanline_opacity", 0.08)
+	mat.set_shader_parameter("scanline_frequency", 220.0)
+	mat.set_shader_parameter("vignette_intensity", 0.35)
+	scanline_overlay.material = mat
 
 
 func _setup_map() -> void:
@@ -129,8 +141,8 @@ func _update_status_display() -> void:
 	power_bar.modulate = Colors.get_power_color(power_percent / 100.0)
 	
 	# Damage sections
-	_update_damage_section(bow_status, ship.damage_sections.get("bow"))
-	_update_damage_section(stern_status, ship.damage_sections.get("stern"))
+	_update_damage_section(bow_status, ship.damage_sections.get("forward"))
+	_update_damage_section(stern_status, ship.damage_sections.get("aft"))
 	_update_damage_section(port_status, ship.damage_sections.get("port"))
 	_update_damage_section(starboard_status, ship.damage_sections.get("starboard"))
 

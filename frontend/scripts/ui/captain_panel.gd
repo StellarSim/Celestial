@@ -26,8 +26,6 @@ extends Control
 @onready var self_destruct_btn: Button = $MainSplit/RightSection/SelfDestruct/SelfDestructContent/SelfDestructBtn
 @onready var abort_btn: Button = $MainSplit/RightSection/SelfDestruct/SelfDestructContent/AbortBtn
 
-var _self_destruct_active := false
-var _self_destruct_timer := 0.0
 var _orders: Array[String] = []
 
 
@@ -36,13 +34,8 @@ func _ready() -> void:
 	_connect_signals()
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	_update_display()
-	
-	if _self_destruct_active:
-		_self_destruct_timer -= delta
-		if _self_destruct_timer <= 0:
-			_trigger_self_destruct()
 
 
 func _setup_alert_styles() -> void:
@@ -97,22 +90,24 @@ func _update_display() -> void:
 
 
 func _update_ship_status(ship: GameState.ShipState) -> void:
-	ship_name.text = ship.display_name
+	ship_name.text = ship.name
 	
 	# Hull integrity
-	hull_bar.value = ship.hull
-	hull_bar.modulate = Colors.get_health_color(ship.hull / 100.0)
+	hull_bar.value = ship.hull_integrity
+	hull_bar.modulate = Colors.get_health_color(ship.hull_integrity / 100.0)
 	
 	# Average shields
 	var shield_total := 0.0
-	for facing in ship.shields:
-		shield_total += ship.shields[facing]
-	var shield_avg := shield_total / max(ship.shields.size(), 1)
+	for facing in ship.shield_facings:
+		shield_total += float(ship.shield_facings[facing])
+	var shield_avg: float = shield_total / max(ship.shield_facings.size(), 1)
 	shields_bar.value = shield_avg
 	shields_bar.modulate = Colors.get_shield_color(shield_avg / 100.0)
 	
 	# Power
-	var power_percent := (ship.power_available / ship.power_total) * 100.0 if ship.power_total > 0 else 0
+	var power_percent := 0.0
+	if ship.power_total > 0:
+		power_percent = (ship.power_available / ship.power_total) * 100.0
 	power_bar.value = power_percent
 	power_bar.modulate = Colors.get_power_color(power_percent / 100.0)
 	
@@ -123,7 +118,7 @@ func _update_ship_status(ship: GameState.ShipState) -> void:
 		damage_total += 100.0 - ship.damage_sections[section].health
 		section_count += 1
 	
-	var avg_damage := damage_total / max(section_count, 1)
+	var avg_damage: float = damage_total / max(section_count, 1)
 	if avg_damage < 10:
 		crew_value.text = "NOMINAL"
 		crew_value.add_theme_color_override("font_color", Colors.STATUS_ONLINE)
@@ -139,25 +134,30 @@ func _update_ship_status(ship: GameState.ShipState) -> void:
 
 
 func _update_alert_status() -> void:
-	var alert := GameState.alert_status
+	var alert := GameState.alert_level
 	
 	match alert:
-		"green":
+		"normal":
 			current_alert.text = "CONDITION GREEN"
 			current_alert.add_theme_color_override("font_color", Colors.ALERT_GREEN)
-			green_alert_btn.button_pressed = true
 		"yellow":
 			current_alert.text = "CONDITION YELLOW"
 			current_alert.add_theme_color_override("font_color", Colors.ALERT_YELLOW)
-			yellow_alert_btn.button_pressed = true
 		"red":
 			current_alert.text = "CONDITION RED"
 			current_alert.add_theme_color_override("font_color", Colors.ALERT_RED)
-			red_alert_btn.button_pressed = true
+		_:
+			return
 	
-	# Update self-destruct display
-	if _self_destruct_active:
-		self_destruct_btn.text = "SELF DESTRUCT: %.0f" % _self_destruct_timer
+	green_alert_btn.button_pressed = alert == "normal"
+	yellow_alert_btn.button_pressed = alert == "yellow"
+	red_alert_btn.button_pressed = alert == "red"
+	
+	# The self destruct countdown is owned by the server.
+	var ship := GameState.get_player_ship()
+	var remaining := ship.self_destruct_remaining if ship else 0.0
+	if remaining > 0.0:
+		self_destruct_btn.text = "SELF DESTRUCT: %.0f" % remaining
 		self_destruct_btn.disabled = true
 		abort_btn.disabled = false
 	else:
@@ -167,9 +167,9 @@ func _update_alert_status() -> void:
 
 
 func _update_mission_status() -> void:
-	mission_name.text = "Current Mission: %s" % GameState.mission_name
+	mission_name.text = "Current Mission: %s" % GameState.get_mission_name()
 	
-	var objectives := GameState.mission_objectives
+	var objectives := GameState.get_mission_objectives()
 	objective_list.clear()
 	
 	for obj in objectives:
@@ -183,28 +183,30 @@ func _update_mission_status() -> void:
 
 
 func _set_alert(level: String) -> void:
-	NetworkClient.send_action("captain", "set_alert", {"level": level})
+	NetworkClient.send_action("alert", "set_level", {"level": level})
 	_add_comm_log("CAPTAIN", "Set ship to %s alert" % level.to_upper())
 
 
 func _on_add_order() -> void:
-	# In a real implementation, this would open a dialog
-	# For now, we'll add a placeholder
 	var order := "Standing Order %d" % (_orders.size() + 1)
 	_orders.append(order)
 	orders_list.add_item(order)
-	NetworkClient.send_action("captain", "add_order", {"order": order})
+	NetworkClient.send_action("command", "issue_order", {"order": order})
 
 
 func _on_clear_orders() -> void:
 	_orders.clear()
 	orders_list.clear()
-	NetworkClient.send_action("captain", "clear_orders", {})
+	NetworkClient.send_action("command", "clear_orders", {})
 
 
 func _on_hail() -> void:
-	NetworkClient.send_action("comms", "hail", {})
-	_add_comm_log("COMMS", "Opening hailing frequencies...")
+	var ship := GameState.get_player_ship()
+	if ship == null or ship.target_id.is_empty():
+		_add_comm_log("COMMS", "No target selected to hail.")
+		return
+	NetworkClient.send_action("comms", "hail", {"target_id": ship.target_id})
+	_add_comm_log("COMMS", "Hailing %s..." % ship.target_id)
 
 
 func _on_broadcast() -> void:
@@ -213,24 +215,13 @@ func _on_broadcast() -> void:
 
 
 func _on_self_destruct() -> void:
-	# Requires confirmation in real implementation
-	_self_destruct_active = true
-	_self_destruct_timer = 60.0
-	NetworkClient.send_action("captain", "self_destruct", {"initiate": true})
-	_add_comm_log("COMPUTER", "[color=red]SELF DESTRUCT SEQUENCE INITIATED - 60 SECONDS[/color]")
+	NetworkClient.send_action("self_destruct", "arm", {})
+	_add_comm_log("COMPUTER", "[color=red]SELF DESTRUCT SEQUENCE ARMED[/color]")
 
 
 func _on_abort_self_destruct() -> void:
-	_self_destruct_active = false
-	_self_destruct_timer = 0.0
-	NetworkClient.send_action("captain", "self_destruct", {"initiate": false})
+	NetworkClient.send_action("self_destruct", "abort", {})
 	_add_comm_log("COMPUTER", "[color=green]Self destruct sequence aborted[/color]")
-
-
-func _trigger_self_destruct() -> void:
-	_self_destruct_active = false
-	NetworkClient.send_action("captain", "self_destruct_execute", {})
-	_add_comm_log("COMPUTER", "[color=red]SELF DESTRUCT COMPLETE[/color]")
 
 
 func _add_comm_log(source: String, message: String) -> void:
@@ -242,9 +233,11 @@ func _on_state_updated() -> void:
 	pass  # Updates handled in _process
 
 
-func _on_mission_event(event: Dictionary) -> void:
-	var event_type := event.get("type", "")
-	var message := event.get("message", "")
+func _on_mission_event(event_name: String, data: Dictionary) -> void:
+	var event_type := event_name
+	if data.has("type"):
+		event_type = str(data.get("type", event_name))
+	var message := str(data.get("message", data.get("objective_id", "")))
 	
 	match event_type:
 		"objective_complete":
@@ -254,4 +247,4 @@ func _on_mission_event(event: Dictionary) -> void:
 		"message":
 			_add_comm_log("MISSION", message)
 		"incoming_comm":
-			_add_comm_log(event.get("source", "UNKNOWN"), message)
+			_add_comm_log(str(data.get("source", "UNKNOWN")), message)

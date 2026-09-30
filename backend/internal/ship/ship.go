@@ -2,22 +2,44 @@ package ship
 
 import (
 	"celestial/internal/config"
+	"fmt"
 	"math"
+	"math/rand"
 	"sync"
 )
+
+// Canonical damage section names.
+const (
+	SectionForward   = "forward"
+	SectionAft       = "aft"
+	SectionPort      = "port"
+	SectionStarboard = "starboard"
+)
+
+// Canonical power breaker names.
+var BreakerNames = []string{
+	"reactor", "engines", "shields", "weapons",
+	"sensors", "comms", "life_support", "navigation",
+}
 
 type Ship struct {
 	mu sync.RWMutex
 
-	ID       string
-	ClassID  string
-	Name     string
-	IsPlayer bool
+	ID         string
+	ClassID    string
+	Name       string
+	IsPlayer   bool
+	Faction    string
+	AlertLevel string
 
 	Position        Vector3
 	Velocity        Vector3
 	Rotation        Quaternion
 	AngularVelocity Vector3
+
+	// Flight control inputs (server authoritative).
+	Throttle   float64 // -1 (astern) .. 1 (ahead)
+	ThrustAxis Vector3 // desired thrust direction in ship-local space
 
 	Mass         float64
 	MaxSpeed     float64
@@ -75,6 +97,7 @@ type Weapon struct {
 	Locked       bool
 	AmmoCapacity int
 	AmmoCount    int
+	Facing       Vector3
 }
 
 type ShieldSystem struct {
@@ -164,15 +187,23 @@ type CrewMember struct {
 }
 
 func NewShip(id, classID, name string, class *config.ShipClass, isPlayer bool) *Ship {
-	ship := &Ship{
+	faction := "hostile"
+	if isPlayer {
+		faction = "player"
+	}
+	sh := &Ship{
 		ID:              id,
 		ClassID:         classID,
 		Name:            name,
 		IsPlayer:        isPlayer,
-		Position:        Vector3{0, 0, 0},
-		Velocity:        Vector3{0, 0, 0},
-		Rotation:        Quaternion{1, 0, 0, 0},
-		AngularVelocity: Vector3{0, 0, 0},
+		Faction:         faction,
+		AlertLevel:      "normal",
+		Position:        Vector3{X: 0, Y: 0, Z: 0},
+		Velocity:        Vector3{X: 0, Y: 0, Z: 0},
+		Rotation:        Quaternion{W: 1, X: 0, Y: 0, Z: 0},
+		AngularVelocity: Vector3{X: 0, Y: 0, Z: 0},
+		Throttle:        0,
+		ThrustAxis:      Vector3{X: 0, Y: 0, Z: 1},
 		Mass:            class.Mass,
 		MaxSpeed:        class.MaxSpeed,
 		Acceleration:    class.Acceleration,
@@ -185,7 +216,7 @@ func NewShip(id, classID, name string, class *config.ShipClass, isPlayer bool) *
 	}
 
 	for _, engCfg := range class.Engines {
-		ship.Engines[engCfg.ID] = &Engine{
+		sh.Engines[engCfg.ID] = &Engine{
 			ID:        engCfg.ID,
 			Type:      engCfg.Type,
 			Thrust:    engCfg.Thrust,
@@ -197,7 +228,8 @@ func NewShip(id, classID, name string, class *config.ShipClass, isPlayer bool) *
 	}
 
 	for _, wpnCfg := range class.Weapons {
-		ship.Weapons[wpnCfg.ID] = &Weapon{
+		facing := Vector3{X: 0, Y: 0, Z: 1}
+		sh.Weapons[wpnCfg.ID] = &Weapon{
 			ID:           wpnCfg.ID,
 			Type:         wpnCfg.Type,
 			Damage:       wpnCfg.Damage,
@@ -210,17 +242,18 @@ func NewShip(id, classID, name string, class *config.ShipClass, isPlayer bool) *
 			PowerDraw:    wpnCfg.PowerDraw,
 			AmmoCapacity: wpnCfg.AmmoCapacity,
 			AmmoCount:    wpnCfg.AmmoCapacity,
+			Facing:       facing,
 		}
 	}
 
-	ship.Shields = &ShieldSystem{
+	sh.Shields = &ShieldSystem{
 		Emitters:     make(map[string]*ShieldEmitter),
 		RechargeRate: class.Shields.RechargeRate,
 		PowerDraw:    class.Shields.PowerDraw,
 		Enabled:      true,
 	}
 	for _, emCfg := range class.Shields.Emitters {
-		ship.Shields.Emitters[emCfg.ID] = &ShieldEmitter{
+		sh.Shields.Emitters[emCfg.ID] = &ShieldEmitter{
 			ID:          emCfg.ID,
 			Facing:      emCfg.Facing,
 			MaxStrength: emCfg.Strength,
@@ -230,11 +263,9 @@ func NewShip(id, classID, name string, class *config.ShipClass, isPlayer bool) *
 		}
 	}
 
-	ship.Hull = &HullSystem{
-		Sections: make(map[string]*HullSection),
-	}
+	sh.Hull = &HullSystem{Sections: make(map[string]*HullSection)}
 	for _, secCfg := range class.Hull.Sections {
-		ship.Hull.Sections[secCfg.ID] = &HullSection{
+		sh.Hull.Sections[secCfg.ID] = &HullSection{
 			ID:        secCfg.ID,
 			MaxArmor:  secCfg.Armor,
 			Armor:     secCfg.Armor,
@@ -244,7 +275,7 @@ func NewShip(id, classID, name string, class *config.ShipClass, isPlayer bool) *
 	}
 
 	for _, subCfg := range class.Subsystems {
-		ship.Subsystems[subCfg.ID] = &Subsystem{
+		sh.Subsystems[subCfg.ID] = &Subsystem{
 			ID:        subCfg.ID,
 			Type:      subCfg.Type,
 			MaxHealth: subCfg.Health,
@@ -255,7 +286,7 @@ func NewShip(id, classID, name string, class *config.ShipClass, isPlayer bool) *
 	}
 
 	for _, bayCfg := range class.LaunchBays {
-		ship.LaunchBays[bayCfg.ID] = &LaunchBay{
+		sh.LaunchBays[bayCfg.ID] = &LaunchBay{
 			ID:        bayCfg.ID,
 			Capacity:  bayCfg.Capacity,
 			Current:   bayCfg.Capacity,
@@ -264,20 +295,21 @@ func NewShip(id, classID, name string, class *config.ShipClass, isPlayer bool) *
 		}
 	}
 
-	ship.Power = &PowerSystem{
+	// Power: reactor generates; each canonical breaker starts closed (on).
+	sh.Power = &PowerSystem{
 		MaxCapacity:     10000,
 		CurrentCapacity: 10000,
 		Generation:      1000,
 		Consumption:     0,
 		Breakers:        make(map[string]*Breaker),
 	}
-
-	ship.LifeSupport = &LifeSupportSystem{
-		Compartments: make(map[string]*Compartment),
+	for _, b := range BreakerNames {
+		sh.Power.Breakers[b] = &Breaker{ID: b, System: b, Enabled: true}
 	}
-	compartmentNames := []string{"bridge", "engineering", "weapons_bay", "crew_quarters", "cargo_bay"}
-	for _, name := range compartmentNames {
-		ship.LifeSupport.Compartments[name] = &Compartment{
+
+	sh.LifeSupport = &LifeSupportSystem{Compartments: make(map[string]*Compartment)}
+	for _, name := range []string{"bridge", "engineering", "weapons_bay", "crew_quarters", "cargo_bay"} {
+		sh.LifeSupport.Compartments[name] = &Compartment{
 			ID:          name,
 			MaxPressure: 101.3,
 			Pressure:    101.3,
@@ -288,18 +320,17 @@ func NewShip(id, classID, name string, class *config.ShipClass, isPlayer bool) *
 	}
 
 	if isPlayer {
-		roles := []string{"engineer", "flight", "weapons", "captain", "comms", "operations", "relay", "first_officer"}
-		for _, role := range roles {
-			ship.Crew[role] = &CrewMember{
-				Role:   role,
-				Health: 100.0,
-				Status: "healthy",
-			}
+		for _, role := range []string{"engineer", "flight", "weapons", "captain", "comms", "operations", "relay", "first_officer"} {
+			sh.Crew[role] = &CrewMember{Role: role, Health: 100.0, Status: "healthy"}
 		}
 	}
 
-	return ship
+	return sh
 }
+
+// ---------------------------------------------------------------------------
+// Frame update
+// ---------------------------------------------------------------------------
 
 func (s *Ship) Update(dt float64) {
 	s.mu.Lock()
@@ -314,39 +345,70 @@ func (s *Ship) Update(dt float64) {
 }
 
 func (s *Ship) updatePhysics(dt float64) {
-	totalThrust := Vector3{0, 0, 0}
-	for _, engine := range s.Engines {
-		if engine.Enabled && engine.Health > 0 {
-			thrustFactor := engine.Health / engine.MaxHealth
-			thrust := engine.Thrust * thrustFactor
-			totalThrust.Z += thrust
+	// Total main-engine thrust available, scaled by health.
+	mainThrust := 0.0
+	enginesOnline := s.breakerOn("engines")
+	if enginesOnline {
+		for _, engine := range s.Engines {
+			if engine.Type == "main" && engine.Enabled && engine.Health > 0 {
+				mainThrust += engine.Thrust * (engine.Health / engine.MaxHealth)
+			}
 		}
 	}
 
-	forward := s.getForwardVector()
-	thrustWorld := Vector3{
-		X: forward.X * totalThrust.Z,
-		Y: forward.Y * totalThrust.Z,
-		Z: forward.Z * totalThrust.Z,
+	fwd := s.forwardLocked()
+	right := s.rightLocked()
+	up := s.upLocked()
+
+	axis := s.ThrustAxis
+	// Blend the desired local thrust direction with forward for heading control.
+	localX := clampf(axis.X, -1.0, 1.0)
+	localY := clampf(axis.Y, -1.0, 1.0)
+	localZ := clampf(axis.Z, -1.0, 1.0)
+	localMag := math.Sqrt(localX*localX + localY*localY + localZ*localZ)
+	if localMag < 0.0001 {
+		localX, localY, localZ, localMag = 0, 0, 1, 1
+	}
+	localX /= localMag
+	localY /= localMag
+	localZ /= localMag
+
+	dir := Vector3{
+		X: right.X*localX + up.X*localY + fwd.X*localZ,
+		Y: right.Y*localX + up.Y*localY + fwd.Y*localZ,
+		Z: right.Z*localX + up.Z*localY + fwd.Z*localZ,
 	}
 
-	accel := Vector3{
-		X: thrustWorld.X / s.Mass,
-		Y: thrustWorld.Y / s.Mass,
-		Z: thrustWorld.Z / s.Mass,
+	// Acceleration comes from ship config, scaled by how much main thrust is
+	// actually available (damaged or offline engines accelerate less) and by the
+	// throttle setting.
+	maxThrust := 0.0
+	for _, engine := range s.Engines {
+		if engine.Type == "main" {
+			maxThrust += engine.Thrust
+		}
 	}
+	thrustFraction := 1.0
+	if maxThrust > 0 {
+		thrustFraction = clampf(mainThrust/maxThrust, 0.0, 1.0)
+	}
+
+	magnitude := s.Acceleration * thrustFraction * s.Throttle
+	accel := Vector3{X: dir.X * magnitude, Y: dir.Y * magnitude, Z: dir.Z * magnitude}
 
 	s.Velocity.X += accel.X * dt
 	s.Velocity.Y += accel.Y * dt
 	s.Velocity.Z += accel.Z * dt
 
-	drag := 0.98
-	s.Velocity.X *= drag
-	s.Velocity.Y *= drag
-	s.Velocity.Z *= drag
+	// Frame-rate independent drag: velocity *= exp(-k*dt)
+	const dragRate = 0.35
+	damp := math.Exp(-dragRate * dt)
+	s.Velocity.X *= damp
+	s.Velocity.Y *= damp
+	s.Velocity.Z *= damp
 
 	speed := math.Sqrt(s.Velocity.X*s.Velocity.X + s.Velocity.Y*s.Velocity.Y + s.Velocity.Z*s.Velocity.Z)
-	if speed > s.MaxSpeed {
+	if s.MaxSpeed > 0 && speed > s.MaxSpeed {
 		scale := s.MaxSpeed / speed
 		s.Velocity.X *= scale
 		s.Velocity.Y *= scale
@@ -357,63 +419,72 @@ func (s *Ship) updatePhysics(dt float64) {
 	s.Position.Y += s.Velocity.Y * dt
 	s.Position.Z += s.Velocity.Z * dt
 
-	rotDrag := 0.95
-	s.AngularVelocity.X *= rotDrag
-	s.AngularVelocity.Y *= rotDrag
-	s.AngularVelocity.Z *= rotDrag
+	const rotDragRate = 1.2
+	rotDamp := math.Exp(-rotDragRate * dt)
+	s.AngularVelocity.X *= rotDamp
+	s.AngularVelocity.Y *= rotDamp
+	s.AngularVelocity.Z *= rotDamp
 
-	angle := math.Sqrt(s.AngularVelocity.X*s.AngularVelocity.X+
-		s.AngularVelocity.Y*s.AngularVelocity.Y+
-		s.AngularVelocity.Z*s.AngularVelocity.Z) * dt
-	if angle > 0.001 {
-		axis := Vector3{
-			X: s.AngularVelocity.X / angle,
-			Y: s.AngularVelocity.Y / angle,
-			Z: s.AngularVelocity.Z / angle,
+	angSpeed := math.Sqrt(
+		s.AngularVelocity.X*s.AngularVelocity.X +
+			s.AngularVelocity.Y*s.AngularVelocity.Y +
+			s.AngularVelocity.Z*s.AngularVelocity.Z)
+	angle := angSpeed * dt
+	if angle > 0.0001 {
+		axisV := Vector3{
+			X: s.AngularVelocity.X / angSpeed,
+			Y: s.AngularVelocity.Y / angSpeed,
+			Z: s.AngularVelocity.Z / angSpeed,
 		}
-		deltaQ := axisAngleToQuaternion(axis, angle)
-		s.Rotation = multiplyQuaternions(deltaQ, s.Rotation)
-		s.Rotation = normalizeQuaternion(s.Rotation)
+		deltaQ := axisAngleToQuaternion(axisV, angle)
+		s.Rotation = normalizeQuaternion(multiplyQuaternions(deltaQ, s.Rotation))
 	}
 }
 
 func (s *Ship) updatePower(dt float64) {
 	consumption := 0.0
-	for _, engine := range s.Engines {
-		if engine.Enabled {
-			consumption += engine.PowerDraw
+	if s.breakerOn("engines") {
+		for _, engine := range s.Engines {
+			if engine.Enabled {
+				consumption += engine.PowerDraw
+			}
 		}
 	}
-	for _, weapon := range s.Weapons {
-		if weapon.Enabled {
-			consumption += weapon.PowerDraw
+	if s.breakerOn("weapons") {
+		for _, weapon := range s.Weapons {
+			if weapon.Enabled {
+				consumption += weapon.PowerDraw
+			}
 		}
 	}
-	if s.Shields.Enabled {
+	if s.breakerOn("shields") && s.Shields.Enabled {
 		consumption += s.Shields.PowerDraw
 	}
 	for _, subsystem := range s.Subsystems {
-		if subsystem.Enabled {
+		if subsystem.Enabled && s.breakerOn(subsystem.ID) {
 			consumption += subsystem.PowerDraw
 		}
 	}
 
 	s.Power.Consumption = consumption
 	s.Power.CurrentCapacity += (s.Power.Generation - consumption) * dt
-
 	if s.Power.CurrentCapacity > s.Power.MaxCapacity {
 		s.Power.CurrentCapacity = s.Power.MaxCapacity
 	}
 	if s.Power.CurrentCapacity < 0 {
 		s.Power.CurrentCapacity = 0
 	}
+
+	// A reactor breaker cut kills generation.
+	if !s.breakerOn("reactor") {
+		s.Power.CurrentCapacity = math.Max(0, s.Power.CurrentCapacity-consumption*dt)
+	}
 }
 
 func (s *Ship) updateShields(dt float64) {
-	if !s.Shields.Enabled {
+	if !s.Shields.Enabled || !s.breakerOn("shields") {
 		return
 	}
-
 	for _, emitter := range s.Shields.Emitters {
 		if emitter.Health > 0 && emitter.Strength < emitter.MaxStrength {
 			emitter.Strength += s.Shields.RechargeRate * dt
@@ -444,7 +515,6 @@ func (s *Ship) updateDamage(dt float64) {
 			}
 		}
 	}
-
 	for _, weapon := range s.Weapons {
 		if weapon.OnFire {
 			weapon.Health -= 5.0 * dt
@@ -453,7 +523,6 @@ func (s *Ship) updateDamage(dt float64) {
 			}
 		}
 	}
-
 	for _, emitter := range s.Shields.Emitters {
 		if emitter.OnFire {
 			emitter.Health -= 5.0 * dt
@@ -462,27 +531,31 @@ func (s *Ship) updateDamage(dt float64) {
 			}
 		}
 	}
-
 	for _, section := range s.Hull.Sections {
 		if section.OnFire {
 			section.Health -= 5.0 * dt
-			if section.Health < 0 {
+			if section.Health <= 0 {
 				section.Health = 0
+				section.Breached = true
+				s.markCompartmentBreached(section.ID)
 			}
 		}
 	}
-
 	for _, subsystem := range s.Subsystems {
 		if subsystem.OnFire {
 			subsystem.Health -= 5.0 * dt
-			if subsystem.Health < 0 {
+			if subsystem.Health <= 0 {
 				subsystem.Health = 0
+				subsystem.Enabled = false
 			}
 		}
 	}
 }
 
 func (s *Ship) updateLifeSupport(dt float64) {
+	if !s.breakerOn("life_support") {
+		return
+	}
 	for _, comp := range s.LifeSupport.Compartments {
 		if comp.Breached {
 			comp.Pressure -= 10.0 * dt
@@ -501,19 +574,148 @@ func (s *Ship) updateLifeSupport(dt float64) {
 	}
 }
 
-func (s *Ship) getForwardVector() Vector3 {
+// ---------------------------------------------------------------------------
+// Orientation helpers
+// ---------------------------------------------------------------------------
+
+func (s *Ship) forwardLocked() Vector3 {
+	// Forward is local -Z mapped into world space.
+	return rotateVectorByQuaternion(Vector3{X: 0, Y: 0, Z: -1}, s.Rotation)
+}
+
+func (s *Ship) rightLocked() Vector3 {
+	return rotateVectorByQuaternion(Vector3{X: 1, Y: 0, Z: 0}, s.Rotation)
+}
+
+func (s *Ship) upLocked() Vector3 {
+	return rotateVectorByQuaternion(Vector3{X: 0, Y: 1, Z: 0}, s.Rotation)
+}
+
+// Forward returns the ship's world-space forward vector.
+func (s *Ship) Forward() Vector3 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.forwardLocked()
+}
+
+// GetPosition returns a copy of the ship's position.
+func (s *Ship) GetPosition() Vector3 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.Position
+}
+
+// GetVelocity returns a copy of the ship's velocity.
+func (s *Ship) GetVelocity() Vector3 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.Velocity
+}
+
+// WeaponsSnapshot returns copies of weapon state for safe external reads.
+func (s *Ship) WeaponsSnapshot() map[string]Weapon {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make(map[string]Weapon, len(s.Weapons))
+	for k, v := range s.Weapons {
+		out[k] = *v
+	}
+	return out
+}
+
+// HullSnapshot returns copies of hull section state for safe external reads.
+func (s *Ship) HullSnapshot() map[string]HullSection {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make(map[string]HullSection, len(s.Hull.Sections))
+	for k, v := range s.Hull.Sections {
+		out[k] = *v
+	}
+	return out
+}
+
+// ShieldsSnapshot returns copies of shield emitter state for safe external reads.
+func (s *Ship) ShieldsSnapshot() map[string]ShieldEmitter {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make(map[string]ShieldEmitter, len(s.Shields.Emitters))
+	for k, v := range s.Shields.Emitters {
+		out[k] = *v
+	}
+	return out
+}
+
+// Right returns the ship's world-space right vector.
+func (s *Ship) Right() Vector3 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.rightLocked()
+}
+
+// FacingFor returns which damage section a world-space point falls into relative
+// to the ship's orientation: forward, aft, port, or starboard.
+func (s *Ship) FacingFor(point Vector3) string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.facingForLocked(point)
+}
+
+func (s *Ship) facingForLocked(point Vector3) string {
+	rel := Vector3{X: point.X - s.Position.X, Y: point.Y - s.Position.Y, Z: point.Z - s.Position.Z}
+	fwd := s.forwardLocked()
+	right := s.rightLocked()
+	// Choose the axis the point is most aligned with (forward/-forward/right/-right).
+	fDot := rel.X*fwd.X + rel.Y*fwd.Y + rel.Z*fwd.Z
+	rDot := rel.X*right.X + rel.Y*right.Y + rel.Z*right.Z
+	if math.Abs(fDot) >= math.Abs(rDot) {
+		if fDot >= 0 {
+			return SectionForward
+		}
+		return SectionAft
+	}
+	if rDot >= 0 {
+		return SectionStarboard
+	}
+	return SectionPort
+}
+
+func rotateVectorByQuaternion(v Vector3, q Quaternion) Vector3 {
+	// Standard v' = v + 2*w*(q_vec x v) + 2*(q_vec x (q_vec x v))
+	qx, qy, qz := q.X, q.Y, q.Z
+
+	c1 := Vector3{
+		X: 2.0 * (qy*v.Z - qz*v.Y),
+		Y: 2.0 * (qz*v.X - qx*v.Z),
+		Z: 2.0 * (qx*v.Y - qy*v.X),
+	}
+	c2 := Vector3{
+		X: 2.0 * (qy*c1.Z - qz*c1.Y),
+		Y: 2.0 * (qz*c1.X - qx*c1.Z),
+		Z: 2.0 * (qx*c1.Y - qy*c1.X),
+	}
 	return Vector3{
-		X: 2 * (s.Rotation.X*s.Rotation.Z + s.Rotation.W*s.Rotation.Y),
-		Y: 2 * (s.Rotation.Y*s.Rotation.Z - s.Rotation.W*s.Rotation.X),
-		Z: 1 - 2*(s.Rotation.X*s.Rotation.X+s.Rotation.Y*s.Rotation.Y),
+		X: v.X + q.W*c1.X + c2.X,
+		Y: v.Y + q.W*c1.Y + c2.Y,
+		Z: v.Z + q.W*c1.Z + c2.Z,
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Input (server authoritative flight control)
+// ---------------------------------------------------------------------------
 
 func (s *Ship) ApplyThrust(x, y, z float64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Applied via input, actual thrust calculated in updatePhysics
+	s.Throttle = clampf(z, -1.0, 1.0)
+	s.ThrustAxis = Vector3{X: x, Y: y, Z: z}
+}
+
+func (s *Ship) SetThrottle(t float64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Throttle = clampf(t, -1.0, 1.0)
 }
 
 func (s *Ship) ApplyRotation(pitch, yaw, roll float64) {
@@ -525,12 +727,83 @@ func (s *Ship) ApplyRotation(pitch, yaw, roll float64) {
 	s.AngularVelocity.Z += roll * s.TurnRate
 }
 
+// ---------------------------------------------------------------------------
+// Power breakers
+// ---------------------------------------------------------------------------
+
+func (s *Ship) SetBreaker(name string, enabled bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if br, ok := s.Power.Breakers[name]; ok {
+		br.Enabled = enabled
+	}
+}
+
+// breakerOn must be called with s.mu held (read or write).
+func (s *Ship) breakerOn(name string) bool {
+	br, ok := s.Power.Breakers[name]
+	return ok && br.Enabled
+}
+
+// BreakerOn reports whether a named breaker is closed (supplying power).
+func (s *Ship) BreakerOn(name string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.breakerOn(name)
+}
+
+// SubsystemOnline reports whether a subsystem is powered and undamaged.
+func (s *Ship) SubsystemOnline(name string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.subsystemOnlineLocked(name)
+}
+
+func (s *Ship) subsystemOnlineLocked(name string) bool {
+	if !s.breakerOn(name) {
+		return false
+	}
+	if sub, ok := s.Subsystems[name]; ok {
+		return sub.Enabled && sub.Health > 0
+	}
+	return true
+}
+
+func (s *Ship) SetShieldsEnabled(enabled bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Shields.Enabled = enabled
+}
+
+// MutateWeapon applies fn to a weapon under the ship lock.
+func (s *Ship) MutateWeapon(weaponID string, fn func(*Weapon) error) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	w, ok := s.Weapons[weaponID]
+	if !ok {
+		return fmt.Errorf("weapon not found: %s", weaponID)
+	}
+	return fn(w)
+}
+
+// ---------------------------------------------------------------------------
+// Weapons
+// ---------------------------------------------------------------------------
+
+// FireWeapon attempts to fire. Checks range, cooldown, power, and (for
+// torpedoes) armed/loaded/locked/ammo gating. Returns success.
 func (s *Ship) FireWeapon(weaponID string, targetID string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.fireWeaponLocked(weaponID, targetID)
+}
 
+func (s *Ship) fireWeaponLocked(weaponID string, targetID string) bool {
 	weapon, ok := s.Weapons[weaponID]
 	if !ok || weapon.Health <= 0 || weapon.Cooldown > 0 {
+		return false
+	}
+	if !weapon.Enabled || !s.breakerOn("weapons") {
 		return false
 	}
 
@@ -550,23 +823,72 @@ func (s *Ship) FireWeapon(weaponID string, targetID string) bool {
 	return true
 }
 
+// InWeaponRange reports whether target is within the weapon's configured range.
+func (s *Ship) InWeaponRange(weaponID string, targetPos Vector3) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	w, ok := s.Weapons[weaponID]
+	if !ok {
+		return false
+	}
+	if w.Range <= 0 {
+		return true
+	}
+	d := Vector3{X: targetPos.X - s.Position.X, Y: targetPos.Y - s.Position.Y, Z: targetPos.Z - s.Position.Z}
+	return math.Sqrt(d.X*d.X+d.Y*d.Y+d.Z*d.Z) <= w.Range
+}
+
+// ---------------------------------------------------------------------------
+// Damage
+// ---------------------------------------------------------------------------
+
+// TakeDamage applies damage at a damage-section location. Shields absorb first;
+// overflow goes to hull, possibly starting fires / causing breaches.
 func (s *Ship) TakeDamage(amount float64, location string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.takeDamageLocked(amount, location, "kinetic")
+}
 
+// ApplyTypedDamage applies damage of a given type, which affects fire/overload
+// chances (mirrors internal/damage behaviour without the extra controller).
+func (s *Ship) ApplyTypedDamage(amount float64, location, damageType string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	switch damageType {
+	case "energy":
+		s.takeDamageLocked(amount*1.5, location, damageType)
+		s.causeSystemOverloadLocked()
+	case "explosive":
+		s.takeDamageLocked(amount, location, damageType)
+		for _, loc := range adjacentLocations(location) {
+			s.takeDamageLocked(amount*0.5, loc, damageType)
+		}
+		if math_rand() < 0.5 {
+			s.startFireLocked(location)
+		}
+	default:
+		s.takeDamageLocked(amount, location, damageType)
+	}
+	s.checkCascadingFailuresLocked(location)
+}
+
+func (s *Ship) takeDamageLocked(amount float64, location string, damageType string) {
 	if location == "" {
-		location = "forward"
+		location = SectionForward
 	}
 
-	emitter, hasEmitter := s.Shields.Emitters[location]
-	if hasEmitter && emitter.Strength > 0 {
-		emitter.Strength -= amount
-		if emitter.Strength < 0 {
-			overflow := -emitter.Strength
-			emitter.Strength = 0
-			amount = overflow
-		} else {
-			return
+	// Shields absorb.
+	if s.Shields.Enabled && s.breakerOn("shields") {
+		if emitter, has := s.Shields.Emitters[location]; has && emitter.Strength > 0 {
+			emitter.Strength -= amount
+			if emitter.Strength < 0 {
+				amount = -emitter.Strength
+				emitter.Strength = 0
+			} else {
+				return
+			}
 		}
 	}
 
@@ -579,22 +901,257 @@ func (s *Ship) TakeDamage(amount float64, location string) {
 			}
 		}
 		section.Health -= amount
+		if damageType == "kinetic" && math_rand() < 0.3 {
+			s.startFireLocked(location)
+		}
 		if section.Health <= 0 {
 			section.Health = 0
 			section.Breached = true
+			s.markCompartmentBreached(location)
 		}
 	}
 }
 
-func axisAngleToQuaternion(axis Vector3, angle float64) Quaternion {
-	halfAngle := angle * 0.5
-	s := math.Sin(halfAngle)
-	return Quaternion{
-		W: math.Cos(halfAngle),
-		X: axis.X * s,
-		Y: axis.Y * s,
-		Z: axis.Z * s,
+func (s *Ship) checkCascadingFailuresLocked(location string) {
+	section, ok := s.Hull.Sections[location]
+	if !ok {
+		return
 	}
+	if section.Health <= 0 && !section.Breached {
+		section.Breached = true
+		s.markCompartmentBreached(location)
+	}
+	if section.OnFire {
+		for _, adj := range adjacentLocations(location) {
+			if math_rand() < 0.1 {
+				s.startFireLocked(adj)
+			}
+		}
+	}
+}
+
+func (s *Ship) startFireLocked(location string) {
+	if sec, ok := s.Hull.Sections[location]; ok {
+		sec.OnFire = true
+	}
+	// Fire in a hull section burns in the compartment behind it.
+	if comp, ok := s.LifeSupport.Compartments[sectionCompartment(location)]; ok {
+		comp.OnFire = true
+	}
+}
+
+func (s *Ship) causeSystemOverloadLocked() {
+	for _, subsystem := range s.Subsystems {
+		if math_rand() < 0.1 {
+			subsystem.Health -= 20
+			if subsystem.Health <= 0 {
+				subsystem.Health = 0
+				subsystem.Enabled = false
+			}
+		}
+	}
+}
+
+func (s *Ship) markCompartmentBreached(sectionID string) {
+	compartment := sectionCompartment(sectionID)
+	if comp, ok := s.LifeSupport.Compartments[compartment]; ok {
+		comp.Breached = true
+	}
+}
+
+func sectionCompartment(sectionID string) string {
+	switch sectionID {
+	case SectionForward:
+		return "bridge"
+	case SectionAft:
+		return "engineering"
+	case SectionPort, SectionStarboard:
+		return "crew_quarters"
+	default:
+		return sectionID
+	}
+}
+
+func adjacentLocations(location string) []string {
+	switch location {
+	case SectionForward:
+		return []string{SectionPort, SectionStarboard, "bridge"}
+	case SectionAft:
+		return []string{SectionPort, SectionStarboard, "engineering"}
+	case SectionPort, SectionStarboard:
+		return []string{SectionForward, SectionAft}
+	default:
+		return nil
+	}
+}
+
+func math_rand() float64 {
+	return rand.Float64()
+}
+
+// Public mutation helpers for the action catalog (all lock-protected).
+
+func (s *Ship) StartFire(section string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.startFireLocked(section)
+}
+
+func (s *Ship) ExtinguishFire(section string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if sec, ok := s.Hull.Sections[section]; ok {
+		sec.OnFire = false
+	}
+	if comp, ok := s.LifeSupport.Compartments[section]; ok {
+		comp.OnFire = false
+	}
+}
+
+func (s *Ship) SealBreach(section string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if sec, ok := s.Hull.Sections[section]; ok {
+		sec.Breached = false
+		if sec.Health > 0 {
+			sec.Armor = math.Min(sec.Armor, sec.MaxArmor)
+		}
+	}
+	if comp, ok := s.LifeSupport.Compartments[sectionCompartment(section)]; ok {
+		comp.Breached = false
+		comp.Pressure = comp.MaxPressure
+		comp.Oxygen = comp.MaxOxygen
+	}
+}
+
+// RepairSection restores hull health and clears damage state. A negative amount
+// removes health instead, which is how tests and GM tooling tear a section down.
+func (s *Ship) RepairSection(section string, amount float64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if sec, ok := s.Hull.Sections[section]; ok {
+		sec.Health = math.Max(0, math.Min(sec.Health+amount, sec.MaxHealth))
+		if sec.Health <= 0 {
+			sec.Breached = true
+			s.markCompartmentBreached(section)
+			return
+		}
+		sec.Breached = false
+		sec.OnFire = false
+	}
+}
+
+func (s *Ship) SetTarget(id string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.TargetID = id
+}
+
+// ---------------------------------------------------------------------------
+// Clone (deep copy for snapshots)
+// ---------------------------------------------------------------------------
+
+// Clone returns a deep copy of the ship for snapshotting.
+func (s *Ship) Clone() *Ship {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	cp := &Ship{
+		ID:              s.ID,
+		ClassID:         s.ClassID,
+		Name:            s.Name,
+		IsPlayer:        s.IsPlayer,
+		Faction:         s.Faction,
+		AlertLevel:      s.AlertLevel,
+		Position:        s.Position,
+		Velocity:        s.Velocity,
+		Rotation:        s.Rotation,
+		AngularVelocity: s.AngularVelocity,
+		Throttle:        s.Throttle,
+		ThrustAxis:      s.ThrustAxis,
+		Mass:            s.Mass,
+		MaxSpeed:        s.MaxSpeed,
+		Acceleration:    s.Acceleration,
+		TurnRate:        s.TurnRate,
+		TargetID:        s.TargetID,
+		Docked:          s.Docked,
+	}
+
+	cp.Engines = make(map[string]*Engine, len(s.Engines))
+	for k, v := range s.Engines {
+		e := *v
+		cp.Engines[k] = &e
+	}
+	cp.Weapons = make(map[string]*Weapon, len(s.Weapons))
+	for k, v := range s.Weapons {
+		w := *v
+		cp.Weapons[k] = &w
+	}
+
+	cp.Shields = &ShieldSystem{
+		Emitters:     make(map[string]*ShieldEmitter, len(s.Shields.Emitters)),
+		RechargeRate: s.Shields.RechargeRate,
+		PowerDraw:    s.Shields.PowerDraw,
+		Enabled:      s.Shields.Enabled,
+	}
+	for k, v := range s.Shields.Emitters {
+		e := *v
+		cp.Shields.Emitters[k] = &e
+	}
+
+	cp.Hull = &HullSystem{Sections: make(map[string]*HullSection, len(s.Hull.Sections))}
+	for k, v := range s.Hull.Sections {
+		sec := *v
+		cp.Hull.Sections[k] = &sec
+	}
+
+	cp.Subsystems = make(map[string]*Subsystem, len(s.Subsystems))
+	for k, v := range s.Subsystems {
+		sub := *v
+		cp.Subsystems[k] = &sub
+	}
+
+	cp.LaunchBays = make(map[string]*LaunchBay, len(s.LaunchBays))
+	for k, v := range s.LaunchBays {
+		b := *v
+		cp.LaunchBays[k] = &b
+	}
+
+	cp.Power = &PowerSystem{
+		MaxCapacity:     s.Power.MaxCapacity,
+		CurrentCapacity: s.Power.CurrentCapacity,
+		Generation:      s.Power.Generation,
+		Consumption:     s.Power.Consumption,
+		Breakers:        make(map[string]*Breaker, len(s.Power.Breakers)),
+	}
+	for k, v := range s.Power.Breakers {
+		b := *v
+		cp.Power.Breakers[k] = &b
+	}
+
+	cp.LifeSupport = &LifeSupportSystem{Compartments: make(map[string]*Compartment, len(s.LifeSupport.Compartments))}
+	for k, v := range s.LifeSupport.Compartments {
+		c := *v
+		cp.LifeSupport.Compartments[k] = &c
+	}
+
+	cp.Crew = make(map[string]*CrewMember, len(s.Crew))
+	for k, v := range s.Crew {
+		c := *v
+		cp.Crew[k] = &c
+	}
+
+	return cp
+}
+
+// ---------------------------------------------------------------------------
+// Quaternion math
+// ---------------------------------------------------------------------------
+
+func axisAngleToQuaternion(axis Vector3, angle float64) Quaternion {
+	half := angle * 0.5
+	s := math.Sin(half)
+	return Quaternion{W: math.Cos(half), X: axis.X * s, Y: axis.Y * s, Z: axis.Z * s}
 }
 
 func multiplyQuaternions(q1, q2 Quaternion) Quaternion {
@@ -609,12 +1166,17 @@ func multiplyQuaternions(q1, q2 Quaternion) Quaternion {
 func normalizeQuaternion(q Quaternion) Quaternion {
 	mag := math.Sqrt(q.W*q.W + q.X*q.X + q.Y*q.Y + q.Z*q.Z)
 	if mag < 0.0001 {
-		return Quaternion{1, 0, 0, 0}
+		return Quaternion{W: 1, X: 0, Y: 0, Z: 0}
 	}
-	return Quaternion{
-		W: q.W / mag,
-		X: q.X / mag,
-		Y: q.Y / mag,
-		Z: q.Z / mag,
+	return Quaternion{W: q.W / mag, X: q.X / mag, Y: q.Y / mag, Z: q.Z / mag}
+}
+
+func clampf(v, lo, hi float64) float64 {
+	if v < lo {
+		return lo
 	}
+	if v > hi {
+		return hi
+	}
+	return v
 }

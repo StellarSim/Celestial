@@ -1,188 +1,463 @@
+# Physical panel mappings.
+#
+# Canonical panel IDs mapped onto the shared action
+# catalog in backend/internal/input/actions.go. The `actions` keys are the
+# panel-local input names (what the physical button is called). Each maps to a
+# (system, action) pair that exists in the catalog, with `value` carrying any
+# static target data.
+
 panels:
-  engineer_power_1:
-    id: engineer_power_1
+  engineer_power_main:
+    id: engineer_power_main
     role: engineer
     actions:
-      breaker_1:
-        system: breaker_main_power
+      breaker_reactor:
+        system: power
         action: toggle_breaker
-      breaker_2:
-        system: breaker_weapons
+        value: {breaker: reactor}
+      breaker_engines:
+        system: power
         action: toggle_breaker
-      breaker_3:
-        system: breaker_shields
+        value: {breaker: engines}
+      breaker_shields:
+        system: power
         action: toggle_breaker
-      breaker_4:
-        system: breaker_life_support
+        value: {breaker: shields}
+      breaker_weapons:
+        system: power
         action: toggle_breaker
+        value: {breaker: weapons}
+      breaker_sensors:
+        system: power
+        action: toggle_breaker
+        value: {breaker: sensors}
+      breaker_comms:
+        system: power
+        action: toggle_breaker
+        value: {breaker: comms}
+      breaker_life_support:
+        system: power
+        action: toggle_breaker
+        value: {breaker: life_support}
+      breaker_navigation:
+        system: power
+        action: toggle_breaker
+        value: {breaker: navigation}
 
-  engineer_damage_1:
-    id: engineer_damage_1
+  engineer_damage_main:
+    id: engineer_damage_main
     role: engineer
     actions:
       repair_forward:
-        system: forward
+        system: damage
         action: repair
+        value: {section: forward}
       repair_aft:
-        system: aft
+        system: damage
         action: repair
+        value: {section: aft}
+      repair_port:
+        system: damage
+        action: repair
+        value: {section: port}
+      repair_starboard:
+        system: damage
+        action: repair
+        value: {section: starboard}
       extinguish_forward:
-        system: forward
-        action: extinguish_fire
+        system: damage
+        action: extinguish
+        value: {section: forward}
       extinguish_aft:
-        system: aft
-        action: extinguish_fire
-      seal_breach_forward:
-        system: forward
+        system: damage
+        action: extinguish
+        value: {section: aft}
+      extinguish_port:
+        system: damage
+        action: extinguish
+        value: {section: port}
+      extinguish_starboard:
+        system: damage
+        action: extinguish
+        value: {section: starboard}
+      seal_forward:
+        system: damage
         action: seal_breach
+        value: {section: forward}
+      seal_aft:
+        system: damage
+        action: seal_breach
+        value: {section: aft}
+      seal_port:
+        system: damage
+        action: seal_breach
+        value: {section: port}
+      seal_starboard:
+        system: damage
+        action: seal_breach
+        value: {section: starboard}
 
-  flight_controls_1:
-    id: flight_controls_1
+  engineer_systems:
+    id: engineer_systems
+    role: engineer
+    actions:
+      deploy_alpha:
+        system: repair
+        action: deploy_team
+        value: {team: 0}
+      deploy_beta:
+        system: repair
+        action: deploy_team
+        value: {team: 1}
+      deploy_gamma:
+        system: repair
+        action: deploy_team
+        value: {team: 2}
+      recall_alpha:
+        system: repair
+        action: recall_team
+        value: {team: 0}
+      recall_beta:
+        system: repair
+        action: recall_team
+        value: {team: 1}
+      recall_gamma:
+        system: repair
+        action: recall_team
+        value: {team: 2}
+
+  flight_main:
+    id: flight_main
     role: flight
     actions:
-      dock_release:
-        system: docking_clamps
-        action: release
+      throttle_up:
+        system: flight
+        action: set_throttle
+        value: {throttle: 0.25}
+      throttle_half:
+        system: flight
+        action: set_throttle
+        value: {throttle: 0.5}
+      throttle_full:
+        system: flight
+        action: set_throttle
+        value: {throttle: 1.0}
+      throttle_all_stop:
+        system: flight
+        action: set_throttle
+        value: {throttle: 0.0}
+      throttle_half_reverse:
+        system: flight
+        action: set_throttle
+        value: {throttle: -0.5}
+      throttle_full_reverse:
+        system: flight
+        action: set_throttle
+        value: {throttle: -1.0}
+      turn_port:
+        system: flight
+        action: set_turn
+        value: {rate: -0.5}
+      turn_starboard:
+        system: flight
+        action: set_turn
+        value: {rate: 0.5}
+      turn_steady:
+        system: flight
+        action: set_turn
+        value: {rate: 0.0}
 
-  weapons_torpedo_1:
-    id: weapons_torpedo_1
+  flight_navigation:
+    id: flight_navigation
+    role: flight
+    actions:
+      release_docking:
+        system: docking
+        action: release
+      autopilot_engage:
+        system: navigation
+        action: engage
+      autopilot_disengage:
+        system: navigation
+        action: disengage
+      clear_waypoint:
+        system: navigation
+        action: clear_waypoint
+
+  weapons_torpedos_1:
+    id: weapons_torpedos_1
     role: weapons
     actions:
       arm_bay_1:
-        system: torpedo_bay_1
+        system: torpedo
         action: arm
+        value: {bay_id: 1, armed: true}
+      disarm_bay_1:
+        system: torpedo
+        action: arm
+        value: {bay_id: 1, armed: false}
       load_bay_1:
-        system: torpedo_bay_1
+        system: torpedo
         action: load
+        value: {bay_id: 1}
       lock_bay_1:
-        system: torpedo_bay_1
+        system: torpedo
         action: lock
+        value: {bay_id: 1, locked: true}
+      unlock_bay_1:
+        system: torpedo
+        action: lock
+        value: {bay_id: 1, locked: false}
       fire_bay_1:
-        system: torpedo_bay_1
+        system: torpedo
         action: fire
-
-  weapons_torpedo_2:
-    id: weapons_torpedo_2
-    role: weapons
-    actions:
+        value: {bay_id: 1}
       arm_bay_2:
-        system: torpedo_bay_2
+        system: torpedo
         action: arm
+        value: {bay_id: 2, armed: true}
+      disarm_bay_2:
+        system: torpedo
+        action: arm
+        value: {bay_id: 2, armed: false}
       load_bay_2:
-        system: torpedo_bay_2
+        system: torpedo
         action: load
+        value: {bay_id: 2}
       lock_bay_2:
-        system: torpedo_bay_2
+        system: torpedo
         action: lock
+        value: {bay_id: 2, locked: true}
+      unlock_bay_2:
+        system: torpedo
+        action: lock
+        value: {bay_id: 2, locked: false}
       fire_bay_2:
-        system: torpedo_bay_2
+        system: torpedo
         action: fire
+        value: {bay_id: 2}
 
-  weapons_torpedo_3:
-    id: weapons_torpedo_3
+  weapons_torpedos_2:
+    id: weapons_torpedos_2
     role: weapons
     actions:
       arm_bay_3:
-        system: torpedo_bay_3
+        system: torpedo
         action: arm
+        value: {bay_id: 3, armed: true}
+      disarm_bay_3:
+        system: torpedo
+        action: arm
+        value: {bay_id: 3, armed: false}
       load_bay_3:
-        system: torpedo_bay_3
+        system: torpedo
         action: load
+        value: {bay_id: 3}
       lock_bay_3:
-        system: torpedo_bay_3
+        system: torpedo
         action: lock
+        value: {bay_id: 3, locked: true}
+      unlock_bay_3:
+        system: torpedo
+        action: lock
+        value: {bay_id: 3, locked: false}
       fire_bay_3:
-        system: torpedo_bay_3
+        system: torpedo
         action: fire
-
-  weapons_torpedo_4:
-    id: weapons_torpedo_4
-    role: weapons
-    actions:
+        value: {bay_id: 3}
       arm_bay_4:
-        system: torpedo_bay_4
+        system: torpedo
         action: arm
+        value: {bay_id: 4, armed: true}
+      disarm_bay_4:
+        system: torpedo
+        action: arm
+        value: {bay_id: 4, armed: false}
       load_bay_4:
-        system: torpedo_bay_4
+        system: torpedo
         action: load
+        value: {bay_id: 4}
       lock_bay_4:
-        system: torpedo_bay_4
+        system: torpedo
         action: lock
+        value: {bay_id: 4, locked: true}
+      unlock_bay_4:
+        system: torpedo
+        action: lock
+        value: {bay_id: 4, locked: false}
       fire_bay_4:
-        system: torpedo_bay_4
+        system: torpedo
         action: fire
+        value: {bay_id: 4}
 
   weapons_phasers:
     id: weapons_phasers
     role: weapons
     actions:
-      fire_phaser_1:
-        system: phaser_array_1
+      fire_array_1:
+        system: phaser
         action: fire
-      fire_phaser_2:
-        system: phaser_array_2
+        value: {array_id: phaser_array_1}
+      fire_array_2:
+        system: phaser
         action: fire
+        value: {array_id: phaser_array_2}
+      auto_fire_on:
+        system: torpedo
+        action: set_auto_fire
+        value: {enabled: true}
+      auto_fire_off:
+        system: torpedo
+        action: set_auto_fire
+        value: {enabled: false}
 
-  captain_alerts:
-    id: captain_alerts
+  captain_command:
+    id: captain_command
     role: captain
     actions:
-      red_alert:
+      alert_normal:
         system: alert
-        action: set
-      yellow_alert:
+        action: set_level
+        value: {level: normal}
+      alert_yellow:
         system: alert
-        action: set
-      green_alert:
+        action: set_level
+        value: {level: yellow}
+      alert_red:
         system: alert
-        action: set
+        action: set_level
+        value: {level: red}
+      self_destruct_arm:
+        system: self_destruct
+        action: arm
+      self_destruct_abort:
+        system: self_destruct
+        action: abort
+      clear_orders:
+        system: command
+        action: clear_orders
 
-  comms_hailing:
-    id: comms_hailing
-    role: comms
+  captain_status:
+    id: captain_status
+    role: captain
     actions:
-      hail:
-        system: hailing
-        action: send
+      broadcast_all:
+        system: comms
+        action: broadcast
+
+  comms_main:
+    id: comms_main
+    role: communications
+    actions:
+      hail_selected:
+        system: comms
+        action: hail
+      freq_emergency:
+        system: comms
+        action: set_frequency
+        value: {frequency: 121.5}
+      freq_military:
+        system: comms
+        action: set_frequency
+        value: {frequency: 243.0}
+      freq_civilian:
+        system: comms
+        action: set_frequency
+        value: {frequency: 156.8}
+      scan_selected:
+        system: comms
+        action: initiate_scan
 
   operations_power:
     id: operations_power
     role: operations
     actions:
-      route_power_weapons:
-        system: weapons
-        action: route_power
-      route_power_shields:
+      shields_up:
         system: shields
-        action: route_power
-      route_power_engines:
-        system: engines
-        action: route_power
-      toggle_shields:
+        action: raise
+      shields_down:
         system: shields
-        action: toggle
+        action: lower
+      shield_freq_up:
+        system: shields
+        action: rotate_frequency
+
+  operations_resources:
+    id: operations_resources
+    role: operations
+    actions:
+      transporter_beam_up:
+        system: transporter
+        action: beam_up
+      transporter_beam_down:
+        system: transporter
+        action: beam_down
+      transporter_emergency:
+        system: transporter
+        action: emergency
 
   relay_sensors:
     id: relay_sensors
     role: relay
     actions:
-      scan_target:
-        system: scan
-        action: initiate
-      sensor_mode_tactical:
+      sensor_passive:
         system: sensors
         action: set_mode
-      sensor_mode_science:
+        value: {mode: passive}
+      sensor_active:
         system: sensors
         action: set_mode
+        value: {mode: active}
+      sensor_deep:
+        system: sensors
+        action: set_mode
+        value: {mode: deep_scan}
+      mark_target:
+        system: sensors
+        action: mark_target
+      launch_probe:
+        system: sensors
+        action: launch_probe
 
-  first_officer_misc:
-    id: first_officer_misc
+  relay_scanning:
+    id: relay_scanning
+    role: relay
+    actions:
+      scan_selected:
+        system: sensors
+        action: initiate_scan
+      deep_scan_selected:
+        system: sensors
+        action: deep_scan
+      set_waypoint:
+        system: navigation
+        action: set_waypoint
+
+  first_officer_main:
+    id: first_officer_main
     role: first_officer
     actions:
-      toggle_system_1:
-        system: navigation
-        action: toggle
-      toggle_system_2:
-        system: life_support
-        action: toggle
+      deploy_team_1:
+        system: crew
+        action: deploy_team
+        value: {team: 0}
+      deploy_team_2:
+        system: crew
+        action: deploy_team
+        value: {team: 1}
+      deploy_team_3:
+        system: crew
+        action: deploy_team
+        value: {team: 2}
+      recall_team_1:
+        system: crew
+        action: recall_team
+        value: {team: 0}
+      recall_team_2:
+        system: crew
+        action: recall_team
+        value: {team: 1}
+      recall_team_3:
+        system: crew
+        action: recall_team
+        value: {team: 2}

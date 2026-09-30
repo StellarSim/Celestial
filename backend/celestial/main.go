@@ -13,20 +13,34 @@ import (
 	"time"
 )
 
+func resolvePath(p string) string {
+	candidates := []string{
+		p,
+		"backend/" + p,
+		"../backend/" + p,
+	}
+	for _, c := range candidates {
+		if _, err := os.Stat(c); err == nil {
+			return c
+		}
+	}
+	return p
+}
+
 func main() {
 	log.Println("Celestial Bridge Simulator - Starting")
 
-	cfg, err := config.LoadConfig("configs/server.yaml")
+	cfg, err := config.LoadConfig(resolvePath("configs/server.yaml"))
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	shipClasses, err := config.LoadShipClasses("configs/ships")
+	shipClasses, err := config.LoadShipClasses(resolvePath("configs/ships"))
 	if err != nil {
 		log.Fatalf("Failed to load ship classes: %v", err)
 	}
 
-	panelMappings, err := config.LoadPanelMappings("configs/panels.yaml")
+	panelMappings, err := config.LoadPanelMappings(resolvePath("configs/panels.yaml"))
 	if err != nil {
 		log.Fatalf("Failed to load panel mappings: %v", err)
 	}
@@ -35,16 +49,19 @@ func main() {
 	go sim.Start()
 
 	missionEngine := mission.NewEngine(sim)
-	if err := missionEngine.LoadMissions("missions"); err != nil {
+	if err := missionEngine.LoadMissions(resolvePath("missions")); err != nil {
 		log.Fatalf("Failed to load missions: %v", err)
 	}
+	sim.OnEvent = missionEngine.TriggerEvent
 
 	gmController := gm.NewController(sim, missionEngine)
 
 	wsServer := network.NewWebSocketServer(cfg.WebSocketPort, sim, gmController)
+	missionEngine.OnEvent = wsServer.BroadcastMissionEvent
+	sim.OnTick = wsServer.ActionRouter().Update
 	go wsServer.Start()
 
-	tcpServer := network.NewTCPServer(cfg.TCPPort, sim, panelMappings)
+	tcpServer := network.NewTCPServer(cfg.TCPPort, sim, panelMappings, wsServer.ActionRouter())
 	go tcpServer.Start()
 
 	log.Printf("WebSocket server listening on :%d", cfg.WebSocketPort)
@@ -59,6 +76,7 @@ func main() {
 	sim.Stop()
 	wsServer.Stop()
 	tcpServer.Stop()
+	gmController.Stop()
 	time.Sleep(100 * time.Millisecond)
 	log.Println("Shutdown complete")
 }

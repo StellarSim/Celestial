@@ -82,7 +82,7 @@ func _update_display() -> void:
 		return
 	
 	_update_contact_list()
-	_update_frequency_display()
+	_update_frequency_display(ship)
 	_update_signal_status(ship)
 
 
@@ -108,7 +108,7 @@ func _update_contact_list() -> void:
 		var distance := player_pos.distance_to(ship_pos)
 		
 		var faction_color: Color = Colors.get_faction_color(ship.faction)
-		var display_text := "%s [%.1f km]" % [ship.display_name, distance / 1000.0]
+		var display_text := "%s [%.1f km]" % [ship.name, distance / 1000.0]
 		
 		var idx := contact_list.add_item(display_text)
 		contact_list.set_item_custom_fg_color(idx, faction_color)
@@ -136,25 +136,25 @@ func _passes_filter(ship: GameState.ShipState) -> bool:
 	return true
 
 
-func _update_frequency_display() -> void:
+func _update_frequency_display(ship: GameState.ShipState) -> void:
+	# The tuned frequency is server state.
+	_current_frequency = ship.communications.frequency
+	frequency_slider.set_value_no_signal(_current_frequency)
 	freq_value.text = "%.1f MHz" % _current_frequency
 
 
 func _update_signal_status(ship: GameState.ShipState) -> void:
-	# Calculate signal strength based on comms system health
-	var comms_enabled := ship.power_breakers.get("comms", true)
-	var signal_strength := 100.0 if comms_enabled else 0.0
+	var comms_online: bool = ship.communications.enabled and ship.power_breakers.get("comms", true)
+	var signal_strength := 100.0 if comms_online else 0.0
 	
 	signal_bar.value = signal_strength
 	signal_bar.modulate = Colors.get_health_color(signal_strength / 100.0)
 	
-	# Check for jamming (simulated)
-	var is_jammed: bool = false  # Would come from game state
-	if is_jammed:
-		jamming_value.text = "JAMMING DETECTED"
-		jamming_value.add_theme_color_override("font_color", Colors.ALERT_RED)
+	if ship.communications.hailing:
+		jamming_value.text = "HAILING: %s" % ship.communications.hail_target
+		jamming_value.add_theme_color_override("font_color", Colors.ALERT_YELLOW)
 	else:
-		jamming_value.text = "NONE DETECTED"
+		jamming_value.text = "NO HAIL"
 		jamming_value.add_theme_color_override("font_color", Colors.STATUS_ONLINE)
 
 
@@ -181,7 +181,7 @@ func _on_hail() -> void:
 		"frequency": _current_frequency
 	})
 	
-	_add_log("OUTGOING", "Hailing %s on %.1f MHz..." % [target.display_name, _current_frequency])
+	_add_log("OUTGOING", "Hailing %s on %.1f MHz..." % [target.name, _current_frequency])
 
 
 func _on_scan() -> void:
@@ -192,8 +192,8 @@ func _on_scan() -> void:
 	if target == null:
 		return
 	
-	NetworkClient.send_action("comms", "scan", {"target_id": _selected_contact_id})
-	_add_log("SENSORS", "Initiating deep scan of %s..." % target.display_name)
+	NetworkClient.send_action("comms", "deep_scan", {"target_id": _selected_contact_id})
+	_add_log("SENSORS", "Initiating deep scan of %s..." % target.name)
 
 
 func _on_frequency_changed(value: float) -> void:
@@ -216,7 +216,7 @@ func _on_identify() -> void:
 		"type": "identify",
 		"frequency": _current_frequency
 	})
-	_add_log("OUTGOING", "This is %s, identifying on all frequencies." % ship.display_name)
+	_add_log("OUTGOING", "This is %s, identifying on all frequencies." % ship.name)
 
 
 func _on_request_dock() -> void:
@@ -224,8 +224,8 @@ func _on_request_dock() -> void:
 		_add_log("ERROR", "No target selected for docking request.")
 		return
 	
-	NetworkClient.send_action("comms", "transmit", {
-		"type": "request_dock",
+	NetworkClient.send_action("comms", "send_message", {
+		"message": "Requesting docking clearance",
 		"target_id": _selected_contact_id,
 		"frequency": _current_frequency
 	})
@@ -233,8 +233,8 @@ func _on_request_dock() -> void:
 
 
 func _on_mayday() -> void:
-	NetworkClient.send_action("comms", "transmit", {
-		"type": "mayday",
+	NetworkClient.send_action("comms", "broadcast", {
+		"message": "MAYDAY MAYDAY MAYDAY",
 		"frequency": PRESET_FREQUENCIES.emergency
 	})
 	_set_frequency(PRESET_FREQUENCIES.emergency)
@@ -242,8 +242,8 @@ func _on_mayday() -> void:
 
 
 func _on_surrender() -> void:
-	NetworkClient.send_action("comms", "transmit", {
-		"type": "surrender",
+	NetworkClient.send_action("comms", "broadcast", {
+		"message": "We are surrendering. Ceasing all hostile actions.",
 		"frequency": _current_frequency
 	})
 	_add_log("OUTGOING", "[color=yellow]We are surrendering. Ceasing all hostile actions.[/color]")
@@ -254,8 +254,7 @@ func _on_send_custom() -> void:
 	if message.is_empty():
 		return
 	
-	NetworkClient.send_action("comms", "transmit", {
-		"type": "custom",
+	NetworkClient.send_action("comms", "send_message", {
 		"message": message,
 		"frequency": _current_frequency,
 		"target_id": _selected_contact_id
@@ -290,10 +289,12 @@ func _on_state_updated() -> void:
 	pass  # Updates handled in _process
 
 
-func _on_mission_event(event: Dictionary) -> void:
-	var event_type: String = event.get("type", "")
+func _on_mission_event(event_name: String, data: Dictionary) -> void:
+	var event_type: String = event_name
+	if data.has("type"):
+		event_type = str(data.get("type", event_name))
 	
 	if event_type == "incoming_comm":
-		var source: String = event.get("source", "UNKNOWN")
-		var message: String = event.get("message", "")
+		var source: String = str(data.get("source", "UNKNOWN"))
+		var message: String = str(data.get("message", ""))
 		_add_log("INCOMING", "[b]%s:[/b] %s" % [source, message])

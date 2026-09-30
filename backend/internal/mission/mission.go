@@ -5,6 +5,7 @@ import (
 	"celestial/internal/simulation"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 
@@ -16,6 +17,7 @@ type Engine struct {
 	missions  map[string]*Mission
 	active    *Mission
 	L         *lua.LState
+	OnEvent   func(event string, data map[string]interface{})
 }
 
 type Mission struct {
@@ -79,6 +81,9 @@ func (e *Engine) StartMission(missionID string) error {
 	}
 
 	e.active = mission
+	// A restart begins from a clean objective list.
+	mission.Objectives = make([]Objective, 0)
+	mission.State = make(map[string]interface{})
 	e.L = lua.NewState()
 	defer func() {
 		if r := recover(); r != nil {
@@ -91,6 +96,8 @@ func (e *Engine) StartMission(missionID string) error {
 	if err := e.L.DoString(mission.Script); err != nil {
 		return fmt.Errorf("executing mission script: %w", err)
 	}
+
+	e.readMissionTable(mission)
 
 	if err := e.L.CallByParam(lua.P{
 		Fn:      e.L.GetGlobal("on_start"),
@@ -153,6 +160,83 @@ func (e *Engine) registerAPI() {
 	e.L.SetGlobal("mission_win", e.L.NewFunction(e.luaMissionWin))
 	e.L.SetGlobal("mission_lose", e.L.NewFunction(e.luaMissionLose))
 	e.L.SetGlobal("log", e.L.NewFunction(e.luaLog))
+	e.L.SetGlobal("ship_exists", e.L.NewFunction(e.luaShipExists))
+	e.L.SetGlobal("ship_health", e.L.NewFunction(e.luaShipHealth))
+	e.L.SetGlobal("ship_distance", e.L.NewFunction(e.luaShipDistance))
+	e.L.SetGlobal("player_ship", e.L.NewFunction(e.luaPlayerShip))
+	e.L.SetGlobal("get_object", e.L.NewFunction(e.luaGetObject))
+}
+
+// luaShipExists reports whether a ship is still in the simulation.
+func (e *Engine) luaShipExists(L *lua.LState) int {
+	L.Push(lua.LBool(e.simulator.GetShip(L.ToString(1)) != nil))
+	return 1
+}
+
+// luaShipHealth returns a ship's remaining hull as a 0..1 fraction.
+func (e *Engine) luaShipHealth(L *lua.LState) int {
+	sh := e.simulator.GetShip(L.ToString(1))
+	if sh == nil {
+		L.Push(lua.LNumber(0))
+		return 1
+	}
+	total, max := 0.0, 0.0
+	for _, section := range sh.HullSnapshot() {
+		total += section.Health
+		max += section.MaxHealth
+	}
+	if max <= 0 {
+		L.Push(lua.LNumber(0))
+		return 1
+	}
+	L.Push(lua.LNumber(total / max))
+	return 1
+}
+
+// luaShipDistance returns the distance between two ships in sim meters.
+func (e *Engine) luaShipDistance(L *lua.LState) int {
+	a := e.simulator.GetShip(L.ToString(1))
+	b := e.simulator.GetShip(L.ToString(2))
+	if a == nil || b == nil {
+		L.Push(lua.LNumber(-1))
+		return 1
+	}
+	L.Push(lua.LNumber(distance(a.GetPosition(), b.GetPosition())))
+	return 1
+}
+
+// luaPlayerShip returns the id of the player ship, if any.
+func (e *Engine) luaPlayerShip(L *lua.LState) int {
+	for _, sh := range e.simulator.GetAllShips() {
+		if sh.IsPlayer {
+			L.Push(lua.LString(sh.ID))
+			return 1
+		}
+	}
+	L.Push(lua.LNil)
+	return 1
+}
+
+// luaGetObject returns {x, y, z} for a spawned object.
+func (e *Engine) luaGetObject(L *lua.LState) int {
+	obj, ok := e.simulator.GetObject(L.ToString(1))
+	if !ok {
+		L.Push(lua.LNil)
+		return 1
+	}
+	tbl := L.NewTable()
+	L.SetField(tbl, "x", lua.LNumber(obj.Position.X))
+	L.SetField(tbl, "y", lua.LNumber(obj.Position.Y))
+	L.SetField(tbl, "z", lua.LNumber(obj.Position.Z))
+	L.Push(tbl)
+	return 1
+}
+
+func distance(a, b ship.Vector3) float64 {
+	dx := a.X - b.X
+	dy := a.Y - b.Y
+	dz := a.Z - b.Z
+	return math.Sqrt(dx*dx + dy*dy + dz*dz)
 }
 
 func (e *Engine) luaSpawnShip(L *lua.LState) int {
@@ -162,14 +246,26 @@ func (e *Engine) luaSpawnShip(L *lua.LState) int {
 	isPlayer := L.ToBool(4)
 	posTable := L.ToTable(5)
 
-	x := posTable.RawGetString("x").(lua.LNumber)
-	y := posTable.RawGetString("y").(lua.LNumber)
-	z := posTable.RawGetString("z").(lua.LNumber)
+	x, ok := checkedNumber(posTable, "x")
+	if !ok {
+		L.Push(lua.LBool(false))
+		return 1
+	}
+	y, ok := checkedNumber(posTable, "y")
+	if !ok {
+		L.Push(lua.LBool(false))
+		return 1
+	}
+	z, ok := checkedNumber(posTable, "z")
+	if !ok {
+		L.Push(lua.LBool(false))
+		return 1
+	}
 
 	position := ship.Vector3{
-		X: float64(x),
-		Y: float64(y),
-		Z: float64(z),
+		X: x,
+		Y: y,
+		Z: z,
 	}
 
 	err := e.simulator.SpawnShip(shipID, classID, name, isPlayer, position)
@@ -193,14 +289,23 @@ func (e *Engine) luaSpawnObject(L *lua.LState) int {
 	objectType := L.ToString(2)
 	posTable := L.ToTable(3)
 
-	x := posTable.RawGetString("x").(lua.LNumber)
-	y := posTable.RawGetString("y").(lua.LNumber)
-	z := posTable.RawGetString("z").(lua.LNumber)
+	x, ok := checkedNumber(posTable, "x")
+	if !ok {
+		return 0
+	}
+	y, ok := checkedNumber(posTable, "y")
+	if !ok {
+		return 0
+	}
+	z, ok := checkedNumber(posTable, "z")
+	if !ok {
+		return 0
+	}
 
 	position := ship.Vector3{
-		X: float64(x),
-		Y: float64(y),
-		Z: float64(z),
+		X: x,
+		Y: y,
+		Z: z,
 	}
 
 	e.simulator.SpawnObject(objectID, objectType, position)
@@ -226,19 +331,32 @@ func (e *Engine) luaDamageShip(L *lua.LState) int {
 	return 0
 }
 
+// luaSetObjective adds an objective, or updates the description of an existing
+// one with the same id.
 func (e *Engine) luaSetObjective(L *lua.LState) int {
 	objID := L.ToString(1)
 	description := L.ToString(2)
 
-	if e.active != nil {
-		e.active.Objectives = append(e.active.Objectives, Objective{
-			ID:          objID,
-			Description: description,
-			Completed:   false,
-		})
-		log.Printf("Objective set: %s - %s", objID, description)
+	if e.active == nil {
+		return 0
 	}
 
+	for i := range e.active.Objectives {
+		if e.active.Objectives[i].ID == objID {
+			e.active.Objectives[i].Description = description
+			log.Printf("Objective updated: %s - %s", objID, description)
+			e.emitEvent("objective_set", map[string]interface{}{"objective_id": objID})
+			return 0
+		}
+	}
+
+	e.active.Objectives = append(e.active.Objectives, Objective{
+		ID:          objID,
+		Description: description,
+		Completed:   false,
+	})
+	log.Printf("Objective set: %s - %s", objID, description)
+	e.emitEvent("objective_set", map[string]interface{}{"objective_id": objID})
 	return 0
 }
 
@@ -250,6 +368,7 @@ func (e *Engine) luaCompleteObjective(L *lua.LState) int {
 			if e.active.Objectives[i].ID == objID {
 				e.active.Objectives[i].Completed = true
 				log.Printf("Objective completed: %s", objID)
+				e.emitEvent("objective_complete", map[string]interface{}{"objective_id": objID})
 				break
 			}
 		}
@@ -260,12 +379,14 @@ func (e *Engine) luaCompleteObjective(L *lua.LState) int {
 
 func (e *Engine) luaMissionWin(L *lua.LState) int {
 	log.Println("Mission completed successfully!")
+	e.emitEvent("mission_win", map[string]interface{}{})
 	return 0
 }
 
 func (e *Engine) luaMissionLose(L *lua.LState) int {
 	reason := L.ToString(1)
 	log.Printf("Mission failed: %s", reason)
+	e.emitEvent("mission_lose", map[string]interface{}{"reason": reason})
 	return 0
 }
 
@@ -296,4 +417,47 @@ func (e *Engine) GetActiveMission() *Mission {
 
 func (e *Engine) GetMissions() map[string]*Mission {
 	return e.missions
+}
+
+func (e *Engine) emitEvent(event string, data map[string]interface{}) {
+	if data == nil {
+		data = map[string]interface{}{}
+	}
+	if e.OnEvent != nil {
+		e.OnEvent(event, data)
+	}
+}
+
+func (e *Engine) readMissionTable(m *Mission) {
+	if e.L == nil {
+		return
+	}
+	tbl := e.L.GetGlobal("mission")
+	mt, ok := tbl.(*lua.LTable)
+	if !ok {
+		return
+	}
+	if v := mt.RawGetString("name"); v != lua.LNil {
+		if s, ok := v.(lua.LString); ok {
+			m.Name = string(s)
+		}
+	}
+	if m.Name == "" {
+		m.Name = m.ID
+	}
+	if v := mt.RawGetString("description"); v != lua.LNil {
+		if s, ok := v.(lua.LString); ok {
+			m.Description = string(s)
+		}
+	}
+}
+
+func checkedNumber(tbl *lua.LTable, key string) (float64, bool) {
+	v := tbl.RawGetString(key)
+	n, ok := v.(lua.LNumber)
+	if !ok {
+		log.Printf("Mission: expected number for %q, got %s", key, v.Type().String())
+		return 0, false
+	}
+	return float64(n), true
 }

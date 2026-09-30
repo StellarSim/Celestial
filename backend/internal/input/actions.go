@@ -4,9 +4,15 @@ import (
 	"celestial/internal/ship"
 	"celestial/internal/simulation"
 	"fmt"
-	"log"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
 )
 
+// Action is a catalog entry as it arrives on the wire. `Value` carries the
+// target object, e.g. {"section":"forward"} or {"bay_id":2}. Handlers must read
+// the target from Value, never from System.
 type Action struct {
 	Role   string
 	System string
@@ -14,458 +20,350 @@ type Action struct {
 	Value  interface{}
 }
 
+type ActionHandler func(action *Action) error
+
+// ActionRouter is the single action catalog: {role, system, action} -> handler.
+// WebSocket screens, ESP32 panels (via configs/panels.yaml) and Lua all route
+// through here.
 type ActionRouter struct {
 	simulator *simulation.Simulator
 	handlers  map[string]ActionHandler
-}
 
-type ActionHandler func(action *Action) error
+	mu    sync.Mutex
+	teams []repairTeam
+	// teamTimers paces deployed repair teams so repairs are continuous.
+	teamTimers []float64
+
+	orders     []string
+	logEntries []string
+	commsLog   []string
+
+	waypoints []waypoint
+	autopilot bool
+	autoFire  bool
+	probes    int
+
+	frequency       float64
+	hailing         bool
+	hailTarget      string
+	shieldFrequency float64
+
+	scan scanState
+
+	transporterActive    bool
+	transporterEmergency bool
+
+	selfDestructAt float64
+}
 
 func NewActionRouter(sim *simulation.Simulator) *ActionRouter {
 	router := &ActionRouter{
 		simulator: sim,
 		handlers:  make(map[string]ActionHandler),
+		probes:    5,
+		scan:      scanState{Mode: "passive", Duration: 6.0},
 	}
-
-	router.registerHandlers()
+	router.teams = []repairTeam{
+		{Name: "Alpha Team", Status: "standing_by"},
+		{Name: "Beta Team", Status: "standing_by"},
+		{Name: "Gamma Team", Status: "standing_by"},
+	}
+	router.teamTimers = make([]float64, len(router.teams))
+	router.register()
 	return router
 }
 
-func (ar *ActionRouter) registerHandlers() {
-	ar.handlers["engineer.power.toggle_breaker"] = ar.handleToggleBreaker
-	ar.handlers["engineer.damage.repair"] = ar.handleRepair
-	ar.handlers["engineer.damage.extinguish_fire"] = ar.handleExtinguishFire
-	ar.handlers["engineer.damage.seal_breach"] = ar.handleSealBreach
+func (ar *ActionRouter) register() {
+	ar.handle("engineer", "power", "toggle_breaker", ar.handleToggleBreaker)
+	ar.handle("engineer", "power", "route_power", ar.handleRoutePower)
+	ar.handle("engineer", "damage", "repair", ar.handleRepair)
+	ar.handle("engineer", "damage", "extinguish", ar.handleExtinguish)
+	ar.handle("engineer", "damage", "seal_breach", ar.handleSealBreach)
+	ar.handle("engineer", "repair", "deploy_team", ar.handleDeployRepairTeam)
+	ar.handle("engineer", "repair", "recall_team", ar.handleRecallRepairTeam)
+	ar.handle("engineer", "repair", "repair_team", ar.handleRepairTeamSection)
 
-	ar.handlers["flight.thrust.set"] = ar.handleSetThrust
-	ar.handlers["flight.rotation.set"] = ar.handleSetRotation
-	ar.handlers["flight.docking.release"] = ar.handleReleaseDocking
+	ar.handle("flight", "flight", "set_throttle", ar.handleSetThrottle)
+	ar.handle("flight", "flight", "set_turn", ar.handleSetTurn)
+	ar.handle("flight", "navigation", "set_waypoint", ar.handleSetWaypoint)
+	ar.handle("flight", "navigation", "clear_waypoint", ar.handleClearWaypoint)
+	ar.handle("flight", "navigation", "engage", ar.handleEngageAutopilot)
+	ar.handle("flight", "navigation", "disengage", ar.handleDisengageAutopilot)
+	ar.handle("flight", "docking", "release", ar.handleReleaseDocking)
 
-	ar.handlers["weapons.torpedo.arm"] = ar.handleArmTorpedo
-	ar.handlers["weapons.torpedo.load"] = ar.handleLoadTorpedo
-	ar.handlers["weapons.torpedo.lock"] = ar.handleLockTorpedo
-	ar.handlers["weapons.torpedo.fire"] = ar.handleFireTorpedo
-	ar.handlers["weapons.phaser.fire"] = ar.handleFirePhaser
-	ar.handlers["weapons.target.set"] = ar.handleSetTarget
+	ar.handle("weapons", "weapons", "set_target", ar.handleSetTarget)
+	ar.handle("weapons", "weapons", "clear_target", ar.handleClearTarget)
+	ar.handle("weapons", "torpedo", "arm", ar.handleTorpedoArm)
+	ar.handle("weapons", "torpedo", "load", ar.handleTorpedoLoad)
+	ar.handle("weapons", "torpedo", "lock", ar.handleTorpedoLock)
+	ar.handle("weapons", "torpedo", "fire", ar.handleTorpedoFire)
+	ar.handle("weapons", "torpedo", "set_auto_fire", ar.handleSetAutoFire)
+	ar.handle("weapons", "phaser", "set_enabled", ar.handleSetPhaserEnabled)
+	ar.handle("weapons", "phaser", "fire", ar.handlePhaserFire)
 
-	ar.handlers["captain.alert.set"] = ar.handleSetAlert
-	ar.handlers["captain.order.issue"] = ar.handleIssueOrder
+	ar.handle("captain", "alert", "set_level", ar.handleSetAlert)
+	ar.handle("captain", "command", "issue_order", ar.handleIssueOrder)
+	ar.handle("captain", "command", "clear_orders", ar.handleClearOrders)
+	ar.handle("captain", "comms", "hail", ar.handleHail)
+	ar.handle("captain", "comms", "broadcast", ar.handleBroadcast)
 
-	ar.handlers["comms.hail.send"] = ar.handleSendHail
-	ar.handlers["comms.message.send"] = ar.handleSendMessage
+	// The bridge alert bar is reachable from every station.
+	for _, role := range []string{
+		"engineer", "flight", "weapons", "communications",
+		"operations", "relay", "first_officer",
+	} {
+		ar.handle(role, "alert", "set_level", ar.handleSetAlert)
+	}
+	ar.handle("captain", "self_destruct", "arm", ar.handleSelfDestruct)
+	ar.handle("captain", "self_destruct", "abort", ar.handleSelfDestructAbort)
 
-	ar.handlers["operations.power.route"] = ar.handleRoutePower
-	ar.handlers["operations.shields.toggle"] = ar.handleToggleShields
+	ar.handle("communications", "comms", "hail", ar.handleHail)
+	ar.handle("communications", "comms", "send_message", ar.handleSendMessage)
+	ar.handle("communications", "comms", "broadcast", ar.handleBroadcast)
+	ar.handle("communications", "comms", "set_frequency", ar.handleSetFrequency)
+	ar.handle("communications", "comms", "initiate_scan", ar.handleInitiateScan)
+	ar.handle("communications", "comms", "deep_scan", ar.handleDeepScan)
 
-	ar.handlers["relay.scan.initiate"] = ar.handleInitiateScan
-	ar.handlers["relay.sensors.set_mode"] = ar.handleSetSensorMode
+	ar.handle("operations", "sensors", "set_mode", ar.handleSetSensorMode)
+	ar.handle("operations", "sensors", "initiate_scan", ar.handleInitiateScan)
+	ar.handle("operations", "sensors", "deep_scan", ar.handleDeepScan)
+	ar.handle("operations", "shields", "raise", ar.handleRaiseShields)
+	ar.handle("operations", "shields", "lower", ar.handleLowerShields)
+	ar.handle("operations", "shields", "set_frequency", ar.handleShieldFrequency)
+	ar.handle("operations", "shields", "rotate_frequency", ar.handleRotateShieldFrequency)
+	ar.handle("operations", "transporter", "beam_up", ar.handleTransporterBeamUp)
+	ar.handle("operations", "transporter", "beam_down", ar.handleTransporterBeamDown)
+	ar.handle("operations", "transporter", "emergency", ar.handleTransporterEmergency)
 
-	ar.handlers["first_officer.system.toggle"] = ar.handleToggleSystem
+	ar.handle("relay", "navigation", "set_waypoint", ar.handleSetWaypoint)
+	ar.handle("relay", "navigation", "clear_waypoint", ar.handleClearWaypoint)
+	ar.handle("relay", "sensors", "set_mode", ar.handleSetSensorMode)
+	ar.handle("relay", "sensors", "mark_target", ar.handleMarkTarget)
+	ar.handle("relay", "sensors", "initiate_scan", ar.handleInitiateScan)
+	ar.handle("relay", "sensors", "deep_scan", ar.handleDeepScan)
+	ar.handle("relay", "sensors", "launch_probe", ar.handleLaunchProbe)
+
+	ar.handle("first_officer", "crew", "deploy_team", ar.handleDeployRepairTeam)
+	ar.handle("first_officer", "crew", "recall_team", ar.handleRecallRepairTeam)
+	ar.handle("first_officer", "crew", "assign_order", ar.handleAssignOrder)
+	ar.handle("first_officer", "log", "add_entry", ar.handleAddLogEntry)
+}
+
+func (ar *ActionRouter) handle(role, system, action string, fn ActionHandler) {
+	ar.handlers[catalogKey(role, system, action)] = fn
+}
+
+func catalogKey(role, system, action string) string {
+	return role + "." + system + "." + action
+}
+
+// CatalogKeys returns every registered {role, system, action} key, sorted.
+func (ar *ActionRouter) CatalogKeys() []string {
+	keys := make([]string, 0, len(ar.handlers))
+	for k := range ar.handlers {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func (ar *ActionRouter) RouteAction(action *Action) error {
-	key := fmt.Sprintf("%s.%s.%s", action.Role, action.System, action.Action)
-	handler, ok := ar.handlers[key]
-	if !ok {
-		return fmt.Errorf("no handler for action: %s", key)
+	if action == nil {
+		return fmt.Errorf("nil action")
+	}
+	if action.System == "" || action.Action == "" {
+		return fmt.Errorf("action requires system and action")
 	}
 
-	log.Printf("Routing action: %s (value: %v)", key, action.Value)
+	role := action.Role
+	if role == "" {
+		return fmt.Errorf("action requires role")
+	}
+
+	key := catalogKey(role, action.System, action.Action)
+	handler, ok := ar.handlers[key]
+	if !ok {
+		return fmt.Errorf("unknown action: %s", key)
+	}
 	return handler(action)
 }
 
-func (ar *ActionRouter) handleToggleBreaker(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
+// ---------------------------------------------------------------------------
+// Value helpers: handlers read targets from Value only.
+// ---------------------------------------------------------------------------
 
-	enabled, ok := action.Value.(bool)
+func valueDict(action *Action) map[string]interface{} {
+	switch v := action.Value.(type) {
+	case map[string]interface{}:
+		return v
+	case nil:
+		return map[string]interface{}{}
+	default:
+		return map[string]interface{}{"value": action.Value}
+	}
+}
+
+func dictString(d map[string]interface{}, key string) string {
+	if v, ok := d[key]; ok {
+		if s, ok := v.(string); ok {
+			return s
+		}
+		return fmt.Sprintf("%v", v)
+	}
+	return ""
+}
+
+func dictFloat(d map[string]interface{}, key string) (float64, bool) {
+	v, ok := d[key]
 	if !ok {
-		return fmt.Errorf("invalid value type for toggle_breaker")
+		return 0, false
 	}
+	switch n := v.(type) {
+	case float64:
+		return n, true
+	case float32:
+		return float64(n), true
+	case int:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	case bool:
+		if n {
+			return 1, true
+		}
+		return 0, true
+	case string:
+		f, err := strconv.ParseFloat(n, 64)
+		if err != nil {
+			return 0, false
+		}
+		return f, true
+	default:
+		return 0, false
+	}
+}
 
-	breakerID := action.System
-	breaker, ok := playerShip.Power.Breakers[breakerID]
+func dictInt(d map[string]interface{}, key string) (int, bool) {
+	f, ok := dictFloat(d, key)
 	if !ok {
-		return fmt.Errorf("breaker not found: %s", breakerID)
+		return 0, false
 	}
-
-	breaker.Enabled = enabled
-	log.Printf("Breaker %s set to %v", breakerID, enabled)
-	return nil
+	return int(f), true
 }
 
-func (ar *ActionRouter) handleRepair(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
-
-	log.Printf("Repair initiated on system: %s", action.System)
-	return nil
-}
-
-func (ar *ActionRouter) handleExtinguishFire(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
-
-	location := action.System
-	section, ok := playerShip.Hull.Sections[location]
-	if ok {
-		section.OnFire = false
-	}
-
-	comp, ok := playerShip.LifeSupport.Compartments[location]
-	if ok {
-		comp.OnFire = false
-	}
-
-	log.Printf("Fire extinguished in: %s", location)
-	return nil
-}
-
-func (ar *ActionRouter) handleSealBreach(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
-
-	location := action.System
-	comp, ok := playerShip.LifeSupport.Compartments[location]
-	if ok {
-		comp.Breached = false
-	}
-
-	section, ok := playerShip.Hull.Sections[location]
-	if ok {
-		section.Breached = false
-	}
-
-	log.Printf("Breach sealed in: %s", location)
-	return nil
-}
-
-func (ar *ActionRouter) handleSetThrust(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
-
-	thrust, ok := action.Value.(float64)
+func dictBool(d map[string]interface{}, key string) (bool, bool) {
+	v, ok := d[key]
 	if !ok {
-		return fmt.Errorf("invalid thrust value")
+		return false, false
 	}
-
-	playerShip.ApplyThrust(0, 0, thrust)
-	return nil
-}
-
-func (ar *ActionRouter) handleSetRotation(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
+	switch b := v.(type) {
+	case bool:
+		return b, true
+	case float64:
+		return b != 0, true
+	case int:
+		return b != 0, true
+	case string:
+		return b == "true" || b == "on" || b == "1", true
+	default:
+		return false, false
 	}
-
-	rotData, ok := action.Value.(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("invalid rotation value")
-	}
-
-	pitch, _ := rotData["pitch"].(float64)
-	yaw, _ := rotData["yaw"].(float64)
-	roll, _ := rotData["roll"].(float64)
-
-	playerShip.ApplyRotation(pitch, yaw, roll)
-	return nil
-}
-
-func (ar *ActionRouter) handleReleaseDocking(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
-
-	playerShip.Docked = false
-	log.Println("Docking clamps released")
-	return nil
-}
-
-func (ar *ActionRouter) handleArmTorpedo(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
-
-	weaponID := action.System
-	weapon, ok := playerShip.Weapons[weaponID]
-	if !ok {
-		return fmt.Errorf("weapon not found: %s", weaponID)
-	}
-
-	armed, ok := action.Value.(bool)
-	if !ok {
-		return fmt.Errorf("invalid arm value")
-	}
-
-	weapon.Armed = armed
-	log.Printf("Torpedo %s armed: %v", weaponID, armed)
-	return nil
-}
-
-func (ar *ActionRouter) handleLoadTorpedo(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
-
-	weaponID := action.System
-	weapon, ok := playerShip.Weapons[weaponID]
-	if !ok {
-		return fmt.Errorf("weapon not found: %s", weaponID)
-	}
-
-	if weapon.AmmoCount <= 0 {
-		return fmt.Errorf("no torpedoes remaining")
-	}
-
-	weapon.Loaded = true
-	log.Printf("Torpedo %s loaded", weaponID)
-	return nil
-}
-
-func (ar *ActionRouter) handleLockTorpedo(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
-
-	weaponID := action.System
-	weapon, ok := playerShip.Weapons[weaponID]
-	if !ok {
-		return fmt.Errorf("weapon not found: %s", weaponID)
-	}
-
-	locked, ok := action.Value.(bool)
-	if !ok {
-		return fmt.Errorf("invalid lock value")
-	}
-
-	weapon.Locked = locked
-	log.Printf("Torpedo %s locked: %v", weaponID, locked)
-	return nil
-}
-
-func (ar *ActionRouter) handleFireTorpedo(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
-
-	weaponID := action.System
-	weapon, ok := playerShip.Weapons[weaponID]
-	if !ok {
-		return fmt.Errorf("weapon not found: %s", weaponID)
-	}
-
-	if !weapon.Armed || !weapon.Loaded || !weapon.Locked {
-		return fmt.Errorf("torpedo not ready to fire")
-	}
-
-	if weapon.Cooldown > 0 {
-		return fmt.Errorf("torpedo on cooldown")
-	}
-
-	targetID := playerShip.TargetID
-	if targetID == "" {
-		return fmt.Errorf("no target set")
-	}
-
-	if playerShip.FireWeapon(weaponID, targetID) {
-		forward := playerShip.Position
-		velocity := playerShip.Velocity
-		velocity.X += 500
-		velocity.Y += 0
-		velocity.Z += 0
-
-		ar.simulator.SpawnProjectile(
-			fmt.Sprintf("torpedo_%s_%.0f", weaponID, ar.simulator.CurrentTime),
-			"torpedo",
-			playerShip.ID,
-			targetID,
-			forward,
-			velocity,
-			weapon.Damage,
-		)
-
-		log.Printf("Fired torpedo %s at target %s", weaponID, targetID)
-		return nil
-	}
-
-	return fmt.Errorf("failed to fire torpedo")
-}
-
-func (ar *ActionRouter) handleFirePhaser(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
-
-	weaponID := action.System
-	weapon, ok := playerShip.Weapons[weaponID]
-	if !ok {
-		return fmt.Errorf("weapon not found: %s", weaponID)
-	}
-
-	if weapon.Cooldown > 0 {
-		return fmt.Errorf("phaser on cooldown")
-	}
-
-	targetID := playerShip.TargetID
-	if targetID == "" {
-		return fmt.Errorf("no target set")
-	}
-
-	target := ar.simulator.GetShip(targetID)
-	if target == nil {
-		return fmt.Errorf("target not found")
-	}
-
-	if playerShip.FireWeapon(weaponID, targetID) {
-		target.TakeDamage(weapon.Damage, "forward")
-		log.Printf("Fired phaser %s at target %s for %.1f damage", weaponID, targetID, weapon.Damage)
-		return nil
-	}
-
-	return fmt.Errorf("failed to fire phaser")
-}
-
-func (ar *ActionRouter) handleSetTarget(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
-
-	targetID, ok := action.Value.(string)
-	if !ok {
-		return fmt.Errorf("invalid target ID")
-	}
-
-	playerShip.TargetID = targetID
-	log.Printf("Target set to: %s", targetID)
-	return nil
-}
-
-func (ar *ActionRouter) handleSetAlert(action *Action) error {
-	alertLevel, ok := action.Value.(string)
-	if !ok {
-		return fmt.Errorf("invalid alert level")
-	}
-
-	log.Printf("Alert level set to: %s", alertLevel)
-	return nil
-}
-
-func (ar *ActionRouter) handleIssueOrder(action *Action) error {
-	order, ok := action.Value.(string)
-	if !ok {
-		return fmt.Errorf("invalid order")
-	}
-
-	log.Printf("Captain issued order: %s", order)
-	return nil
-}
-
-func (ar *ActionRouter) handleSendHail(action *Action) error {
-	targetID, ok := action.Value.(string)
-	if !ok {
-		return fmt.Errorf("invalid target ID")
-	}
-
-	log.Printf("Hailing target: %s", targetID)
-	return nil
-}
-
-func (ar *ActionRouter) handleSendMessage(action *Action) error {
-	message, ok := action.Value.(string)
-	if !ok {
-		return fmt.Errorf("invalid message")
-	}
-
-	log.Printf("Sending message: %s", message)
-	return nil
-}
-
-func (ar *ActionRouter) handleRoutePower(action *Action) error {
-	log.Printf("Routing power to: %s", action.System)
-	return nil
-}
-
-func (ar *ActionRouter) handleToggleShields(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
-
-	enabled, ok := action.Value.(bool)
-	if !ok {
-		return fmt.Errorf("invalid shield toggle value")
-	}
-
-	playerShip.Shields.Enabled = enabled
-	log.Printf("Shields set to: %v", enabled)
-	return nil
-}
-
-func (ar *ActionRouter) handleInitiateScan(action *Action) error {
-	targetID, ok := action.Value.(string)
-	if !ok {
-		return fmt.Errorf("invalid scan target")
-	}
-
-	log.Printf("Initiating scan of: %s", targetID)
-	return nil
-}
-
-func (ar *ActionRouter) handleSetSensorMode(action *Action) error {
-	mode, ok := action.Value.(string)
-	if !ok {
-		return fmt.Errorf("invalid sensor mode")
-	}
-
-	log.Printf("Sensor mode set to: %s", mode)
-	return nil
-}
-
-func (ar *ActionRouter) handleToggleSystem(action *Action) error {
-	playerShip := ar.getPlayerShip()
-	if playerShip == nil {
-		return fmt.Errorf("no player ship found")
-	}
-
-	enabled, ok := action.Value.(bool)
-	if !ok {
-		return fmt.Errorf("invalid toggle value")
-	}
-
-	systemID := action.System
-	subsystem, ok := playerShip.Subsystems[systemID]
-	if ok {
-		subsystem.Enabled = enabled
-		log.Printf("Subsystem %s set to: %v", systemID, enabled)
-	}
-
-	return nil
 }
 
 func (ar *ActionRouter) getPlayerShip() *ship.Ship {
-	ships := ar.simulator.GetAllShips()
-	for _, sh := range ships {
+	for _, sh := range ar.simulator.GetAllShips() {
 		if sh.IsPlayer {
 			return sh
 		}
 	}
 	return nil
+}
+
+func (ar *ActionRouter) playerShip(action *Action) (*ship.Ship, error) {
+	d := valueDict(action)
+	if id := dictString(d, "ship_id"); id != "" {
+		sh := ar.simulator.GetShip(id)
+		if sh == nil {
+			return nil, fmt.Errorf("ship not found: %s", id)
+		}
+		return sh, nil
+	}
+	sh := ar.getPlayerShip()
+	if sh == nil {
+		return nil, fmt.Errorf("no player ship")
+	}
+	return sh, nil
+}
+
+// findTorpedoBay resolves a bay target from value: {"bay_id":N} or {"bay":"torpedo_bay_2"}.
+func findTorpedoBay(sh *ship.Ship, d map[string]interface{}) (*ship.Weapon, error) {
+	weapons := sh.WeaponsSnapshot()
+
+	if bayID, ok := dictInt(d, "bay_id"); ok {
+		key := fmt.Sprintf("torpedo_bay_%d", bayID)
+		if w, ok := weapons[key]; ok && w.Type == "torpedo" {
+			return &w, nil
+		}
+		return nil, fmt.Errorf("torpedo bay not found: %d", bayID)
+	}
+
+	if bay := dictString(d, "bay"); bay != "" {
+		if w, ok := weapons[bay]; ok && w.Type == "torpedo" {
+			return &w, nil
+		}
+		return nil, fmt.Errorf("torpedo bay not found: %s", bay)
+	}
+
+	// Default to the first torpedo bay.
+	keys := make([]string, 0, len(weapons))
+	for k, w := range weapons {
+		if w.Type == "torpedo" {
+			keys = append(keys, k)
+		}
+	}
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("no torpedo bays")
+	}
+	sort.Strings(keys)
+	w := weapons[keys[0]]
+	return &w, nil
+}
+
+func findPhaserArray(sh *ship.Ship, d map[string]interface{}) (*ship.Weapon, error) {
+	weapons := sh.WeaponsSnapshot()
+
+	if arrayID := dictString(d, "array_id"); arrayID != "" {
+		if w, ok := weapons[arrayID]; ok && w.Type != "torpedo" {
+			return &w, nil
+		}
+		return nil, fmt.Errorf("phaser array not found: %s", arrayID)
+	}
+
+	keys := make([]string, 0, len(weapons))
+	for k, w := range weapons {
+		if w.Type != "torpedo" {
+			keys = append(keys, k)
+		}
+	}
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("no phaser arrays")
+	}
+	sort.Strings(keys)
+	w := weapons[keys[0]]
+	return &w, nil
+}
+
+func normalizeSection(s string) (string, error) {
+	switch strings.ToLower(s) {
+	case "forward", "bow", "fore":
+		return ship.SectionForward, nil
+	case "aft", "stern":
+		return ship.SectionAft, nil
+	case "port", "left":
+		return ship.SectionPort, nil
+	case "starboard", "right":
+		return ship.SectionStarboard, nil
+	default:
+		return "", fmt.Errorf("unknown hull section: %s", s)
+	}
 }

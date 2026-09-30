@@ -2,6 +2,8 @@ package panel
 
 import (
 	"celestial/internal/ship"
+	"fmt"
+	"math"
 	"sync"
 )
 
@@ -37,57 +39,27 @@ func NewPanelStateManager() *PanelStateManager {
 	}
 }
 
-func (psm *PanelStateManager) UpdateFromShip(panelID string, sh *ship.Ship, currentTime float64) *PanelState {
-	psm.mu.Lock()
-	defer psm.mu.Unlock()
-
-	state := &PanelState{
-		PanelID:    panelID,
-		Indicators: make(map[string]Indicator),
-		Displays:   make(map[string]Display),
-		Timestamp:  currentTime,
-	}
-
-	switch {
-	case panelID == "engineer_power_main":
-		psm.updateEngineerPowerPanel(state, sh)
-	case panelID == "engineer_damage_main":
-		psm.updateEngineerDamagePanel(state, sh)
-	case panelID == "engineer_systems":
-		psm.updateEngineerSystemsPanel(state, sh)
-	case panelID == "flight_main":
-		psm.updateFlightMainPanel(state, sh)
-	case panelID == "flight_navigation":
-		psm.updateFlightNavigationPanel(state, sh)
-	case panelID == "weapons_torpedos_1":
-		psm.updateWeaponsTorpedosPanel1(state, sh)
-	case panelID == "weapons_torpedos_2":
-		psm.updateWeaponsTorpedosPanel2(state, sh)
-	case panelID == "weapons_phasers":
-		psm.updateWeaponsPhasersPanel(state, sh)
-	case panelID == "captain_command":
-		psm.updateCaptainCommandPanel(state, sh)
-	case panelID == "captain_status":
-		psm.updateCaptainStatusPanel(state, sh)
-	case panelID == "comms_main":
-		psm.updateCommsMainPanel(state, sh)
-	case panelID == "operations_power":
-		psm.updateOperationsPowerPanel(state, sh)
-	case panelID == "operations_resources":
-		psm.updateOperationsResourcesPanel(state, sh)
-	case panelID == "relay_sensors":
-		psm.updateRelaySensorsPanel(state, sh)
-	case panelID == "relay_scanning":
-		psm.updateRelayScanningPanel(state, sh)
-	case panelID == "first_officer_main":
-		psm.updateFirstOfficerMainPanel(state, sh)
-	}
-
-	psm.states[panelID] = state
-	return state
+// updaters maps the canonical panel IDs from backend/configs/panels.yaml to serializers.
+var updaters = map[string]func(*PanelState, *ship.Ship, StationState){
+	"engineer_power_main":  updateEngineerPowerPanel,
+	"engineer_damage_main": updateEngineerDamagePanel,
+	"engineer_systems":     updateEngineerSystemsPanel,
+	"flight_main":          updateFlightMainPanel,
+	"flight_navigation":    updateFlightNavigationPanel,
+	"weapons_torpedos_1":   updateWeaponsTorpedosPanel1,
+	"weapons_torpedos_2":   updateWeaponsTorpedosPanel2,
+	"weapons_phasers":      updateWeaponsPhasersPanel,
+	"captain_command":      updateCaptainCommandPanel,
+	"captain_status":       updateCaptainStatusPanel,
+	"comms_main":           updateCommsMainPanel,
+	"operations_power":     updateOperationsPowerPanel,
+	"operations_resources": updateOperationsResourcesPanel,
+	"relay_sensors":        updateRelaySensorsPanel,
+	"relay_scanning":       updateRelayScanningPanel,
+	"first_officer_main":   updateFirstOfficerMainPanel,
 }
 
-func (psm *PanelStateManager) updateEngineerPowerPanel(state *PanelState, sh *ship.Ship) {
+func updateEngineerPowerPanel(state *PanelState, sh *ship.Ship, station StationState) {
 	powerPercent := (sh.Power.CurrentCapacity / sh.Power.MaxCapacity) * 100
 
 	state.Displays["power_level"] = Display{
@@ -125,7 +97,11 @@ func (psm *PanelStateManager) updateEngineerPowerPanel(state *PanelState, sh *sh
 		Blink: powerPercent < 15,
 	}
 
-	for id, breaker := range sh.Power.Breakers {
+	for _, id := range ship.BreakerNames {
+		breaker, ok := sh.Power.Breakers[id]
+		if !ok {
+			continue
+		}
 		state.Indicators["breaker_"+id] = Indicator{
 			Type:  "led",
 			Value: breaker.Enabled,
@@ -142,8 +118,16 @@ func (psm *PanelStateManager) updateEngineerPowerPanel(state *PanelState, sh *sh
 	}
 }
 
-func (psm *PanelStateManager) updateEngineerDamagePanel(state *PanelState, sh *ship.Ship) {
-	for id, section := range sh.Hull.Sections {
+func updateEngineerDamagePanel(state *PanelState, sh *ship.Ship, station StationState) {
+	// Iterate the canonical sections in a stable order so the panel layout does
+	// not shuffle between updates.
+	for _, id := range []string{
+		ship.SectionForward, ship.SectionAft, ship.SectionPort, ship.SectionStarboard,
+	} {
+		section, ok := sh.Hull.Sections[id]
+		if !ok {
+			continue
+		}
 		healthPercent := (section.Health / section.MaxHealth) * 100
 
 		color := "green"
@@ -203,7 +187,7 @@ func (psm *PanelStateManager) updateEngineerDamagePanel(state *PanelState, sh *s
 	}
 }
 
-func (psm *PanelStateManager) updateEngineerSystemsPanel(state *PanelState, sh *ship.Ship) {
+func updateEngineerSystemsPanel(state *PanelState, sh *ship.Ship, station StationState) {
 	for id, engine := range sh.Engines {
 		healthPercent := (engine.Health / engine.MaxHealth) * 100
 
@@ -237,37 +221,43 @@ func (psm *PanelStateManager) updateEngineerSystemsPanel(state *PanelState, sh *
 	}
 }
 
-func (psm *PanelStateManager) updateFlightMainPanel(state *PanelState, sh *ship.Ship) {
+func updateFlightMainPanel(state *PanelState, sh *ship.Ship, station StationState) {
+	vel := sh.Velocity
+
 	state.Displays["velocity_x"] = Display{
 		Type:   "numeric",
-		Value:  sh.Velocity.X,
+		Value:  vel.X,
 		Unit:   "m/s",
 		Format: "%.1f",
 	}
 
 	state.Displays["velocity_y"] = Display{
 		Type:   "numeric",
-		Value:  sh.Velocity.Y,
+		Value:  vel.Y,
 		Unit:   "m/s",
 		Format: "%.1f",
 	}
 
 	state.Displays["velocity_z"] = Display{
 		Type:   "numeric",
-		Value:  sh.Velocity.Z,
+		Value:  vel.Z,
 		Unit:   "m/s",
 		Format: "%.1f",
 	}
 
-	speed := (sh.Velocity.X*sh.Velocity.X + sh.Velocity.Y*sh.Velocity.Y + sh.Velocity.Z*sh.Velocity.Z)
-	if speed > 0 {
-		speed = speed * 0.5
-	}
-
+	speed := math.Sqrt(vel.X*vel.X + vel.Y*vel.Y + vel.Z*vel.Z)
 	state.Displays["speed"] = Display{
 		Type:   "numeric",
 		Value:  speed,
 		Unit:   "m/s",
+		Format: "%.0f",
+	}
+
+	throttle := sh.Throttle
+	state.Displays["throttle"] = Display{
+		Type:   "numeric",
+		Value:  throttle,
+		Unit:   "%",
 		Format: "%.0f",
 	}
 
@@ -279,47 +269,59 @@ func (psm *PanelStateManager) updateFlightMainPanel(state *PanelState, sh *ship.
 	}
 }
 
-func (psm *PanelStateManager) updateFlightNavigationPanel(state *PanelState, sh *ship.Ship) {
+func updateFlightNavigationPanel(state *PanelState, sh *ship.Ship, station StationState) {
+	pos := sh.Position
+
 	state.Displays["position_x"] = Display{
 		Type:   "numeric",
-		Value:  sh.Position.X,
+		Value:  pos.X,
 		Unit:   "km",
 		Format: "%.0f",
 	}
 
 	state.Displays["position_y"] = Display{
 		Type:   "numeric",
-		Value:  sh.Position.Y,
+		Value:  pos.Y,
 		Unit:   "km",
 		Format: "%.0f",
 	}
 
 	state.Displays["position_z"] = Display{
 		Type:   "numeric",
-		Value:  sh.Position.Z,
+		Value:  pos.Z,
 		Unit:   "km",
 		Format: "%.0f",
 	}
 
 	state.Displays["heading"] = Display{
 		Type:   "numeric",
-		Value:  0.0,
+		Value:  headingDegrees(sh),
 		Unit:   "°",
 		Format: "%.1f",
 	}
 }
 
-func (psm *PanelStateManager) updateWeaponsTorpedosPanel1(state *PanelState, sh *ship.Ship) {
-	psm.updateTorpedoBay(state, sh, "torpedo_bay_1")
-	psm.updateTorpedoBay(state, sh, "torpedo_bay_2")
+// headingDegrees returns the ship's compass heading in degrees.
+func headingDegrees(sh *ship.Ship) float64 {
+	fwd := sh.Forward()
+	deg := math.Atan2(fwd.X, -fwd.Z) * 180 / math.Pi
+	if deg < 0 {
+		deg += 360
+	}
+	return deg
 }
 
-func (psm *PanelStateManager) updateWeaponsTorpedosPanel2(state *PanelState, sh *ship.Ship) {
-	psm.updateTorpedoBay(state, sh, "torpedo_bay_3")
-	psm.updateTorpedoBay(state, sh, "torpedo_bay_4")
+func updateWeaponsTorpedosPanel1(state *PanelState, sh *ship.Ship, station StationState) {
+	updateTorpedoBay(state, sh, "torpedo_bay_1")
+	updateTorpedoBay(state, sh, "torpedo_bay_2")
 }
 
-func (psm *PanelStateManager) updateTorpedoBay(state *PanelState, sh *ship.Ship, bayID string) {
+func updateWeaponsTorpedosPanel2(state *PanelState, sh *ship.Ship, station StationState) {
+	updateTorpedoBay(state, sh, "torpedo_bay_3")
+	updateTorpedoBay(state, sh, "torpedo_bay_4")
+}
+
+func updateTorpedoBay(state *PanelState, sh *ship.Ship, bayID string) {
 	weapon, ok := sh.Weapons[bayID]
 	if !ok {
 		return
@@ -369,7 +371,7 @@ func (psm *PanelStateManager) updateTorpedoBay(state *PanelState, sh *ship.Ship,
 	}
 }
 
-func (psm *PanelStateManager) updateWeaponsPhasersPanel(state *PanelState, sh *ship.Ship) {
+func updateWeaponsPhasersPanel(state *PanelState, sh *ship.Ship, station StationState) {
 	for id, weapon := range sh.Weapons {
 		if weapon.Type != "phaser" {
 			continue
@@ -413,19 +415,28 @@ func (psm *PanelStateManager) updateWeaponsPhasersPanel(state *PanelState, sh *s
 	}
 }
 
-func (psm *PanelStateManager) updateCaptainCommandPanel(state *PanelState, sh *ship.Ship) {
-	state.Indicators["red_alert"] = Indicator{
+func updateCaptainCommandPanel(state *PanelState, sh *ship.Ship, station StationState) {
+	level := sh.AlertLevel
+	if level == "" {
+		level = "normal"
+	}
+	state.Indicators["alert_normal"] = Indicator{
 		Type:  "led",
-		Value: false,
-		Color: "red",
+		Value: level == "normal",
+		Color: "green",
 		Blink: false,
 	}
-
-	state.Indicators["yellow_alert"] = Indicator{
+	state.Indicators["alert_yellow"] = Indicator{
 		Type:  "led",
-		Value: true,
+		Value: level == "yellow",
 		Color: "yellow",
-		Blink: false,
+		Blink: level == "yellow",
+	}
+	state.Indicators["alert_red"] = Indicator{
+		Type:  "led",
+		Value: level == "red",
+		Color: "red",
+		Blink: level == "red",
 	}
 
 	for role, crew := range sh.Crew {
@@ -446,7 +457,7 @@ func (psm *PanelStateManager) updateCaptainCommandPanel(state *PanelState, sh *s
 	}
 }
 
-func (psm *PanelStateManager) updateCaptainStatusPanel(state *PanelState, sh *ship.Ship) {
+func updateCaptainStatusPanel(state *PanelState, sh *ship.Ship, station StationState) {
 	totalHull := 0.0
 	maxHull := 0.0
 	for _, section := range sh.Hull.Sections {
@@ -492,7 +503,7 @@ func (psm *PanelStateManager) updateCaptainStatusPanel(state *PanelState, sh *sh
 	}
 }
 
-func (psm *PanelStateManager) updateCommsMainPanel(state *PanelState, sh *ship.Ship) {
+func updateCommsMainPanel(state *PanelState, sh *ship.Ship, station StationState) {
 	comms, ok := sh.Subsystems["comms"]
 	if ok {
 		healthPercent := (comms.Health / comms.MaxHealth) * 100
@@ -512,14 +523,37 @@ func (psm *PanelStateManager) updateCommsMainPanel(state *PanelState, sh *ship.S
 
 		state.Indicators["comms_online"] = Indicator{
 			Type:  "led",
-			Value: comms.Enabled && healthPercent > 0,
+			Value: comms.Enabled && sh.BreakerOn("comms") && healthPercent > 0,
 			Color: color,
 			Blink: false,
 		}
 	}
+
+	state.Displays["frequency"] = Display{
+		Type:   "numeric",
+		Value:  station.Frequency,
+		Unit:   "MHz",
+		Format: "%.1f",
+	}
+
+	state.Indicators["hailing"] = Indicator{
+		Type:  "led",
+		Value: station.Hailing,
+		Color: "green",
+		Blink: station.Hailing,
+	}
+
+	if station.HailTarget != "" {
+		state.Displays["hail_target"] = Display{
+			Type:   "text",
+			Value:  station.HailTarget,
+			Unit:   "",
+			Format: "%s",
+		}
+	}
 }
 
-func (psm *PanelStateManager) updateOperationsPowerPanel(state *PanelState, sh *ship.Ship) {
+func updateOperationsPowerPanel(state *PanelState, sh *ship.Ship, station StationState) {
 	state.Indicators["shields_enabled"] = Indicator{
 		Type:  "led",
 		Value: sh.Shields.Enabled,
@@ -552,18 +586,42 @@ func (psm *PanelStateManager) updateOperationsPowerPanel(state *PanelState, sh *
 	}
 }
 
-func (psm *PanelStateManager) updateOperationsResourcesPanel(state *PanelState, sh *ship.Ship) {
+func updateOperationsResourcesPanel(state *PanelState, sh *ship.Ship, station StationState) {
 	for id, bay := range sh.LaunchBays {
 		state.Displays["bay_"+id+"_count"] = Display{
 			Type:   "numeric",
 			Value:  bay.Current,
-			Unit:   "/" + string(rune(bay.Capacity)),
+			Unit:   fmt.Sprintf("/%d", bay.Capacity),
 			Format: "%d",
 		}
 	}
+
+	state.Indicators["transporter_active"] = Indicator{
+		Type:  "led",
+		Value: station.TransporterActive,
+		Color: "blue",
+		Blink: station.TransporterEmergency,
+	}
+
+	state.Displays["transporter_status"] = Display{
+		Type:   "text",
+		Value:  transporterLabel(station),
+		Unit:   "",
+		Format: "%s",
+	}
 }
 
-func (psm *PanelStateManager) updateRelaySensorsPanel(state *PanelState, sh *ship.Ship) {
+func transporterLabel(station StationState) string {
+	if station.TransporterEmergency {
+		return "EMERGENCY"
+	}
+	if station.TransporterActive {
+		return "BEAM ACTIVE"
+	}
+	return "READY"
+}
+
+func updateRelaySensorsPanel(state *PanelState, sh *ship.Ship, station StationState) {
 	sensors, ok := sh.Subsystems["sensors"]
 	if ok {
 		healthPercent := (sensors.Health / sensors.MaxHealth) * 100
@@ -583,23 +641,108 @@ func (psm *PanelStateManager) updateRelaySensorsPanel(state *PanelState, sh *shi
 
 		state.Indicators["sensors_online"] = Indicator{
 			Type:  "led",
-			Value: sensors.Enabled && healthPercent > 0,
+			Value: sensors.Enabled && sh.BreakerOn("sensors") && healthPercent > 0,
 			Color: color,
 			Blink: false,
 		}
 	}
-}
 
-func (psm *PanelStateManager) updateRelayScanningPanel(state *PanelState, sh *ship.Ship) {
 	state.Indicators["scan_active"] = Indicator{
 		Type:  "led",
-		Value: false,
+		Value: station.ScanActive,
 		Color: "blue",
-		Blink: false,
+		Blink: station.ScanActive,
+	}
+
+	state.Displays["scan_progress"] = Display{
+		Type:   "numeric",
+		Value:  station.ScanProgress * 100,
+		Unit:   "%",
+		Format: "%.0f",
+	}
+
+	if station.ScanTarget != "" {
+		state.Displays["scan_target"] = Display{
+			Type:   "text",
+			Value:  station.ScanTarget,
+			Unit:   "",
+			Format: "%s",
+		}
 	}
 }
 
-func (psm *PanelStateManager) updateFirstOfficerMainPanel(state *PanelState, sh *ship.Ship) {
+// StationState carries the server-owned values a panel renders that are not
+// part of the ship snapshot itself (scan progress, transporter, comms).
+type StationState struct {
+	ScanActive   bool
+	ScanTarget   string
+	ScanProgress float64
+	ScanMode     string
+
+	Hailing    bool
+	HailTarget string
+	Frequency  float64
+
+	TransporterActive    bool
+	TransporterEmergency bool
+}
+
+// UpdateFromShip builds panel state from a ship plus server-owned station state.
+func (psm *PanelStateManager) UpdateFromShip(panelID string, sh *ship.Ship, currentTime float64, station StationState) *PanelState {
+	state := &PanelState{
+		PanelID:    panelID,
+		Indicators: make(map[string]Indicator),
+		Displays:   make(map[string]Display),
+		Timestamp:  currentTime,
+	}
+
+	// Serialize without the manager lock: updaters only read the ship snapshot
+	// and the station state, so panels do not serialize against each other.
+	if updater, ok := updaters[panelID]; ok {
+		updater(state, sh, station)
+	}
+
+	psm.mu.Lock()
+	psm.states[panelID] = state
+	psm.mu.Unlock()
+
+	return state
+}
+
+// UpdateFromShip builds panel state from a ship plus server-owned station state.
+func updateRelayScanningPanel(state *PanelState, sh *ship.Ship, station StationState) {
+	state.Indicators["scan_active"] = Indicator{
+		Type:  "led",
+		Value: station.ScanActive,
+		Color: "blue",
+		Blink: station.ScanActive,
+	}
+
+	state.Displays["scan_progress"] = Display{
+		Type:   "numeric",
+		Value:  station.ScanProgress * 100,
+		Unit:   "%",
+		Format: "%.0f",
+	}
+
+	state.Displays["scan_mode"] = Display{
+		Type:   "text",
+		Value:  station.ScanMode,
+		Unit:   "",
+		Format: "%s",
+	}
+
+	if station.ScanTarget != "" {
+		state.Displays["scan_target"] = Display{
+			Type:   "text",
+			Value:  station.ScanTarget,
+			Unit:   "",
+			Format: "%s",
+		}
+	}
+}
+
+func updateFirstOfficerMainPanel(state *PanelState, sh *ship.Ship, station StationState) {
 	for id, subsystem := range sh.Subsystems {
 		healthPercent := (subsystem.Health / subsystem.MaxHealth) * 100
 

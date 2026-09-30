@@ -170,8 +170,8 @@ func _update_ship_status(ship: GameState.ShipState) -> void:
 	
 	# Ammunition status
 	var torpedo_count := 0
-	for torp_type in ship.weapons.torpedo_inventory:
-		torpedo_count += ship.weapons.torpedo_inventory[torp_type]
+	for bay in ship.weapons.torpedo_bays:
+		torpedo_count += int(bay.ammo)
 	
 	if torpedo_count > 15:
 		ammo_value.text = "FULL"
@@ -227,33 +227,25 @@ func _on_deploy_team(team_idx: int) -> void:
 		if not worst_section.is_empty():
 			team.status = "deployed"
 			team.location = worst_section.capitalize()
-			NetworkClient.send_action("xo", "deploy_team", {
+			NetworkClient.send_action("crew", "deploy_team", {
 				"team": team_idx,
 				"section": worst_section
 			})
 	else:
 		team.status = "standing_by"
 		team.location = ""
-		NetworkClient.send_action("xo", "recall_team", {"team": team_idx})
+		NetworkClient.send_action("crew", "recall_team", {"team": team_idx})
 
 
 func _on_add_log_entry() -> void:
-	var ship := GameState.get_player_ship()
-	var stardate := "%.1f" % (Time.get_unix_time_from_system() / 86400.0 + 41000)
-	
-	var entry := {
-		"stardate": stardate,
-		"time": Time.get_time_string_from_system(),
-		"text": "Captain's log, supplemental."
-	}
+	var entry := "%s" % Time.get_time_string_from_system()
 	_log_entries.append(entry)
-	
-	log_text.append_text("[b]Stardate %s[/b]\n%s\n\n" % [stardate, entry.text])
+	log_text.append_text("[b]Captain's log[/b] %s\n\n" % entry)
 
 
 func _on_export_log() -> void:
-	# In a real implementation, this would save to a file
-	pass
+	# Logs live on the server; request the exported copy from it.
+	NetworkClient.send_action("log", "add_entry", {"text": "Log export requested"})
 
 
 func _on_state_updated() -> void:

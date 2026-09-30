@@ -28,7 +28,6 @@ const EXPLOSION_SCENE := preload("res://scenes/3d/explosion.tscn")
 @onready var debug_overlay: PanelContainer = $UI/HUD/DebugOverlay
 @onready var disconnect_overlay: ColorRect = $UI/HUD/DisconnectOverlay
 @onready var alert_overlay: ColorRect = $UI/HUD/AlertOverlay
-@onready var targeting_reticle: Control = $UI/HUD/TargetingReticle
 @onready var damage_vignette: ColorRect = $UI/HUD/DamageOverlay/VignetteEffect
 
 # Ship visual instances keyed by ship_id
@@ -120,8 +119,9 @@ func _create_starfield() -> void:
 
 
 func _preload_effects() -> void:
-	# Preload effect scenes to avoid hitches during gameplay
-	pass
+	# Warm the explosion scene so impacts do not hitch mid-firefight.
+	if ResourceLoader.exists("res://scenes/3d/explosion.tscn"):
+		load("res://scenes/3d/explosion.tscn")
 
 
 func _update_camera(delta: float) -> void:
@@ -133,14 +133,10 @@ func _update_camera(delta: float) -> void:
 	var target_pos := player_ship.get_interpolated_position(t)
 	var target_rot := player_ship.get_interpolated_rotation(t)
 	
-	# Position camera behind and above the ship
-	var offset := target_rot * Vector3(0, 5, 25)
-	var camera_target := target_pos + offset
-	
-	camera.global_position = camera.global_position.lerp(camera_target, delta * 5.0)
-	
-	# Look at the ship
-	var look_target := target_pos + target_rot * Vector3(0, 0, -50)
+	# First person: the camera rides the ship and looks out the front window.
+	# The ship itself is never rendered.
+	camera.global_position = camera.global_position.lerp(target_pos, clampf(delta * 8.0, 0.0, 1.0))
+	var look_target := target_pos + target_rot * Vector3(0, 0, -100)
 	camera.look_at(look_target, Vector3.UP)
 
 
@@ -159,8 +155,8 @@ func _update_ship_visuals(delta: float) -> void:
 		instance.quaternion = ship.get_interpolated_rotation(t)
 		
 		# Update visual state (damage, engine glow, etc.)
-		if instance.has_method("update_visual_state"):
-			instance.update_visual_state(ship)
+		if instance.has_method("update_from_state"):
+			instance.update_from_state(ship)
 
 
 func _update_projectile_visuals(delta: float) -> void:
@@ -203,7 +199,9 @@ func _update_hud() -> void:
 	heading_label.text = "HDG: %03d°" % int(heading)
 	
 	# Shields
-	var max_per_facing := ship.max_shields / 4.0 if ship.max_shields > 0 else 250.0
+	var max_per_facing := 250.0
+	if ship.max_shields > 0:
+		max_per_facing = ship.max_shields / 4.0
 	var fore_val: float = ship.shield_facings.get("fore", 0.0)
 	var aft_val: float = ship.shield_facings.get("aft", 0.0)
 	var port_val: float = ship.shield_facings.get("port", 0.0)
@@ -215,7 +213,9 @@ func _update_hud() -> void:
 	
 	# Shield status
 	if ship.shields_enabled:
-		var shield_percent := ship.shields / ship.max_shields if ship.max_shields > 0 else 0
+		var shield_percent := 0.0
+		if ship.max_shields > 0:
+			shield_percent = ship.shields / ship.max_shields
 		shield_status.text = "ONLINE"
 		shield_status.add_theme_color_override("font_color", Colors.get_shield_color(shield_percent))
 	else:
@@ -223,7 +223,9 @@ func _update_hud() -> void:
 		shield_status.add_theme_color_override("font_color", Colors.STATUS_OFFLINE)
 	
 	# Hull
-	var hull_percent := (ship.hull_integrity / ship.max_hull) * 100.0 if ship.max_hull > 0 else 0
+	var hull_percent := 0.0
+	if ship.max_hull > 0:
+		hull_percent = (ship.hull_integrity / ship.max_hull) * 100.0
 	hull_value.text = "%d%%" % int(hull_percent)
 	hull_value.add_theme_color_override("font_color", Colors.get_health_color(hull_percent / 100.0))
 	
@@ -370,15 +372,15 @@ func _create_placeholder_ship(ship) -> Node3D:
 	var box := BoxMesh.new()
 	
 	# Scale based on ship class
+	var dims := Vector3(15, 6, 40)
 	match ship.ship_class:
-		"dreadnought":
-			box.size = Vector3(30, 10, 80)
-		"cruiser", "heavy_cruiser":
-			box.size = Vector3(20, 8, 50)
-		"frigate":
-			box.size = Vector3(12, 5, 30)
-		_:
-			box.size = Vector3(15, 6, 40)
+		"enemy_dreadnought":
+			dims = Vector3(30, 10, 80)
+		"player_cruiser":
+			dims = Vector3(20, 8, 50)
+		"enemy_frigate":
+			dims = Vector3(12, 5, 30)
+	box.size = dims
 	
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color(0.4, 0.45, 0.5)

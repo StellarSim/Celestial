@@ -5,6 +5,7 @@ import (
 	"celestial/internal/config"
 	"celestial/internal/input"
 	"celestial/internal/panel"
+	"celestial/internal/ship"
 	"celestial/internal/simulation"
 	"encoding/json"
 	"fmt"
@@ -29,6 +30,7 @@ type TCPServer struct {
 type PanelConnection struct {
 	conn    net.Conn
 	panelID string
+	writeMu sync.Mutex
 }
 
 type PanelMessage struct {
@@ -37,14 +39,16 @@ type PanelMessage struct {
 	Value   interface{} `json:"value"`
 }
 
-func NewTCPServer(port int, sim *simulation.Simulator, mappings *config.PanelMapping) *TCPServer {
+// NewTCPServer shares the single action catalog with the WebSocket server so a
+// panel input and a screen input take exactly the same path.
+func NewTCPServer(port int, sim *simulation.Simulator, mappings *config.PanelMapping, router *input.ActionRouter) *TCPServer {
 	return &TCPServer{
 		port:              port,
 		simulator:         sim,
 		panelMappings:     mappings,
 		connections:       make(map[string]*PanelConnection),
 		stopChan:          make(chan struct{}),
-		actionRouter:      input.NewActionRouter(sim),
+		actionRouter:      router,
 		panelStateManager: panel.NewPanelStateManager(),
 	}
 }
@@ -128,9 +132,17 @@ func (ts *TCPServer) handleConnection(conn net.Conn) {
 }
 
 func (ts *TCPServer) handleMessage(panelConn *PanelConnection, message string) {
+	// A malformed panel message must never take the server down.
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Panel %s sent a message that could not be handled: %v", panelConn.panelID, r)
+			ts.sendFeedback(panelConn, panelConn.panelID, "error", "message could not be handled")
+		}
+	}()
 	var msg PanelMessage
 	if err := json.Unmarshal([]byte(message), &msg); err != nil {
 		log.Printf("Error parsing panel message: %v", err)
+		ts.sendFeedback(panelConn, msg.PanelID, "error", "invalid JSON")
 		return
 	}
 
@@ -140,19 +152,23 @@ func (ts *TCPServer) handleMessage(panelConn *PanelConnection, message string) {
 	}
 
 	if msg.Action == "register" {
-		ts.sendFeedback(panelConn.conn, msg.PanelID, "registered", "")
+		if _, ok := ts.panelMappings.Panels[msg.PanelID]; !ok {
+			ts.sendFeedback(panelConn, msg.PanelID, "error", "unknown panel_id")
+			return
+		}
+		ts.sendFeedback(panelConn, msg.PanelID, "registered", "")
 		return
 	}
 
 	panelConfig, ok := ts.panelMappings.Panels[msg.PanelID]
 	if !ok {
-		log.Printf("Unknown panel ID: %s", msg.PanelID)
+		ts.sendFeedback(panelConn, msg.PanelID, "error", fmt.Sprintf("unknown panel_id: %s", msg.PanelID))
 		return
 	}
 
 	actionDef, ok := panelConfig.Actions[msg.Action]
 	if !ok {
-		log.Printf("Unknown action %s for panel %s", msg.Action, msg.PanelID)
+		ts.sendFeedback(panelConn, msg.PanelID, "error", fmt.Sprintf("unknown action %s for panel %s", msg.Action, msg.PanelID))
 		return
 	}
 
@@ -160,18 +176,42 @@ func (ts *TCPServer) handleMessage(panelConn *PanelConnection, message string) {
 		Role:   panelConfig.Role,
 		System: actionDef.System,
 		Action: actionDef.Action,
-		Value:  msg.Value,
+		Value:  mergeValue(actionDef.Value, msg.Value),
 	}
 
 	if err := ts.actionRouter.RouteAction(action); err != nil {
-		log.Printf("Error routing action: %v", err)
-		ts.sendFeedback(panelConn.conn, msg.PanelID, "error", err.Error())
-	} else {
-		ts.sendFeedback(panelConn.conn, msg.PanelID, "success", "")
+		log.Printf("Error routing panel action: %v", err)
+		ts.sendFeedback(panelConn, msg.PanelID, "error", err.Error())
+		return
 	}
+	ts.sendFeedback(panelConn, msg.PanelID, "success", "")
 }
 
-func (ts *TCPServer) sendFeedback(conn net.Conn, panelID, status, message string) {
+// mergeValue lets panels.yaml supply a static value (for example the breaker
+// name) while the panel's own payload supplies the variable part. The static
+// value comes from shared config, so it is copied rather than mutated.
+func mergeValue(static interface{}, dynamic interface{}) interface{} {
+	staticMap, _ := static.(map[string]interface{})
+	dynamicMap, _ := dynamic.(map[string]interface{})
+
+	if staticMap == nil && dynamicMap == nil {
+		if dynamic != nil {
+			return dynamic
+		}
+		return static
+	}
+
+	merged := make(map[string]interface{}, len(staticMap)+len(dynamicMap))
+	for k, v := range staticMap {
+		merged[k] = v
+	}
+	for k, v := range dynamicMap {
+		merged[k] = v
+	}
+	return merged
+}
+
+func (ts *TCPServer) sendFeedback(panelConn *PanelConnection, panelID, status, message string) {
 	feedback := map[string]interface{}{
 		"type":     "feedback",
 		"panel_id": panelID,
@@ -185,8 +225,9 @@ func (ts *TCPServer) sendFeedback(conn net.Conn, panelID, status, message string
 		return
 	}
 
-	data = append(data, '\n')
-	if _, err := conn.Write(data); err != nil {
+	panelConn.writeMu.Lock()
+	defer panelConn.writeMu.Unlock()
+	if _, err := panelConn.conn.Write(append(data, '\n')); err != nil {
 		log.Printf("Error sending feedback: %v", err)
 	}
 }
@@ -200,28 +241,53 @@ func (ts *TCPServer) broadcastPanelStates() {
 		case <-ts.stopChan:
 			return
 		case <-ticker.C:
-			ships := ts.simulator.GetAllShips()
-			for _, sh := range ships {
-				if !sh.IsPlayer {
-					continue
-				}
+			player := ts.playerShip()
+			if player == nil {
+				continue
+			}
+			// One deep copy per tick so panel serialization never races the sim.
+			snapshot := player.Clone()
+			now := ts.simulator.GetCurrentTime()
 
-				ts.mu.RLock()
-				for _, panelConn := range ts.connections {
-					if panelConn.panelID == "" {
-						continue
-					}
-
-					state := ts.panelStateManager.UpdateFromShip(panelConn.panelID, sh, ts.simulator.CurrentTime)
-					ts.sendPanelState(panelConn.conn, state)
+			ts.mu.RLock()
+			conns := make([]*PanelConnection, 0, len(ts.connections))
+			for _, c := range ts.connections {
+				if c.panelID != "" {
+					conns = append(conns, c)
 				}
-				ts.mu.RUnlock()
+			}
+			ts.mu.RUnlock()
+
+			for _, c := range conns {
+				state := ts.panelStateManager.UpdateFromShip(c.panelID, snapshot, now, ts.stationState())
+				ts.sendPanelState(c, state)
 			}
 		}
 	}
 }
 
-func (ts *TCPServer) sendPanelState(conn net.Conn, state *panel.PanelState) {
+func (ts *TCPServer) stationState() panel.StationState {
+	scanActive, scanTarget, scanProgress, scanMode := ts.actionRouter.ScanState()
+	hailing, hailTarget, frequency := ts.actionRouter.CommState()
+	transporterActive, transporterEmergency := ts.actionRouter.TransporterState()
+	return panel.StationState{
+		ScanActive: scanActive, ScanTarget: scanTarget,
+		ScanProgress: scanProgress, ScanMode: scanMode,
+		Hailing: hailing, HailTarget: hailTarget, Frequency: frequency,
+		TransporterActive: transporterActive, TransporterEmergency: transporterEmergency,
+	}
+}
+
+func (ts *TCPServer) playerShip() *ship.Ship {
+	for _, sh := range ts.simulator.GetAllShips() {
+		if sh.IsPlayer {
+			return sh
+		}
+	}
+	return nil
+}
+
+func (ts *TCPServer) sendPanelState(panelConn *PanelConnection, state *panel.PanelState) {
 	message := map[string]interface{}{
 		"type":  "state_update",
 		"state": state,
@@ -229,9 +295,13 @@ func (ts *TCPServer) sendPanelState(conn net.Conn, state *panel.PanelState) {
 
 	data, err := json.Marshal(message)
 	if err != nil {
+		log.Printf("Error marshaling panel state: %v", err)
 		return
 	}
 
-	data = append(data, '\n')
-	conn.Write(data)
+	panelConn.writeMu.Lock()
+	defer panelConn.writeMu.Unlock()
+	if _, err := panelConn.conn.Write(append(data, '\n')); err != nil {
+		log.Printf("Error sending panel state: %v", err)
+	}
 }

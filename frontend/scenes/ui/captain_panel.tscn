@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://cfqk2mwp7r8aj"]
+[gd_scene load_steps=3 format=3 uid="uid://cfqk2mwp7r8aj"]
 
 [ext_resource type="Script" path="res://scripts/ui/captain_panel.gd" id="1_captain"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_alert"]
 
 [node name="CaptainPanel" type="Control"]
 layout_mode = 3
@@ -232,5 +234,3 @@ layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "ABORT"
-
-[sub_resource type="ButtonGroup" id="ButtonGroup_alert"]

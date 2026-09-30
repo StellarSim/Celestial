@@ -139,9 +139,12 @@ type PanelConfig struct {
 	Actions map[string]ActionDef `yaml:"actions"`
 }
 
+// ActionDef maps a panel-local input name onto the shared action catalog.
+// Value supplies any static parts of the target (for example the breaker name).
 type ActionDef struct {
-	System string `yaml:"system"`
-	Action string `yaml:"action"`
+	System string                 `yaml:"system"`
+	Action string                 `yaml:"action"`
+	Value  map[string]interface{} `yaml:"value"`
 }
 
 func LoadPanelMappings(path string) (*PanelMapping, error) {

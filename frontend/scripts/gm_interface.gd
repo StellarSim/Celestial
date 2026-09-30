@@ -1,7 +1,7 @@
 extends Control
 ## Game Master interface with free camera, ship management, and simulation controls.
 
-const SHIP_CLASSES := ["frigate", "cruiser", "heavy_cruiser", "dreadnought"]
+const SHIP_CLASSES := ["player_cruiser", "enemy_frigate", "enemy_dreadnought"]
 
 @onready var viewport: SubViewport = $MainSplit/ViewportContainer/SubViewport
 @onready var gm_camera: Camera3D = $MainSplit/ViewportContainer/SubViewport/World/GMCamera
@@ -284,15 +284,15 @@ func _create_ship_visual(ship) -> Node3D:
 	var mesh_instance := MeshInstance3D.new()
 	var box := BoxMesh.new()
 	
+	var dims := Vector3(15, 6, 40)
 	match ship.ship_class:
-		"dreadnought":
-			box.size = Vector3(30, 10, 80)
-		"cruiser", "heavy_cruiser":
-			box.size = Vector3(20, 8, 50)
-		"frigate":
-			box.size = Vector3(12, 5, 30)
-		_:
-			box.size = Vector3(15, 6, 40)
+		"enemy_dreadnought":
+			dims = Vector3(30, 10, 80)
+		"player_cruiser":
+			dims = Vector3(20, 8, 50)
+		"enemy_frigate":
+			dims = Vector3(12, 5, 30)
+	box.size = dims
 	
 	var material := StandardMaterial3D.new()
 	if ship.is_player:
@@ -367,7 +367,7 @@ func _on_heal_pressed() -> void:
 func _on_destroy_pressed() -> void:
 	if _selected_ship_id.is_empty():
 		return
-	NetworkClient.send_gm_command("destroy_ship", {"ship_id": _selected_ship_id})
+	NetworkClient.send_gm_command("remove_ship", {"ship_id": _selected_ship_id})
 
 
 func _on_spawn_pressed() -> void:
@@ -375,7 +375,9 @@ func _on_spawn_pressed() -> void:
 	var spawn_pos := gm_camera.global_position + gm_camera.global_transform.basis * Vector3(0, 0, -200)
 	
 	NetworkClient.send_gm_command("spawn_ship", {
-		"class": ship_class,
+		"class_id": ship_class,
+		"ship_id": "%s_%d" % [ship_class, Time.get_ticks_msec()],
+		"name": ship_class.capitalize(),
 		"position": {"x": spawn_pos.x, "y": spawn_pos.y, "z": spawn_pos.z}
 	})
 
@@ -393,7 +395,7 @@ func _on_lose_pressed() -> void:
 
 
 func _on_restart_pressed() -> void:
-	NetworkClient.send_gm_command("mission_restart")
+	NetworkClient.send_gm_command("stop_mission")
 
 
 func _on_back_pressed() -> void:

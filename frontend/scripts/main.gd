@@ -15,7 +15,7 @@ const STATION_ROLES := [
 
 const DISPLAY_ROLES := [
 	{"id": "viewscreen", "name": "Main Viewscreen", "desc": "3D Bridge Display"},
-	{"id": "tactical_display", "name": "Tactical Display", "desc": "Rear Overview"},
+	{"id": "rear_display", "name": "Rear Display", "desc": "Room Tactical Map"},
 	{"id": "gm", "name": "Game Master", "desc": "Mission Control"},
 ]
 
@@ -43,7 +43,6 @@ const DISPLAY_ROLES := [
 
 var _selected_role: String = ""
 var _role_buttons: Dictionary = {}
-
 
 func _ready() -> void:
 	_load_settings()
@@ -226,7 +225,7 @@ func _launch_client() -> void:
 	match _selected_role:
 		"viewscreen":
 			scene_path = "res://scenes/viewscreen.tscn"
-		"tactical_display", "rear_display":
+		"rear_display":
 			scene_path = "res://scenes/rear_display.tscn"
 		"gm":
 			scene_path = "res://scenes/gm_interface.tscn"

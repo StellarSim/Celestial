@@ -83,7 +83,6 @@ func _setup_weapon_controls() -> void:
 
 func _connect_signals() -> void:
 	GameState.state_updated.connect(_on_state_updated)
-	GameState.ship_added.connect(_on_ship_added)
 	GameState.ship_removed.connect(_on_ship_removed)
 	
 	lock_btn.pressed.connect(_on_lock_target)
@@ -91,7 +90,7 @@ func _connect_signals() -> void:
 	next_btn.pressed.connect(_on_next_target)
 	
 	auto_fire_toggle.toggled.connect(_on_auto_fire_toggled)
-	fire_all_btn.pressed.connect(_on_fire_all)
+	fire_all_btn.pressed.connect(_on_fire_all_bays)
 	
 	target_list.item_selected.connect(_on_target_selected)
 
@@ -134,7 +133,7 @@ func _update_target_list() -> void:
 		# Color-code by faction
 		var faction_color: Color = Colors.get_faction_color(ship.faction)
 		
-		var display_text := "%s (%.1f km)" % [ship.display_name, distance / 1000.0]
+		var display_text := "%s (%.1f km)" % [ship.name, distance / 1000.0]
 		var idx := target_list.add_item(display_text)
 		target_list.set_item_custom_fg_color(idx, faction_color)
 		target_list.set_item_metadata(idx, ship_id)
@@ -173,7 +172,7 @@ func _update_target_info() -> void:
 	var bearing := rad_to_deg(atan2(dir.x, dir.z))
 	bearing = fmod(bearing + 360, 360)
 	
-	target_name.text = target.display_name
+	target_name.text = target.name
 	var target_color: Color = Colors.get_faction_color(target.faction)
 	target_name.add_theme_color_override("font_color", target_color)
 	
@@ -191,60 +190,58 @@ func _update_target_info() -> void:
 	shield_value.add_theme_color_override("font_color", Colors.get_shield_color(shield_avg / 100.0))
 	
 	# Hull status
-	hull_value.text = "%.0f%%" % target.hull
-	hull_value.add_theme_color_override("font_color", Colors.get_health_color(target.hull / 100.0))
+	hull_value.text = "%.0f%%" % target.hull_integrity
+	hull_value.add_theme_color_override("font_color", Colors.get_health_color(target.hull_integrity / 100.0))
 
 
 func _update_weapon_status(ship: GameState.ShipState) -> void:
-	# Update beam weapons
+	# Update beam weapons (spec: phaser_arrays)
 	for i in range(_beam_controls.size()):
 		var ctrl: Dictionary = _beam_controls[i]
-		var beam_state = ship.weapons.beams[i] if i < ship.weapons.beams.size() else null
+		var beam_state = ship.weapons.phaser_arrays[i] if i < ship.weapons.phaser_arrays.size() else null
 		
 		if beam_state:
-			(ctrl.toggle as CheckButton).set_pressed_no_signal(beam_state.enabled)
-			(ctrl.charge as ProgressBar).value = beam_state.charge
-			(ctrl.fire as Button).disabled = beam_state.charge < 100 or _locked_target_id.is_empty()
+			(ctrl.toggle as CheckButton).set_pressed_no_signal(beam_state.health > 0 and beam_state.cooldown <= 0)
+			(ctrl.charge as ProgressBar).value = 100.0 - clampf(beam_state.cooldown * 50.0, 0.0, 100.0)
+			(ctrl.fire as Button).disabled = beam_state.cooldown > 0 or _locked_target_id.is_empty()
 		else:
 			(ctrl.fire as Button).disabled = true
 	
-	# Update torpedo tubes
+	# Update torpedo tubes (spec: torpedo_bays)
 	for i in range(_tube_controls.size()):
 		var ctrl: Dictionary = _tube_controls[i]
-		var tube_state = ship.weapons.tubes[i] if i < ship.weapons.tubes.size() else null
+		var tube_state = ship.weapons.torpedo_bays[i] if i < ship.weapons.torpedo_bays.size() else null
 		
 		if tube_state:
-			(ctrl.toggle as CheckButton).set_pressed_no_signal(tube_state.enabled)
+			(ctrl.toggle as CheckButton).set_pressed_no_signal(tube_state.armed)
 			
 			var status_label := ctrl.status as Label
-			match tube_state.state:
-				"empty":
-					status_label.text = "EMPTY"
-					status_label.add_theme_color_override("font_color", Colors.STATUS_OFFLINE)
-				"loading":
-					status_label.text = "LOADING..."
-					status_label.add_theme_color_override("font_color", Colors.ALERT_YELLOW)
-				"ready":
-					status_label.text = "READY"
-					status_label.add_theme_color_override("font_color", Colors.STATUS_ONLINE)
-				_:
-					status_label.text = tube_state.state.to_upper()
+			if not tube_state.loaded:
+				status_label.text = "EMPTY"
+				status_label.add_theme_color_override("font_color", Colors.STATUS_OFFLINE)
+			elif tube_state.cooldown > 0:
+				status_label.text = "LOADING..."
+				status_label.add_theme_color_override("font_color", Colors.ALERT_YELLOW)
+			elif tube_state.loaded and tube_state.locked:
+				status_label.text = "READY"
+				status_label.add_theme_color_override("font_color", Colors.STATUS_ONLINE)
+			else:
+				status_label.text = "LOADED"
+				status_label.add_theme_color_override("font_color", Colors.ALERT_YELLOW)
 			
-			(ctrl.fire as Button).disabled = tube_state.state != "ready" or _locked_target_id.is_empty()
+			(ctrl.fire as Button).disabled = not (tube_state.loaded and tube_state.locked) or _locked_target_id.is_empty()
 		else:
 			(ctrl.fire as Button).disabled = true
 
 
 func _update_inventory(ship: GameState.ShipState) -> void:
-	var inv: Dictionary = ship.weapons.torpedo_inventory
-	var standard_val: int = inv.get("standard", 0)
-	var emp_val: int = inv.get("emp", 0)
-	var nuclear_val: int = inv.get("nuclear", 0)
-	var mine_val: int = inv.get("mine", 0)
-	standard_count.text = str(standard_val)
-	emp_count.text = str(emp_val)
-	nuclear_count.text = str(nuclear_val)
-	mine_count.text = str(mine_val)
+	var total_ammo := 0
+	for bay in ship.weapons.torpedo_bays:
+		total_ammo += int(bay.ammo)
+	standard_count.text = str(total_ammo)
+	emp_count.text = "0"
+	nuclear_count.text = "0"
+	mine_count.text = "0"
 
 
 func _on_target_selected(idx: int) -> void:
@@ -257,7 +254,7 @@ func _on_lock_target() -> void:
 		return
 	
 	_locked_target_id = target_list.get_item_metadata(selected[0])
-	NetworkClient.send_action("weapons", "lock_target", {"target_id": _locked_target_id})
+	NetworkClient.send_action("weapons", "set_target", {"target_id": _locked_target_id})
 
 
 func _on_clear_target() -> void:
@@ -280,8 +277,8 @@ func _on_next_target() -> void:
 
 
 func _on_beam_toggle(enabled: bool, bank_idx: int) -> void:
-	NetworkClient.send_action("weapons", "toggle_beam", {
-		"bank": bank_idx,
+	NetworkClient.send_action("phaser", "set_enabled", {
+		"array_id": _phaser_id(bank_idx),
 		"enabled": enabled
 	})
 
@@ -289,51 +286,61 @@ func _on_beam_toggle(enabled: bool, bank_idx: int) -> void:
 func _on_beam_fire(bank_idx: int) -> void:
 	if _locked_target_id.is_empty():
 		return
-	NetworkClient.send_action("weapons", "fire_beam", {
-		"bank": bank_idx,
+	NetworkClient.send_action("phaser", "fire", {
+		"array_id": _phaser_id(bank_idx),
 		"target_id": _locked_target_id
 	})
 
 
 func _on_tube_toggle(enabled: bool, tube_idx: int) -> void:
-	NetworkClient.send_action("weapons", "toggle_tube", {
-		"tube": tube_idx,
-		"enabled": enabled
+	NetworkClient.send_action("torpedo", "arm", {
+		"bay_id": tube_idx + 1,
+		"armed": enabled
 	})
 
 
-func _on_tube_type_changed(type_idx: int, tube_idx: int) -> void:
-	NetworkClient.send_action("weapons", "load_tube", {
-		"tube": tube_idx,
-		"torpedo_type": TORPEDO_TYPES[type_idx].to_lower()
-	})
+func _on_tube_type_changed(_type_idx: int, tube_idx: int) -> void:
+	NetworkClient.send_action("torpedo", "load", {"bay_id": tube_idx + 1})
 
 
 func _on_tube_fire(tube_idx: int) -> void:
 	if _locked_target_id.is_empty():
 		return
-	NetworkClient.send_action("weapons", "fire_torpedo", {
-		"tube": tube_idx,
+	NetworkClient.send_action("torpedo", "fire", {
+		"bay_id": tube_idx + 1,
 		"target_id": _locked_target_id
 	})
 
 
 func _on_auto_fire_toggled(enabled: bool) -> void:
-	NetworkClient.send_action("weapons", "auto_fire", {"enabled": enabled})
+	NetworkClient.send_action("torpedo", "set_auto_fire", {"enabled": enabled})
 
 
-func _on_fire_all() -> void:
+func _on_fire_all_bays() -> void:
 	if _locked_target_id.is_empty():
 		return
-	NetworkClient.send_action("weapons", "fire_all", {"target_id": _locked_target_id})
+	var ship := GameState.get_player_ship()
+	if ship == null:
+		return
+	for bay in ship.weapons.torpedo_bays:
+		NetworkClient.send_action("torpedo", "fire", {
+			"bay_id": bay.bay_id,
+			"target_id": _locked_target_id
+		})
+
+
+func _phaser_id(index: int) -> String:
+	var ship := GameState.get_player_ship()
+	if ship and index < ship.weapons.phaser_arrays.size():
+		var array_id: String = ship.weapons.phaser_arrays[index].array_id
+		if not array_id.is_empty():
+			return array_id
+	return "phaser_array_%d" % (index + 1)
 
 
 func _on_state_updated() -> void:
-	pass  # Updates handled in _process
-
-
-func _on_ship_added(_ship_id: String) -> void:
-	pass  # List updates in _process
+	# Reflect the server's auto-fire state instead of keeping a local flag.
+	auto_fire_toggle.set_pressed_no_signal(GameState.auto_fire)
 
 
 func _on_ship_removed(ship_id: String) -> void:

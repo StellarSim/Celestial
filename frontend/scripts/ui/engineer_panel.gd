@@ -2,7 +2,7 @@ extends Control
 ## Engineer station panel for power management and damage control.
 
 const BREAKERS := ["reactor", "engines", "shields", "weapons", "sensors", "comms", "life_support", "navigation"]
-const SECTIONS := ["bow", "stern", "port", "starboard"]
+const SECTIONS := ["forward", "aft", "port", "starboard"]
 
 @onready var generation_value: Label = $MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/GenerationPanel/GenerationValue
 @onready var consumption_value: Label = $MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/ConsumptionPanel/ConsumptionValue
@@ -58,8 +58,8 @@ func _setup_breakers() -> void:
 func _connect_signals() -> void:
 	GameState.state_updated.connect(_on_state_updated)
 	
-	bow_section.pressed.connect(func(): _select_section("bow"))
-	stern_section.pressed.connect(func(): _select_section("stern"))
+	bow_section.pressed.connect(func(): _select_section("forward"))
+	stern_section.pressed.connect(func(): _select_section("aft"))
 	port_section.pressed.connect(func(): _select_section("port"))
 	starboard_section.pressed.connect(func(): _select_section("starboard"))
 	
@@ -112,8 +112,8 @@ func _update_breakers(ship: GameState.ShipState) -> void:
 
 
 func _update_damage_sections(ship: GameState.ShipState) -> void:
-	_update_section_button(bow_section, "BOW", ship.damage_sections.get("bow"))
-	_update_section_button(stern_section, "STERN", ship.damage_sections.get("stern"))
+	_update_section_button(bow_section, "FORWARD", ship.damage_sections.get("forward"))
+	_update_section_button(stern_section, "AFT", ship.damage_sections.get("aft"))
 	_update_section_button(port_section, "PORT", ship.damage_sections.get("port"))
 	_update_section_button(starboard_section, "STARBOARD", ship.damage_sections.get("starboard"))
 
@@ -148,26 +148,36 @@ func _update_section_button(button: Button, name: String, section) -> void:
 
 
 func _update_engine_status(ship: GameState.ShipState) -> void:
-	var engine_health := ship.engines.health
+	var engine_health := 100.0
+	var thrust := 0.0
+	if ship.engines_list.size() > 0:
+		engine_health = 0.0
+		for engine in ship.engines_list:
+			engine_health = minf(engine_health, engine.health)
+			thrust += engine.thrust.to_vector3().length()
+	elif ship.engines:
+		engine_health = ship.engines.health
+		thrust = ship.engines.thrust.to_vector3().length()
+
 	engine_health_bar.value = engine_health
 	engine_health_bar.modulate = Colors.get_health_color(engine_health / 100.0)
-	
-	# Calculate thrust percentage from velocity
-	var thrust := ship.engines.thrust.to_vector3().length()
-	var max_thrust := 10000.0  # Approximate max thrust
-	var thrust_percent := (thrust / max_thrust) * 100.0
-	thrust_value.text = "%.0f%%" % clampf(thrust_percent, 0, 100)
-	
-	# Temperature (simulated based on thrust)
-	engine_temp_bar.value = thrust_percent * 0.6 + 20.0
+
+	# Thrust output is the commanded throttle, which the server owns.
+	var thrust_percent := 0.0
+	if ship.power_breakers.get("engines", true):
+		thrust_percent = clampf(ship.engines_list[0].thrust.to_vector3().length(), 0.0, 100.0) if ship.engines_list.size() > 0 else 0.0
+	thrust_value.text = "%.0f%%" % thrust_percent
+
+	# Temperature is derived from server thrust state, never timed locally.
+	engine_temp_bar.value = 20.0 + thrust_percent * 0.6
 
 
 func _select_section(section: String) -> void:
 	_selected_section = section
 	
 	# Update button states to show selection
-	bow_section.button_pressed = section == "bow"
-	stern_section.button_pressed = section == "stern"
+	bow_section.button_pressed = section == "forward"
+	stern_section.button_pressed = section == "aft"
 	port_section.button_pressed = section == "port"
 	starboard_section.button_pressed = section == "starboard"
 	

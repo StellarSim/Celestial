@@ -40,7 +40,6 @@ const STATION_NAMES := {
 @onready var disconnect_overlay: ColorRect = $DisconnectOverlay
 @onready var pause_overlay: ColorRect = $PauseOverlay
 @onready var alert_overlay: ColorRect = $AlertOverlay
-@onready var damage_effects: Control = $DamageEffects
 
 @onready var fps_label: Label = $DebugOverlay/DebugContent/FPSLabel
 @onready var latency_label: Label = $DebugOverlay/DebugContent/LatencyLabel
@@ -88,30 +87,23 @@ func _load_station_panel() -> void:
 	var role := GameState.client_role
 	
 	if not STATION_PANELS.has(role):
-		push_warning("Unknown station role: ", role)
+		push_error("Unknown station role: %s" % role)
 		return
 	
 	var panel_path: String = STATION_PANELS[role]
 	
 	if not ResourceLoader.exists(panel_path):
-		push_warning("Station panel not found: ", panel_path)
-		_create_placeholder_panel(role)
+		push_error("Station panel scene missing: %s" % panel_path)
 		return
 	
 	var panel_scene := load(panel_path) as PackedScene
-	if panel_scene:
-		_current_panel = panel_scene.instantiate()
-		station_content.add_child(_current_panel)
-		_current_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-
-
-func _create_placeholder_panel(role: String) -> void:
-	var placeholder := Label.new()
-	placeholder.text = "Station panel for '%s' not yet implemented" % role
-	placeholder.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	placeholder.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	station_content.add_child(placeholder)
-	placeholder.set_anchors_preset(Control.PRESET_FULL_RECT)
+	if panel_scene == null:
+		push_error("Station panel scene failed to load: %s" % panel_path)
+		return
+	
+	_current_panel = panel_scene.instantiate()
+	station_content.add_child(_current_panel)
+	_current_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 
 
 func _update_station_label() -> void:
@@ -211,8 +203,8 @@ func _on_back_pressed() -> void:
 
 
 func _on_red_alert_pressed() -> void:
-	NetworkClient.send_action("alert", "set_level", "red")
+	NetworkClient.send_action("alert", "set_level", {"level": "red"})
 
 
 func _on_yellow_alert_pressed() -> void:
-	NetworkClient.send_action("alert", "set_level", "yellow")
+	NetworkClient.send_action("alert", "set_level", {"level": "yellow"})

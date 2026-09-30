@@ -21,6 +21,17 @@ var is_display: bool = false
 var simulation_time: float = 0.0
 var is_paused: bool = false
 var alert_level: String = "normal"
+var mission: Dictionary = {}
+
+# Session-level state shared by every station.
+var orders: Array = []
+var waypoints: Array = []
+var repair_teams: Array = []
+var probes: int = 0
+var communications_log: Array = []
+var log_entries: Array = []
+var autopilot: bool = false
+var auto_fire: bool = false
 
 # Game objects
 var ships: Dictionary = {}  # ship_id -> ShipState
@@ -177,6 +188,7 @@ class SensorsState:
 	var scan_active: bool = false
 	var scan_target: String = ""
 	var scan_progress: float = 0.0
+	var mode: String = "passive"
 	
 	func _init(data: Dictionary = {}) -> void:
 		if data.has("health"): health = data.health
@@ -184,6 +196,7 @@ class SensorsState:
 		if data.has("scan_active"): scan_active = data.scan_active
 		if data.has("scan_target"): scan_target = data.scan_target
 		if data.has("scan_progress"): scan_progress = data.scan_progress
+		if data.has("mode"): mode = data.mode
 
 
 class CommsState:
@@ -191,17 +204,20 @@ class CommsState:
 	var enabled: bool = true
 	var hailing: bool = false
 	var hail_target: String = ""
+	var frequency: float = 500.0
 	
 	func _init(data: Dictionary = {}) -> void:
 		if data.has("health"): health = data.health
 		if data.has("enabled"): enabled = data.enabled
 		if data.has("hailing"): hailing = data.hailing
 		if data.has("hail_target"): hail_target = data.hail_target
+		if data.has("frequency"): frequency = data.frequency
 
 
 class ShipState:
 	var id: String = ""
 	var name: String = ""
+	var faction: String = "neutral"
 	var is_player: bool = false
 	var ship_class: String = ""
 	
@@ -219,6 +235,7 @@ class ShipState:
 	var power_total: float = 1000.0
 	
 	var engines: EngineState
+	var engines_list: Array = []
 	var weapons: WeaponsState
 	
 	var shield_facings: Dictionary = {
@@ -247,7 +264,14 @@ class ShipState:
 	
 	var docked: bool = false
 	var docking_target: String = ""
+	var target_id: String = ""
 	var alert_level: String = "normal"
+	
+	# Server-owned station values (never simulated client-side).
+	var shield_frequency: float = 0.0
+	var transporter_active: bool = false
+	var transporter_emergency: bool = false
+	var self_destruct_remaining: float = 0.0
 	
 	# Interpolation helpers
 	var _prev_position: Vector3
@@ -272,8 +296,10 @@ class ShipState:
 		
 		if data.has("id"): id = data.id
 		if data.has("name"): name = data.name
+		if data.has("faction"): faction = data.faction
 		if data.has("is_player"): is_player = data.is_player
 		if data.has("class"): ship_class = data["class"]
+		if data.has("class_id"): ship_class = data["class_id"]
 		
 		if data.has("position"): position = Vector3State.new(data.position)
 		if data.has("velocity"): velocity = Vector3State.new(data.velocity)
@@ -288,7 +314,18 @@ class ShipState:
 		if data.has("power_available"): power_available = data.power_available
 		if data.has("power_total"): power_total = data.power_total
 		
-		if data.has("engines"): engines = EngineState.new(data.engines)
+		if data.has("engines"):
+			var eng_data = data.engines
+			if eng_data is Array:
+				engines_list.clear()
+				for e in eng_data:
+					if e is Dictionary:
+						engines_list.append(EngineState.new(e))
+				if engines_list.size() > 0:
+					engines = engines_list[0]
+			elif eng_data is Dictionary:
+				engines = EngineState.new(eng_data)
+				engines_list = [engines]
 		if data.has("weapons"): weapons = WeaponsState.new(data.weapons)
 		
 		if data.has("shield_facings"): shield_facings = data.shield_facings.duplicate()
@@ -311,7 +348,15 @@ class ShipState:
 		
 		if data.has("docked"): docked = data.docked
 		if data.has("docking_target"): docking_target = data.docking_target
+		if data.has("target_id"): target_id = data.target_id
 		if data.has("alert_level"): alert_level = data.alert_level
+		if data.has("shield_frequency"): shield_frequency = data.shield_frequency
+		if data.has("self_destruct_remaining"): self_destruct_remaining = data.self_destruct_remaining
+		if data.has("transporter"):
+			var tp = data.transporter
+			if tp is Dictionary:
+				transporter_active = tp.get("active", false)
+				transporter_emergency = tp.get("emergency", false)
 	
 	func get_interpolated_position(t: float) -> Vector3:
 		return _prev_position.lerp(position.to_vector3(), t)
@@ -372,13 +417,53 @@ func apply_state_update(data: Dictionary) -> void:
 		is_paused = data.paused
 		if was_paused != is_paused:
 			paused_changed.emit(is_paused)
+
+	if data.has("alert_level"):
+		var new_alert: String = str(data.alert_level)
+		if new_alert != alert_level:
+			alert_level = new_alert
+			alert_level_changed.emit(alert_level)
+
+	if data.has("mission"):
+		var m = data.mission
+		if m is Dictionary:
+			mission = m
+		else:
+			mission = {}
+
+	if data.has("orders"):
+		orders = data.orders
+	if data.has("waypoints"):
+		waypoints = data.waypoints
+	if data.has("repair_teams"):
+		repair_teams = data.repair_teams
+	if data.has("probes"):
+		probes = data.probes
+	if data.has("communications_log"):
+		communications_log = data.communications_log
+	if data.has("log_entries"):
+		log_entries = data.log_entries
+	if data.has("autopilot"):
+		autopilot = data.autopilot
+	if data.has("auto_fire"):
+		auto_fire = data.auto_fire
 	
-	# Update ships
+	# Update ships (spec: array; tolerate keyed map from older builds)
 	if data.has("ships"):
+		var ship_list: Array = []
+		var ships_raw = data.ships
+		if ships_raw is Array:
+			ship_list = ships_raw
+		elif ships_raw is Dictionary:
+			ship_list = ships_raw.values()
 		var received_ship_ids: Array[String] = []
 		
-		for ship_data in data.ships:
-			var ship_id: String = ship_data.id
+		for ship_data in ship_list:
+			if not (ship_data is Dictionary):
+				continue
+			if not ship_data.has("id"):
+				continue
+			var ship_id: String = str(ship_data.id)
 			received_ship_ids.append(ship_id)
 			
 			if ships.has(ship_id):
@@ -401,12 +486,22 @@ func apply_state_update(data: Dictionary) -> void:
 			ships.erase(ship_id)
 			ship_removed.emit(ship_id)
 	
-	# Update projectiles
+	# Update projectiles (spec: array; tolerate map)
 	if data.has("projectiles"):
+		var proj_list: Array = []
+		var proj_raw = data.projectiles
+		if proj_raw is Array:
+			proj_list = proj_raw
+		elif proj_raw is Dictionary:
+			proj_list = proj_raw.values()
 		var received_projectile_ids: Array[String] = []
 		
-		for proj_data in data.projectiles:
-			var proj_id: String = proj_data.id
+		for proj_data in proj_list:
+			if not (proj_data is Dictionary):
+				continue
+			if not proj_data.has("id"):
+				continue
+			var proj_id: String = str(proj_data.id)
 			received_projectile_ids.append(proj_id)
 			
 			if projectiles.has(proj_id):
@@ -450,9 +545,44 @@ func get_enemy_ships() -> Array:
 	return enemies
 
 
+func get_mission_waypoints() -> Array:
+	var wps: Array = []
+	if not mission.is_empty():
+		var mission_wps = mission.get("waypoints", [])
+		if mission_wps is Array:
+			wps = mission_wps
+	wps.append_array(waypoints)
+	return wps
+
+
+func get_mission_name() -> String:
+	if mission.is_empty():
+		return "No Mission"
+	return str(mission.get("name", "Unknown Mission"))
+
+
+func get_mission_objectives() -> Array:
+	if mission.is_empty():
+		return []
+	var objs = mission.get("objectives", [])
+	if objs is Array:
+		return objs
+	return []
+
+
 func clear_state() -> void:
 	ships.clear()
 	projectiles.clear()
 	player_ship_id = ""
 	simulation_time = 0.0
 	is_paused = false
+	alert_level = "normal"
+	mission = {}
+	orders = []
+	waypoints = []
+	repair_teams = []
+	probes = 0
+	communications_log = []
+	log_entries = []
+	autopilot = false
+	auto_fire = false

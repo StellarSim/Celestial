@@ -17,7 +17,7 @@ var _ambient_player: AudioStreamPlayer
 var _current_sfx_index: int = 0
 var _current_sfx_3d_index: int = 0
 
-# Preloaded common sounds (will be populated as assets are created)
+# Named sound registry, populated as audio assets are authored (BACKLOG 6.1).
 var sounds: Dictionary = {}
 
 
@@ -27,10 +27,7 @@ func _ready() -> void:
 
 
 func _setup_audio_buses() -> void:
-	# Create audio buses if they don't exist
-	var bus_layout := AudioServer.get_bus_count()
-	
-	# The buses should be defined in project settings, but we ensure they exist
+	# The buses are defined in default_bus_layout.tres, but we ensure they exist.
 	_ensure_bus_exists(BUS_SFX, BUS_MASTER)
 	_ensure_bus_exists(BUS_MUSIC, BUS_MASTER)
 	_ensure_bus_exists(BUS_UI, BUS_MASTER)
@@ -193,31 +190,34 @@ func _get_next_sfx_3d_player() -> AudioStreamPlayer3D:
 	return player
 
 
-# Convenience methods for common sounds
+# Convenience methods for common sounds. Audio assets are authored later
+# (BACKLOG 6.1); each method resolves its stream from the `sounds` registry and
+# silently does nothing until the asset is registered.
 func play_button_click() -> void:
-	# Will use actual sound when assets are added
-	pass
+	play_ui_sound(sounds.get("ui_click"))
 
 
 func play_button_hover() -> void:
-	pass
+	play_ui_sound(sounds.get("ui_hover"))
 
 
 func play_alert(level: String) -> void:
-	pass
+	var stream: AudioStream = sounds.get("alert_%s" % level)
+	play_ui_sound(stream)
 
 
 func play_damage_hit() -> void:
-	pass
+	play_sfx(sounds.get("hull_hit"))
 
 
 func play_weapon_fire(weapon_type: String, position: Vector3) -> void:
-	pass
+	play_sfx_3d(sounds.get("weapon_%s" % weapon_type), position)
 
 
 func play_explosion(position: Vector3, size: float = 1.0) -> void:
-	pass
+	var stream: AudioStream = sounds.get("explosion_%s" % ("large" if size >= 1.0 else "small"))
+	play_sfx_3d(stream, position, linear_to_db(clampf(size, 0.1, 1.0)))
 
 
 func play_shield_impact(position: Vector3) -> void:
-	pass
+	play_sfx_3d(sounds.get("shield_impact"), position)

@@ -7,12 +7,28 @@ import (
 	"math/rand"
 )
 
+// Combat range constants (sim meters).
+const (
+	engagementRange = 5000.0
+	weaponFireRange = 2000.0
+	optimalRange    = 1500.0
+	retreatTrigger  = 8000.0
+	closeEvadeRange = 600.0
+)
+
 type Controller struct {
 	State           string
 	TargetID        string
 	Difficulty      float64
 	AggressionLevel float64
 	TacticalMode    string
+
+	spawner ProjectileSpawner
+}
+
+// ProjectileSpawner lets the AI launch real projectiles through the simulator.
+type ProjectileSpawner interface {
+	SpawnTorpedo(shooter *ship.Ship, target *ship.Ship, weaponID string)
 }
 
 func NewController() *Controller {
@@ -24,31 +40,40 @@ func NewController() *Controller {
 	}
 }
 
+// Clone returns a deep copy so snapshot restore does not alias live controllers.
+func (c *Controller) Clone() *Controller {
+	return &Controller{
+		State:           c.State,
+		TargetID:        c.TargetID,
+		Difficulty:      c.Difficulty,
+		AggressionLevel: c.AggressionLevel,
+		TacticalMode:    c.TacticalMode,
+	}
+}
+
 func (c *Controller) Update(dt float64, sh *ship.Ship, allShips map[string]*ship.Ship) {
 	switch c.State {
 	case "patrol":
-		c.updatePatrol(dt, sh, allShips)
+		c.updatePatrol(sh, allShips)
 	case "combat":
-		c.updateCombat(dt, sh, allShips)
+		c.updateCombat(sh, allShips)
 	case "evade":
-		c.updateEvade(dt, sh, allShips)
+		c.updateEvade(sh, allShips)
 	case "retreat":
-		c.updateRetreat(dt, sh, allShips)
+		c.updateRetreat(sh, allShips)
 	}
 
 	c.evaluateState(sh, allShips)
 }
 
-func (c *Controller) updatePatrol(dt float64, sh *ship.Ship, allShips map[string]*ship.Ship) {
-	sh.ApplyThrust(0, 0, sh.MaxSpeed*0.3)
-
-	yawRate := 0.1 * c.Difficulty
-	sh.ApplyRotation(0, yawRate, 0)
+func (c *Controller) updatePatrol(sh *ship.Ship, allShips map[string]*ship.Ship) {
+	sh.ApplyThrust(0, 0, 0.3)
+	sh.ApplyRotation(0, 0.1*c.Difficulty, 0)
 
 	threat := c.findNearestThreat(sh, allShips)
 	if threat != nil {
 		dist := distance(sh.Position, threat.Position)
-		if dist < 5000.0 {
+		if dist < engagementRange {
 			c.State = "combat"
 			c.TargetID = threat.ID
 			log.Printf("AI ship %s entering combat with %s", sh.ID, threat.ID)
@@ -56,7 +81,7 @@ func (c *Controller) updatePatrol(dt float64, sh *ship.Ship, allShips map[string
 	}
 }
 
-func (c *Controller) updateCombat(dt float64, sh *ship.Ship, allShips map[string]*ship.Ship) {
+func (c *Controller) updateCombat(sh *ship.Ship, allShips map[string]*ship.Ship) {
 	target := allShips[c.TargetID]
 	if target == nil {
 		c.State = "patrol"
@@ -73,7 +98,8 @@ func (c *Controller) updateCombat(dt float64, sh *ship.Ship, allShips map[string
 	}
 	toTarget = normalize(toTarget)
 
-	forward := sh.Position
+	// Use the ship's real orientation, not its position.
+	forward := sh.Forward()
 	dot := toTarget.X*forward.X + toTarget.Y*forward.Y + toTarget.Z*forward.Z
 
 	turnRate := c.Difficulty * 0.5
@@ -81,25 +107,25 @@ func (c *Controller) updateCombat(dt float64, sh *ship.Ship, allShips map[string
 		sh.ApplyRotation(toTarget.Y*turnRate, toTarget.X*turnRate, 0)
 	}
 
-	optimalRange := 1000.0
-	if dist > optimalRange*1.5 {
-		sh.ApplyThrust(0, 0, sh.MaxSpeed*0.8)
-	} else if dist < optimalRange*0.5 {
-		sh.ApplyThrust(0, 0, -sh.MaxSpeed*0.5)
-	} else {
-		sh.ApplyThrust(0, 0, sh.MaxSpeed*0.3)
+	switch {
+	case dist > optimalRange*1.5:
+		sh.ApplyThrust(0, 0, 0.8)
+	case dist < optimalRange*0.5:
+		sh.ApplyThrust(0, 0, -0.5)
+	default:
+		sh.ApplyThrust(0, 0, 0.3)
 	}
 
-	if dot > 0.95 && dist < 2000.0 {
-		c.attemptFire(sh, target)
+	if dot > 0.95 && dist < weaponFireRange {
+		c.attemptPhaserFire(sh, target)
 	}
 
-	if rand.Float64() < 0.1*c.AggressionLevel {
-		c.attemptMissilefire(sh, target)
+	if rand.Float64() < 0.02*c.AggressionLevel && dist < weaponFireRange {
+		c.attemptTorpedoFire(sh, target)
 	}
 }
 
-func (c *Controller) updateEvade(dt float64, sh *ship.Ship, allShips map[string]*ship.Ship) {
+func (c *Controller) updateEvade(sh *ship.Ship, allShips map[string]*ship.Ship) {
 	target := allShips[c.TargetID]
 	if target == nil {
 		c.State = "patrol"
@@ -114,25 +140,25 @@ func (c *Controller) updateEvade(dt float64, sh *ship.Ship, allShips map[string]
 	}
 	away = normalize(away)
 
-	sh.ApplyThrust(0, 0, sh.MaxSpeed)
+	sh.ApplyThrust(0, 0, 1.0)
 	sh.ApplyRotation(away.Y*0.5, away.X*0.5, rand.Float64()*0.2-0.1)
 
-	if rand.Float64() < 0.3 {
+	if distance(sh.Position, target.Position) > optimalRange {
 		c.State = "combat"
 	}
 }
 
-func (c *Controller) updateRetreat(dt float64, sh *ship.Ship, allShips map[string]*ship.Ship) {
-	sh.ApplyThrust(0, 0, sh.MaxSpeed)
+func (c *Controller) updateRetreat(sh *ship.Ship, allShips map[string]*ship.Ship) {
+	sh.ApplyThrust(0, 0, 1.0)
 
-	dist := 10000.0
+	dist := math.MaxFloat64
 	if c.TargetID != "" {
 		if target := allShips[c.TargetID]; target != nil {
 			dist = distance(sh.Position, target.Position)
 		}
 	}
 
-	if dist > 8000.0 {
+	if dist > retreatTrigger {
 		c.State = "patrol"
 		c.TargetID = ""
 		log.Printf("AI ship %s ending retreat", sh.ID)
@@ -146,42 +172,49 @@ func (c *Controller) evaluateState(sh *ship.Ship, allShips map[string]*ship.Ship
 	if hullHealth < 0.3 || shieldHealth < 0.2 {
 		if c.State != "retreat" {
 			c.State = "retreat"
-			log.Printf("AI ship %s retreating (hull: %.1f%%, shields: %.1f%%)", sh.ID, hullHealth*100, shieldHealth*100)
 		}
 		return
 	}
 
-	if hullHealth < 0.6 && shieldHealth < 0.5 {
-		if c.State == "combat" && rand.Float64() < 0.3 {
-			c.State = "evade"
-			log.Printf("AI ship %s evading", sh.ID)
-		}
+	if hullHealth < 0.6 && shieldHealth < 0.5 && c.State == "combat" {
+		c.State = "evade"
 	}
 }
 
-func (c *Controller) attemptFire(sh *ship.Ship, target *ship.Ship) {
-	for id, weapon := range sh.Weapons {
-		if weapon.Type == "phaser" && weapon.Health > 0 && weapon.Cooldown <= 0 {
-			if sh.FireWeapon(id, target.ID) {
-				target.TakeDamage(weapon.Damage*c.Difficulty, "forward")
-				log.Printf("AI ship %s fired %s at %s for %.1f damage", sh.ID, id, target.ID, weapon.Damage*c.Difficulty)
-				return
-			}
+// attemptPhaserFire fires a phaser within range and applies damage.
+func (c *Controller) attemptPhaserFire(sh *ship.Ship, target *ship.Ship) {
+	for id, weapon := range sh.WeaponsSnapshot() {
+		if weapon.Type != "phaser" || weapon.Health <= 0 || weapon.Cooldown > 0 {
+			continue
 		}
+		if weapon.Range > 0 && distance(sh.Position, target.Position) > weapon.Range {
+			continue
+		}
+		if !sh.FireWeapon(id, target.ID) {
+			return
+		}
+		facing := target.FacingFor(sh.Position)
+		target.ApplyTypedDamage(weapon.Damage*c.Difficulty, facing, "energy")
+		return
 	}
 }
 
-func (c *Controller) attemptMissilefire(sh *ship.Ship, target *ship.Ship) {
-	for id, weapon := range sh.Weapons {
-		if weapon.Type == "torpedo" && weapon.Health > 0 && weapon.Cooldown <= 0 && weapon.AmmoCount > 0 {
-			weapon.Armed = true
-			weapon.Loaded = true
-			weapon.Locked = true
-			if sh.FireWeapon(id, target.ID) {
-				log.Printf("AI ship %s fired torpedo %s at %s", sh.ID, id, target.ID)
-				return
-			}
+// attemptTorpedoFire consumes torpedo ammo and spawns a real projectile.
+func (c *Controller) attemptTorpedoFire(sh *ship.Ship, target *ship.Ship) {
+	for id, weapon := range sh.WeaponsSnapshot() {
+		if weapon.Type != "torpedo" || weapon.Health <= 0 || weapon.Cooldown > 0 || weapon.AmmoCount <= 0 {
+			continue
 		}
+		if weapon.Range > 0 && distance(sh.Position, target.Position) > weapon.Range {
+			continue
+		}
+		if !sh.FireWeapon(id, target.ID) {
+			return
+		}
+		if c.spawner != nil {
+			c.spawner.SpawnTorpedo(sh, target, id)
+		}
+		return
 	}
 }
 
@@ -193,11 +226,9 @@ func (c *Controller) findNearestThreat(sh *ship.Ship, allShips map[string]*ship.
 		if other.ID == sh.ID {
 			continue
 		}
-
 		if sh.IsPlayer == other.IsPlayer {
 			continue
 		}
-
 		dist := distance(sh.Position, other.Position)
 		if dist < minDist {
 			minDist = dist
@@ -209,9 +240,8 @@ func (c *Controller) findNearestThreat(sh *ship.Ship, allShips map[string]*ship.
 }
 
 func (c *Controller) calculateHullHealth(sh *ship.Ship) float64 {
-	total := 0.0
-	max := 0.0
-	for _, section := range sh.Hull.Sections {
+	total, max := 0.0, 0.0
+	for _, section := range sh.HullSnapshot() {
 		total += section.Health
 		max += section.MaxHealth
 	}
@@ -222,9 +252,8 @@ func (c *Controller) calculateHullHealth(sh *ship.Ship) float64 {
 }
 
 func (c *Controller) calculateShieldHealth(sh *ship.Ship) float64 {
-	total := 0.0
-	max := 0.0
-	for _, emitter := range sh.Shields.Emitters {
+	total, max := 0.0, 0.0
+	for _, emitter := range sh.ShieldsSnapshot() {
 		total += emitter.Strength
 		max += emitter.MaxStrength
 	}
@@ -236,7 +265,6 @@ func (c *Controller) calculateShieldHealth(sh *ship.Ship) float64 {
 
 func (c *Controller) SetDifficulty(diff float64) {
 	c.Difficulty = diff
-	log.Printf("AI difficulty set to %.2f", diff)
 }
 
 func (c *Controller) SetTacticalMode(mode string) {
@@ -249,7 +277,11 @@ func (c *Controller) SetTacticalMode(mode string) {
 	case "balanced":
 		c.AggressionLevel = 0.5
 	}
-	log.Printf("AI tactical mode set to %s", mode)
+}
+
+// SetSpawner wires the projectile spawner used for AI torpedo fire.
+func (c *Controller) SetSpawner(s ProjectileSpawner) {
+	c.spawner = s
 }
 
 func distance(a, b ship.Vector3) float64 {
@@ -262,11 +294,7 @@ func distance(a, b ship.Vector3) float64 {
 func normalize(v ship.Vector3) ship.Vector3 {
 	mag := math.Sqrt(v.X*v.X + v.Y*v.Y + v.Z*v.Z)
 	if mag < 0.0001 {
-		return ship.Vector3{0, 0, 1}
+		return ship.Vector3{X: 0, Y: 0, Z: -1}
 	}
-	return ship.Vector3{
-		X: v.X / mag,
-		Y: v.Y / mag,
-		Z: v.Z / mag,
-	}
+	return ship.Vector3{X: v.X / mag, Y: v.Y / mag, Z: v.Z / mag}
 }

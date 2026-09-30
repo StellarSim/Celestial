@@ -1,118 +1,104 @@
 -- Mission: Rescue Operation
--- Description: Respond to distress call and rescue stranded vessel
+--
+-- The merchant vessel survives or it does not, based on what the crew does.
+-- The ending follows the state of the simulation, not a counter.
 
 mission = {
     name = "Rescue Operation",
-    description = "Respond to distress call from merchant vessel under attack"
+    description = "Answer a distress call and get the crew of the Aurora to safety."
 }
 
-local player_ship = "player_1"
-local merchant_ship = "merchant_1"
-local rescue_complete = false
-local merchant_alive = true
-local escort_active = false
-local enemies_remaining = 4
+local player_id = nil
+local merchant_id = "aurora"
+local hauntress = "hauntress_1"
+
+local DOCK_RANGE = 300.0
+
 
 function on_start()
-    log("Mission started: Rescue Operation")
-    
-    spawn_ship(player_ship, "player_cruiser", "USS Celestial", true, {x=0, y=0, z=0})
-    
-    spawn_ship(merchant_ship, "enemy_frigate", "Merchant Vessel Aurora", false, {x=10000, y=500, z=-5000})
-    
-    set_objective("respond", "Respond to distress call")
-    set_objective("defend", "Defend the merchant vessel")
-    set_objective("eliminate", "Eliminate all hostiles (0/4)")
-    set_objective("escort", "Escort merchant to safety")
-    
-    log("Distress call received from merchant vessel Aurora")
-    log("Pirates attacking! Respond immediately!")
-    
-    spawn_initial_enemies()
+    spawn_ship("player_1", "player_cruiser", "USS Endeavour", true, {x = 0, y = 0, z = 0})
+    player_id = "player_1"
+
+    spawn_ship(merchant_id, "enemy_frigate", "Merchant Vessel Aurora", false, {x = 10000, y = 500, z = -5000})
+    spawn_ship(hauntress, "enemy_frigate", "Pirate Hauntress", false, {x = 10400, y = 400, z = -4900})
+
+    damage_ship(merchant_id, 220, "aft")
+
+    set_objective("respond", "Reach the Aurora")
+    set_objective("protect", "Keep the Aurora alive")
+
+    log("Distress call from the Aurora. A hauntress is closing on her stern.")
+    log("No time to find out who they are.")
 end
+
 
 function on_event(event_name, params)
-    if event_name == "area_reached" then
-        local area = params.area
-        
-        if area == "merchant_location" then
-            log("Arrived at merchant vessel location")
-            complete_objective("respond")
-            
-            log("Merchant vessel: 'Thank you for responding! We're under heavy fire!'")
-        elseif area == "safe_zone" and escort_active then
-            log("Safe zone reached")
-            complete_objective("escort")
-            mission_win()
-        end
-    end
-    
-    if event_name == "ship_destroyed" then
-        local ship_id = params.ship_id
-        
-        if ship_id == merchant_ship then
-            merchant_alive = false
-            mission_lose("Merchant vessel destroyed")
-        elseif ship_id == player_ship then
-            mission_lose("Player ship destroyed")
-        elseif string.find(ship_id, "pirate_") then
-            enemies_remaining = enemies_remaining - 1
-            log("Pirate destroyed. Remaining: " .. enemies_remaining)
-            
-            set_objective("eliminate", "Eliminate all hostiles (" .. (4 - enemies_remaining) .. "/4)")
-            
-            if enemies_remaining == 2 then
-                log("Pirate reinforcements inbound!")
-                spawn_reinforcements()
-            end
-            
-            if enemies_remaining == 0 then
-                complete_objective("eliminate")
-                complete_objective("defend")
-                start_escort()
-            end
-        end
-    end
-    
-    if event_name == "merchant_damaged" then
-        local health = params.health
-        
-        if health < 30 then
-            log("WARNING: Merchant vessel critical! Hull at " .. health .. "%")
-        elseif health < 60 then
-            log("Merchant vessel taking heavy damage! Hull at " .. health .. "%")
-        end
+    if event_name == "crew_action" then
+        on_crew_action(params)
+
+    elseif event_name == "damage_critical" then
+        on_critical(params)
+
+    elseif event_name == "ship_destroyed" then
+        on_ship_destroyed(params.ship_id)
     end
 end
 
-function spawn_initial_enemies()
-    log("Pirate raiders detected attacking merchant vessel")
-    
-    spawn_ship("pirate_1", "enemy_frigate", "Pirate Raider", false, {x=10500, y=300, z=-4800})
-    spawn_ship("pirate_2", "enemy_frigate", "Pirate Raider", false, {x=10200, y=700, z=-5200})
-    
-    damage_ship(merchant_ship, 150, "forward")
+
+function on_crew_action(params)
+    local action = params.action
+    local merchant_health = ship_health(merchant_id)
+
+    if action == "hail" then
+        log("Aurora: 'We are hit and losing pressure. Please, get her off!'")
+        set_objective("protect", "Get a damage team to the Aurora while the raider pressures her")
+
+    elseif action == "repair_team" then
+        log("Repair team away for the Aurora.")
+        set_objective("protect", "Repair team working: hold the hauntress off")
+
+    elseif action == "dock" then
+        if merchant_health <= 0 then
+            log("Nothing left to dock with.")
+            return
+        end
+        log("Docking clamps engaged with the Aurora.")
+        complete_objective("respond")
+        complete_objective("protect")
+        mission_win("Aurora crew transferred. The hauntress broke off.")
+    end
 end
 
-function spawn_reinforcements()
-    log("Pirate reinforcements detected!")
-    
-    spawn_ship("pirate_3", "enemy_frigate", "Pirate Gunship", false, {x=11000, y=0, z=-5500})
-    spawn_ship("pirate_4", "enemy_frigate", "Pirate Gunship", false, {x=11000, y=0, z=-4500})
+
+function on_critical(params)
+    if params.ship_id == player_id then
+        log("Endeavour is critical. The rescue is going badly.")
+        set_objective("protect", "Survive: the Aurora still needs you")
+
+    elseif params.ship_id == merchant_id then
+        log("Aurora hull failing. The repair team has minutes.")
+        set_objective("protect", "Aurora failing: get pressure back on her now")
+
+    elseif params.ship_id == hauntress then
+        log("Hauntress is withdrawing under fire.")
+    end
 end
 
-function start_escort()
-    log("All hostiles eliminated")
-    log("Merchant vessel: 'We're clear! Please escort us to the safe zone.'")
-    
-    escort_active = true
-    
-    spawn_object("safe_zone", "waypoint", {x=-8000, y=0, z=3000})
-    log("Escort merchant vessel to safe zone coordinates")
-end
 
-function check_merchant_status()
-    if merchant_alive and not rescue_complete then
-        log("Merchant vessel status nominal")
+function on_ship_destroyed(ship_id)
+    if ship_id == player_id then
+        mission_lose("Endeavour destroyed. No one came for the Aurora.")
+        return
+    end
+
+    if ship_id == merchant_id then
+        mission_lose("Aurora destroyed before the crew could be transferred.")
+        return
+    end
+
+    if ship_id == hauntress then
+        complete_objective("respond")
+        set_objective("protect", "Aurora is clear: dock and take the crew aboard")
+        log("The hauntress is gone. The Aurora is not going anywhere without you.")
     end
 end
