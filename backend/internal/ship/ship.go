@@ -851,7 +851,7 @@ func (s *Ship) TakeDamage(amount float64, location string) {
 }
 
 // ApplyTypedDamage applies damage of a given type, which affects fire/overload
-// chances (mirrors internal/damage behaviour without the extra controller).
+// chances for energy and explosive ordnance.
 func (s *Ship) ApplyTypedDamage(amount float64, location, damageType string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -1045,6 +1045,34 @@ func (s *Ship) SetTarget(id string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.TargetID = id
+}
+
+// SetAlertLevel updates the ship's alert level under the ship lock.
+func (s *Ship) SetAlertLevel(level string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.AlertLevel = level
+}
+
+// GetAlertLevel reads the ship's alert level under the ship lock.
+func (s *Ship) GetAlertLevel() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.AlertLevel
+}
+
+// SetDocked updates the docked flag under the ship lock.
+func (s *Ship) SetDocked(docked bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Docked = docked
+}
+
+// GetTargetID reads the locked target under the ship lock.
+func (s *Ship) GetTargetID() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.TargetID
 }
 
 // ---------------------------------------------------------------------------

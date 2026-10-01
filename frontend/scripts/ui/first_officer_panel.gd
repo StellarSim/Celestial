@@ -1,4 +1,4 @@
-extends Control
+extends StationPanel
 ## First Officer panel - crew management, status overview, and captain's log.
 
 const DEPARTMENTS := ["Bridge", "Engineering", "Security", "Medical", "Science", "Operations"]
@@ -34,6 +34,7 @@ var _log_entries: Array[Dictionary] = []
 
 
 func _ready() -> void:
+	super._ready()
 	_setup_departments()
 	_setup_repair_teams()
 	_connect_signals()
@@ -57,7 +58,6 @@ func _setup_repair_teams() -> void:
 
 
 func _connect_signals() -> void:
-	GameState.state_updated.connect(_on_state_updated)
 	
 	add_entry_btn.pressed.connect(_on_add_log_entry)
 	export_btn.pressed.connect(_on_export_log)
@@ -195,11 +195,11 @@ func _update_damage_report(ship: GameState.ShipState) -> void:
 			damage_list.set_item_custom_fg_color(idx, Colors.get_health_color(section.health / 100.0))
 		
 		if section.fires > 0:
-			var idx := damage_list.add_item("  🔥 %d fire(s) in %s" % [section.fires, section_name.capitalize()])
+			var idx := damage_list.add_item("  FIRE: %d fire(s) in %s" % [section.fires, section_name.capitalize()])
 			damage_list.set_item_custom_fg_color(idx, Colors.ALERT_RED)
-		
+
 		if section.breaches > 0:
-			var idx := damage_list.add_item("  ⚠ %d breach(es) in %s" % [section.breaches, section_name.capitalize()])
+			var idx := damage_list.add_item("  BREACH: %d breach(es) in %s" % [section.breaches, section_name.capitalize()])
 			damage_list.set_item_custom_fg_color(idx, Colors.ALERT_ORANGE)
 	
 	if damage_list.item_count == 0:
@@ -246,7 +246,3 @@ func _on_add_log_entry() -> void:
 func _on_export_log() -> void:
 	# Logs live on the server; request the exported copy from it.
 	NetworkClient.send_action("log", "add_entry", {"text": "Log export requested"})
-
-
-func _on_state_updated() -> void:
-	pass  # Updates handled in _process

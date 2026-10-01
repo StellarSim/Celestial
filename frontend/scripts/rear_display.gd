@@ -46,6 +46,11 @@ func _ready() -> void:
 	_setup_scanlines()
 
 
+func _input(event: InputEvent) -> void:
+	if NavUtils.is_menu_exit(event, get_viewport()):
+		NavUtils.exit_to_menu(get_tree())
+
+
 func _process(_delta: float) -> void:
 	_update_status_display()
 	_update_time_display()
@@ -62,7 +67,6 @@ func _connect_signals() -> void:
 	
 	$MainLayout/ContentArea/TacticalMap/MapControls/ZoomInBtn.pressed.connect(_on_zoom_in)
 	$MainLayout/ContentArea/TacticalMap/MapControls/ZoomOutBtn.pressed.connect(_on_zoom_out)
-	$MainLayout/Footer/FooterContent/BackButton.pressed.connect(_on_back_pressed)
 
 
 func _setup_scanlines() -> void:
@@ -160,18 +164,14 @@ func _update_damage_section(label: Label, section) -> void:
 	# Add indicators for fires/breaches
 	var indicators := ""
 	if section.fires > 0:
-		indicators += " 🔥"
+		indicators += " FIRE"
 	if section.breaches > 0:
-		indicators += " ⚠"
+		indicators += " BREACH"
 	label.text += indicators
 
 
 func _update_time_display() -> void:
-	var total_seconds := int(GameState.simulation_time)
-	var hours := total_seconds / 3600
-	var minutes := (total_seconds % 3600) / 60
-	var seconds := total_seconds % 60
-	time_label.text = "%02d:%02d:%02d" % [hours, minutes, seconds]
+	time_label.text = NavUtils.format_clock(GameState.simulation_time)
 
 
 func _update_tactical_map() -> void:
@@ -198,48 +198,29 @@ func _update_tactical_map() -> void:
 		marker.position = map_center_screen + relative_pos - marker.size / 2
 		
 		# Update rotation to match ship heading
-		var rotation := ship.rotation.to_quaternion()
-		var forward := rotation * Vector3.FORWARD
-		var heading := atan2(forward.x, -forward.z)
+		var heading := NavUtils.heading_rad(ship.rotation.to_quaternion())
 		marker.rotation = heading
 
 
 func _update_contacts_list() -> void:
 	contacts_list.clear()
-	
-	var player_ship := GameState.get_player_ship()
-	var player_pos := Vector3.ZERO
-	if player_ship:
-		player_pos = player_ship.position.to_vector3()
-	
-	for ship_id in GameState.ships:
-		var ship := GameState.get_ship(ship_id)
-		if ship.is_player:
-			continue
-		
-		var distance := ship.position.to_vector3().distance_to(player_pos)
-		var display_name: String = ship.name if not ship.name.is_empty() else ship_id
-		var text := "%s - %.0fm" % [display_name, distance]
-		
+
+	for entry in NavUtils.contacts_by_distance():
+		var ship = entry.ship
+		var text := "%s - %.0fm" % [ship.name if not ship.name.is_empty() else entry.id, entry.distance]
+
 		contacts_list.add_item(text)
 		var idx := contacts_list.item_count - 1
-		
-		if ship.is_player:
-			contacts_list.set_item_custom_fg_color(idx, Colors.FACTION_PLAYER)
-		else:
-			contacts_list.set_item_custom_fg_color(idx, Colors.FACTION_HOSTILE)
+
+		contacts_list.set_item_custom_fg_color(idx, Colors.get_faction_color(ship.faction))
 
 
 func _on_connected() -> void:
-	disconnect_overlay.visible = false
-	connection_dot.color = Colors.STATUS_ONLINE
-	connection_text.text = "Connected"
+	NavUtils.set_connection_state(disconnect_overlay, true, connection_dot, connection_text)
 
 
 func _on_disconnected() -> void:
-	disconnect_overlay.visible = true
-	connection_dot.color = Colors.STATUS_OFFLINE
-	connection_text.text = "Disconnected"
+	NavUtils.set_connection_state(disconnect_overlay, false, connection_dot, connection_text)
 
 
 func _on_state_updated() -> void:
@@ -273,24 +254,18 @@ func _create_ship_marker(ship) -> Control:
 	var triangle := ColorRect.new()
 	triangle.custom_minimum_size = Vector2(20, 20)
 	triangle.size = Vector2(20, 20)
-	
-	if ship.is_player:
-		triangle.color = Colors.FACTION_PLAYER
-	else:
-		triangle.color = Colors.FACTION_HOSTILE
-	
+
+	triangle.color = Colors.get_faction_color(ship.faction)
+
 	marker.add_child(triangle)
-	
+
 	# Add ship name label
 	var label := Label.new()
 	label.text = ship.name if not ship.name.is_empty() else ship.id
 	label.position = Vector2(25, 0)
 	label.add_theme_font_size_override("font_size", 10)
-	
-	if ship.is_player:
-		label.add_theme_color_override("font_color", Colors.FACTION_PLAYER)
-	else:
-		label.add_theme_color_override("font_color", Colors.FACTION_HOSTILE)
+
+	label.add_theme_color_override("font_color", Colors.get_faction_color(ship.faction))
 	
 	marker.add_child(label)
 	
@@ -314,12 +289,9 @@ func _on_alert_changed(level: String) -> void:
 
 
 func _start_alert_flash(color: Color) -> void:
-	alert_overlay.visible = true
-	alert_overlay.color = Color(color.r, color.g, color.b, 0.0)
-	
-	_alert_tween = create_tween().set_loops()
-	_alert_tween.tween_property(alert_overlay, "color:a", 0.1, 0.5)
-	_alert_tween.tween_property(alert_overlay, "color:a", 0.0, 0.5)
+	if _alert_tween:
+		_alert_tween.kill()
+	_alert_tween = NavUtils.start_alert_flash(self, alert_overlay, color, 0.1, 0.5)
 
 
 func _on_zoom_in() -> void:
@@ -334,8 +306,3 @@ func _on_zoom_out() -> void:
 	$MainLayout/ContentArea/TacticalMap/MapControls/ZoomLabel.text = "%.1fx" % zoom_level
 	grid_overlay.queue_redraw()
 	range_circles.queue_redraw()
-
-
-func _on_back_pressed() -> void:
-	NetworkClient.disconnect_from_server()
-	get_tree().change_scene_to_file("res://scenes/main.tscn")

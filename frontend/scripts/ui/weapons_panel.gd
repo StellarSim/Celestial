@@ -1,4 +1,4 @@
-extends Control
+extends StationPanel
 ## Weapons station panel for targeting and firing weapons.
 
 const TORPEDO_TYPES := ["Standard", "EMP", "Nuclear", "Mine"]
@@ -31,6 +31,7 @@ var _tube_controls: Array[Dictionary] = []
 
 
 func _ready() -> void:
+	super._ready()
 	_setup_weapon_controls()
 	_connect_signals()
 
@@ -82,7 +83,6 @@ func _setup_weapon_controls() -> void:
 
 
 func _connect_signals() -> void:
-	GameState.state_updated.connect(_on_state_updated)
 	GameState.ship_removed.connect(_on_ship_removed)
 	
 	lock_btn.pressed.connect(_on_lock_target)
@@ -110,38 +110,32 @@ func _update_target_list() -> void:
 	var player_ship := GameState.get_player_ship()
 	if player_ship == null:
 		return
-	
+
 	# Get current selection
 	var selected_idx := -1
 	var selected_items := target_list.get_selected_items()
 	if not selected_items.is_empty():
 		selected_idx = selected_items[0]
-	
+
 	target_list.clear()
-	
-	var player_pos := player_ship.position.to_vector3()
-	
+
 	# Add all non-player ships as potential targets
-	for ship_id in GameState.ships:
-		if ship_id == GameState.player_ship_id:
-			continue
-		
-		var ship: GameState.ShipState = GameState.ships[ship_id]
-		var ship_pos := ship.position.to_vector3()
-		var distance := player_pos.distance_to(ship_pos)
-		
+	for entry in NavUtils.contacts_by_distance():
+		var ship: GameState.ShipState = entry.ship
+		var ship_id: String = entry.id
+
 		# Color-code by faction
 		var faction_color: Color = Colors.get_faction_color(ship.faction)
-		
-		var display_text := "%s (%.1f km)" % [ship.name, distance / 1000.0]
+
+		var display_text := "%s (%.1f km)" % [ship.name, entry.distance / 1000.0]
 		var idx := target_list.add_item(display_text)
 		target_list.set_item_custom_fg_color(idx, faction_color)
 		target_list.set_item_metadata(idx, ship_id)
-		
+
 		# Highlight locked target
 		if ship_id == _locked_target_id:
 			target_list.select(idx)
-	
+
 	lock_btn.disabled = target_list.get_selected_items().is_empty()
 
 
@@ -166,11 +160,9 @@ func _update_target_info() -> void:
 	var player_pos := player_ship.position.to_vector3()
 	var target_pos := target.position.to_vector3()
 	var distance := player_pos.distance_to(target_pos)
-	
+
 	# Calculate bearing
-	var dir := (target_pos - player_pos).normalized()
-	var bearing := rad_to_deg(atan2(dir.x, dir.z))
-	bearing = fmod(bearing + 360, 360)
+	var bearing := NavUtils.bearing_to(player_pos, target_pos)
 	
 	target_name.text = target.name
 	var target_color: Color = Colors.get_faction_color(target.faction)

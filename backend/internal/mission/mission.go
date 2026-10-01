@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"sort"
 
 	lua "github.com/yuin/gopher-lua"
 )
@@ -413,6 +414,24 @@ func (e *Engine) goToLua(v interface{}) lua.LValue {
 
 func (e *Engine) GetActiveMission() *Mission {
 	return e.active
+}
+
+// GetActiveMissionID returns the active mission id, or "" when none runs.
+func (e *Engine) GetActiveMissionID() string {
+	if e.active == nil {
+		return ""
+	}
+	return e.active.ID
+}
+
+// GetMissionIDs returns the loaded mission ids in sorted order.
+func (e *Engine) GetMissionIDs() []string {
+	ids := make([]string, 0, len(e.missions))
+	for id := range e.missions {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	return ids
 }
 
 func (e *Engine) GetMissions() map[string]*Mission {

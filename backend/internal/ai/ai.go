@@ -29,6 +29,7 @@ type Controller struct {
 // ProjectileSpawner lets the AI launch real projectiles through the simulator.
 type ProjectileSpawner interface {
 	SpawnTorpedo(shooter *ship.Ship, target *ship.Ship, weaponID string)
+	SpawnPhaserBeam(shooter *ship.Ship, target *ship.Ship)
 }
 
 func NewController() *Controller {
@@ -195,6 +196,9 @@ func (c *Controller) attemptPhaserFire(sh *ship.Ship, target *ship.Ship) {
 		}
 		facing := target.FacingFor(sh.Position)
 		target.ApplyTypedDamage(weapon.Damage*c.Difficulty, facing, "energy")
+		if c.spawner != nil {
+			c.spawner.SpawnPhaserBeam(sh, target)
+		}
 		return
 	}
 }

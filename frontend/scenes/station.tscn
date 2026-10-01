@@ -183,11 +183,6 @@ text = "YELLOW ALERT"
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="BackButton" type="Button" parent="MainLayout/BottomBar/BottomBarContent"]
-custom_minimum_size = Vector2(80, 30)
-layout_mode = 2
-text = "MENU"
-
 [node name="AlertOverlay" type="ColorRect" parent="."]
 visible = false
 layout_mode = 1
@@ -277,12 +272,8 @@ horizontal_alignment = 1
 [node name="ReconnectLabel" type="Label" parent="DisconnectOverlay/DisconnectContent"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
-text = "Attempting to reconnect..."
+text = "Attempting to reconnect... (Shift+Enter: exit to menu)"
 horizontal_alignment = 1
-
-[node name="MenuButton" type="Button" parent="DisconnectOverlay/DisconnectContent"]
-layout_mode = 2
-text = "Return to Menu"
 
 [node name="PauseOverlay" type="ColorRect" parent="."]
 visible = false

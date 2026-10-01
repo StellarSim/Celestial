@@ -327,7 +327,7 @@ func (ws *WebSocketServer) handleGMCommand(client *Client, raw map[string]interf
 		ws.simulator.SetAlertLevel(level)
 		for _, sh := range ws.simulator.GetAllShips() {
 			if sh.IsPlayer {
-				sh.AlertLevel = level
+				sh.SetAlertLevel(level)
 			}
 		}
 		ws.sendFeedback(client, "success", command, "")
@@ -437,31 +437,55 @@ func (ws *WebSocketServer) handleModifyShip(raw map[string]interface{}) error {
 	if sh == nil {
 		return fmt.Errorf("ship not found: %s", shipID)
 	}
-	if f, ok := toFloat(value); ok {
-		if f < 0 {
-			sh.TakeDamage(-f, "forward")
-		} else {
-			ws.gmController.ModifyShipSystem(shipID, system, system, "health", value)
-		}
-		return nil
+	// Optional section target: top-level "section" or a {"section","amount"} dict.
+	section := ""
+	if s, _ := raw["section"].(string); s != "" {
+		section = s
 	}
-	ws.gmController.ModifyShipSystem(shipID, system, system, "value", value)
-	return nil
+	amount := 0.0
+	hasAmount := false
+	if m, ok := value.(map[string]interface{}); ok {
+		if s, _ := m["section"].(string); s != "" {
+			section = s
+		}
+		if f, ok := toFloat(m["amount"]); ok {
+			amount, hasAmount = f, true
+		} else if f, ok := toFloat(m["value"]); ok {
+			amount, hasAmount = f, true
+		}
+	} else if f, ok := toFloat(value); ok {
+		amount, hasAmount = f, true
+	}
+	if !hasAmount {
+		return fmt.Errorf("modify_ship requires a numeric value")
+	}
+	return modifyShipHull(sh, system, section, amount)
 }
 
-func (ws *WebSocketServer) handleHOTASInput(payload map[string]interface{}) {
-	shipID, _ := payload["ship_id"].(string)
-	pitch, _ := toFloat(payload["pitch"])
-	yaw, _ := payload["yaw"]
-	_ = yaw
-	roll, _ := toFloat(payload["roll"])
-	thrust, _ := toFloat(payload["thrust"])
-
-	sh := ws.simulator.GetShip(shipID)
-	if sh != nil {
-		yawF, _ := toFloat(payload["yaw"])
-		sh.ApplyRotation(pitch, yawF, roll)
-		sh.ApplyThrust(0, 0, thrust)
+// modifyShipHull applies GM hull damage/heal through the locked Ship mutators.
+// Negative amounts damage, positive amounts repair. Both go through TakeDamage
+// and RepairSection so no raw hull pointers escape the ship lock.
+func modifyShipHull(sh *ship.Ship, system, section string, amount float64) error {
+	switch system {
+	case "hull", "damage", "health":
+		if amount < 0 {
+			loc := section
+			if loc == "" {
+				loc = "forward"
+			}
+			sh.TakeDamage(-amount, loc)
+			return nil
+		}
+		if section != "" {
+			sh.RepairSection(section, amount)
+			return nil
+		}
+		for sec := range sh.HullSnapshot() {
+			sh.RepairSection(sec, amount)
+		}
+		return nil
+	default:
+		return fmt.Errorf("modify_ship: unsupported system %q", system)
 	}
 }
 
@@ -643,7 +667,19 @@ func (ws *WebSocketServer) buildStateMessage() map[string]interface{} {
 				"id": m.ID, "name": name, "objectives": objs,
 			}
 		}
+		msg["missions"] = ws.gmController.GetMissionIDs()
+		msg["active_mission"] = ws.gmController.GetActiveMissionID()
+	} else {
+		msg["missions"] = []interface{}{}
+		msg["active_mission"] = ""
 	}
+	snapshots := ws.simulator.SnapshotInfo()
+	snapArr := make([]interface{}, 0, len(snapshots))
+	for _, s := range snapshots {
+		snapArr = append(snapArr, s)
+	}
+	msg["snapshots"] = snapArr
+	msg["snapshot_count"] = len(snapshots)
 	return msg
 }
 
@@ -669,6 +705,9 @@ type stationState struct {
 }
 
 func (ws *WebSocketServer) buildShipData(sh *ship.Ship, globalAlert string, st stationState) map[string]interface{} {
+	// Clone once so the broadcast reads a consistent snapshot without racing
+	// the sim tick. All field reads below are on the private copy.
+	sh = sh.Clone()
 	faction := sh.Faction
 	if faction == "" {
 		if sh.IsPlayer {

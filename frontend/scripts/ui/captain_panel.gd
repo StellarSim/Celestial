@@ -1,4 +1,4 @@
-extends Control
+extends StationPanel
 ## Captain's panel - ship overview, alerts, mission status, and command.
 
 @onready var ship_name: Label = $MainSplit/LeftSection/ShipStatus/StatusContent/ShipName
@@ -30,6 +30,7 @@ var _orders: Array[String] = []
 
 
 func _ready() -> void:
+	super._ready()
 	_setup_alert_styles()
 	_connect_signals()
 
@@ -62,7 +63,6 @@ func _style_button(btn: Button, color: Color) -> void:
 
 
 func _connect_signals() -> void:
-	GameState.state_updated.connect(_on_state_updated)
 	GameState.mission_event.connect(_on_mission_event)
 	
 	green_alert_btn.pressed.connect(func(): _set_alert("green"))
@@ -173,10 +173,10 @@ func _update_mission_status() -> void:
 	objective_list.clear()
 	
 	for obj in objectives:
-		var prefix := "✓ " if obj.get("completed", false) else "○ "
+		var prefix := "[DONE] " if obj.get("complete", false) else "[TODO] "
 		var idx := objective_list.add_item(prefix + obj.get("description", "Unknown objective"))
-		
-		if obj.get("completed", false):
+
+		if obj.get("complete", false):
 			objective_list.set_item_custom_fg_color(idx, Colors.ALERT_GREEN)
 		elif obj.get("failed", false):
 			objective_list.set_item_custom_fg_color(idx, Colors.ALERT_RED)
@@ -228,9 +228,6 @@ func _add_comm_log(source: String, message: String) -> void:
 	var time_str := Time.get_time_string_from_system()
 	comm_log.append_text("[%s] [b]%s:[/b] %s\n" % [time_str, source, message])
 
-
-func _on_state_updated() -> void:
-	pass  # Updates handled in _process
 
 
 func _on_mission_event(event_name: String, data: Dictionary) -> void:

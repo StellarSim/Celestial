@@ -65,6 +65,8 @@ func _process(delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("debug_toggle"):
 		debug_overlay.visible = not debug_overlay.visible
+	if NavUtils.is_menu_exit(event, get_viewport()):
+		NavUtils.exit_to_menu(get_tree())
 
 
 func _connect_signals() -> void:
@@ -161,9 +163,11 @@ func _update_ship_visuals(delta: float) -> void:
 
 func _update_projectile_visuals(delta: float) -> void:
 	var t := GameState.get_interpolation_factor()
-	
+
 	for proj_id in _projectile_instances:
 		var instance: Node3D = _projectile_instances[proj_id]
+		if instance is BeamEffect3D:
+			continue  # Beams are static origin-to-target shots that fade themselves.
 		var proj: GameState.ProjectileState = GameState.projectiles.get(proj_id)
 		
 		if proj == null:
@@ -192,10 +196,7 @@ func _update_hud() -> void:
 	speed_label.text = "SPD: %.0f m/s" % speed
 	
 	var rotation := ship.rotation.to_quaternion()
-	var forward := rotation * Vector3.FORWARD
-	var heading := rad_to_deg(atan2(forward.x, -forward.z))
-	if heading < 0:
-		heading += 360.0
+	var heading := NavUtils.heading_deg(rotation)
 	heading_label.text = "HDG: %03d°" % int(heading)
 	
 	# Shields
@@ -264,11 +265,11 @@ func add_shake(amount: float) -> void:
 
 
 func _on_connected() -> void:
-	disconnect_overlay.visible = false
+	NavUtils.set_connection_state(disconnect_overlay, true)
 
 
 func _on_disconnected() -> void:
-	disconnect_overlay.visible = true
+	NavUtils.set_connection_state(disconnect_overlay, false)
 
 
 func _on_ship_added(ship_id: String) -> void:
@@ -311,16 +312,35 @@ func _on_projectile_added(projectile_id: String) -> void:
 	var proj = GameState.projectiles.get(projectile_id)
 	if proj == null:
 		return
-	
+
+	if proj.type == "phaser":
+		_spawn_beam(projectile_id, proj)
+		return
+
 	var instance: Node3D
 	if ResourceLoader.exists("res://scenes/3d/torpedo.tscn"):
 		instance = TORPEDO_SCENE.instantiate()
 	else:
 		instance = _create_placeholder_projectile(proj)
-	
+
 	projectiles_container.add_child(instance)
 	instance.global_position = proj.position.to_vector3()
 	_projectile_instances[projectile_id] = instance
+
+
+## Renders a phaser shot as a beam plus an impact flash. The beam fades and
+## frees itself; when the server projectile expires there is nothing to detonate.
+func _spawn_beam(projectile_id: String, proj) -> void:
+	var origin: Vector3 = proj.position.to_vector3()
+	var target_pos: Vector3 = origin + proj.velocity.to_vector3().normalized() * 500.0
+	var target = GameState.get_ship(proj.target_id)
+	if target != null:
+		target_pos = target.position.to_vector3()
+
+	var beam := BeamEffect3D.create_beam(origin, target_pos)
+	effects_container.add_child(beam)
+	_projectile_instances[projectile_id] = beam
+	_spawn_explosion(target_pos)
 
 
 func _on_projectile_removed(projectile_id: String) -> void:
@@ -328,7 +348,12 @@ func _on_projectile_removed(projectile_id: String) -> void:
 		return
 	
 	var instance: Node3D = _projectile_instances[projectile_id]
-	
+
+	if instance is BeamEffect3D:
+		# The beam already flashed its impact and fades itself out.
+		_projectile_instances.erase(projectile_id)
+		return
+
 	# Spawn explosion at projectile location
 	_spawn_explosion(instance.global_position)
 	
@@ -356,12 +381,9 @@ func _on_alert_changed(level: String) -> void:
 
 
 func _start_alert_flash(color: Color) -> void:
-	alert_overlay.visible = true
-	alert_overlay.color = Color(color.r, color.g, color.b, 0.0)
-	
-	_alert_tween = create_tween().set_loops()
-	_alert_tween.tween_property(alert_overlay, "color:a", 0.12, 0.4)
-	_alert_tween.tween_property(alert_overlay, "color:a", 0.0, 0.4)
+	if _alert_tween:
+		_alert_tween.kill()
+	_alert_tween = NavUtils.start_alert_flash(self, alert_overlay, color, 0.12, 0.4)
 
 
 func _create_placeholder_ship(ship) -> Node3D:

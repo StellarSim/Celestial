@@ -98,31 +98,59 @@ func (c *Controller) ModifyShipSystem(shipID, systemType, systemID string, prope
 		return
 	}
 
+	// All mutations go through the locked Ship mutators. Never write through
+	// raw subsystem pointers: broadcasts read hull state under Ship.Clone().
+	amount, hasAmount := toFloatAmount(value)
 	switch systemType {
-	case "engine":
-		if engine, ok := sh.Engines[systemID]; ok {
-			c.applyProperty(engine, property, value)
+	case "hull", "damage":
+		section := systemID
+		if section == "" || section == "hull" || section == "damage" {
+			section = ship.SectionForward
 		}
-	case "weapon":
-		if weapon, ok := sh.Weapons[systemID]; ok {
-			c.applyProperty(weapon, property, value)
+		if !hasAmount {
+			log.Printf("GM: modify hull on %s needs a numeric value, got %v", shipID, value)
+			return
 		}
-	case "shield":
-		if emitter, ok := sh.Shields.Emitters[systemID]; ok {
-			c.applyProperty(emitter, property, value)
+		if amount < 0 {
+			sh.TakeDamage(-amount, section)
+		} else {
+			sh.RepairSection(section, amount)
 		}
-	case "hull":
-		if section, ok := sh.Hull.Sections[systemID]; ok {
-			c.applyProperty(section, property, value)
+	case "shields":
+		if enabled, ok := value.(bool); ok {
+			sh.SetShieldsEnabled(enabled)
+		} else {
+			log.Printf("GM: modify shields on %s needs a bool, got %v", shipID, value)
+			return
 		}
+	case "alert":
+		if level, ok := value.(string); ok {
+			sh.SetAlertLevel(level)
+		} else {
+			log.Printf("GM: modify alert on %s needs a level string, got %v", shipID, value)
+			return
+		}
+	default:
+		log.Printf("GM: unsupported modify target %s.%s = %v on ship %s", systemType, systemID, value, shipID)
+		return
 	}
 
 	log.Printf("GM: Modified %s.%s.%s = %v on ship %s", systemType, systemID, property, value, shipID)
 }
 
-func (c *Controller) applyProperty(obj interface{}, property string, value interface{}) {
-	// Simplified property setting
-	log.Printf("Applying property %s = %v", property, value)
+func toFloatAmount(v interface{}) (float64, bool) {
+	switch n := v.(type) {
+	case float64:
+		return n, true
+	case float32:
+		return float64(n), true
+	case int:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	default:
+		return 0, false
+	}
 }
 
 func (c *Controller) DamageShip(shipID string, amount float64, location string) {
@@ -158,6 +186,22 @@ func (c *Controller) TriggerEvent(eventName string, params map[string]interface{
 
 func (c *Controller) GetActiveMission() *mission.Mission {
 	return c.missionEngine.GetActiveMission()
+}
+
+// GetMissionIDs lists loaded missions for the state_update broadcast.
+func (c *Controller) GetMissionIDs() []string {
+	if c.missionEngine == nil {
+		return []string{}
+	}
+	return c.missionEngine.GetMissionIDs()
+}
+
+// GetActiveMissionID returns the running mission id, or "" when idle.
+func (c *Controller) GetActiveMissionID() string {
+	if c.missionEngine == nil {
+		return ""
+	}
+	return c.missionEngine.GetActiveMissionID()
 }
 
 func (c *Controller) GetSimulationState() map[string]interface{} {

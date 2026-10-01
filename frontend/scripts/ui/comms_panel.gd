@@ -1,4 +1,4 @@
-extends Control
+extends StationPanel
 ## Communications station panel - hailing, frequencies, and message handling.
 
 const FILTER_OPTIONS := ["All", "Friendly", "Enemy", "Neutral", "Stations"]
@@ -38,6 +38,7 @@ var _current_filter: String = "All"
 
 
 func _ready() -> void:
+	super._ready()
 	_setup_filters()
 	_connect_signals()
 
@@ -53,7 +54,6 @@ func _setup_filters() -> void:
 
 
 func _connect_signals() -> void:
-	GameState.state_updated.connect(_on_state_updated)
 	GameState.mission_event.connect(_on_mission_event)
 	
 	filter_select.item_selected.connect(_on_filter_changed)
@@ -90,33 +90,27 @@ func _update_contact_list() -> void:
 	var player_ship := GameState.get_player_ship()
 	if player_ship == null:
 		return
-	
+
 	contact_list.clear()
-	var player_pos := player_ship.position.to_vector3()
-	
-	for ship_id in GameState.ships:
-		if ship_id == GameState.player_ship_id:
-			continue
-		
-		var ship: GameState.ShipState = GameState.ships[ship_id]
-		
+
+	for entry in NavUtils.contacts_by_distance():
+		var ship: GameState.ShipState = entry.ship
+		var ship_id: String = entry.id
+
 		# Apply filter
 		if not _passes_filter(ship):
 			continue
-		
-		var ship_pos := ship.position.to_vector3()
-		var distance := player_pos.distance_to(ship_pos)
-		
+
 		var faction_color: Color = Colors.get_faction_color(ship.faction)
-		var display_text := "%s [%.1f km]" % [ship.name, distance / 1000.0]
-		
+		var display_text := "%s [%.1f km]" % [ship.name, entry.distance / 1000.0]
+
 		var idx := contact_list.add_item(display_text)
 		contact_list.set_item_custom_fg_color(idx, faction_color)
 		contact_list.set_item_metadata(idx, ship_id)
-		
+
 		if ship_id == _selected_contact_id:
 			contact_list.select(idx)
-	
+
 	hail_btn.disabled = _selected_contact_id.is_empty()
 	scan_btn.disabled = _selected_contact_id.is_empty()
 
@@ -284,9 +278,6 @@ func _add_log(source: String, message: String) -> void:
 		color.to_html(false), time_str, source, message
 	])
 
-
-func _on_state_updated() -> void:
-	pass  # Updates handled in _process
 
 
 func _on_mission_event(event_name: String, data: Dictionary) -> void:

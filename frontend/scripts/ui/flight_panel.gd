@@ -1,4 +1,4 @@
-extends Control
+extends StationPanel
 ## Flight control station - throttle, steering, and navigation.
 
 @onready var throttle_slider: VSlider = $MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer/ThrottleSlider
@@ -40,6 +40,7 @@ var _turn_rate: float = 0.0
 
 
 func _ready() -> void:
+	super._ready()
 	_setup_controls()
 	_connect_signals()
 
@@ -58,7 +59,6 @@ func _setup_controls() -> void:
 
 
 func _connect_signals() -> void:
-	GameState.state_updated.connect(_on_state_updated)
 	
 	# Throttle controls
 	throttle_slider.value_changed.connect(_on_throttle_changed)
@@ -125,9 +125,7 @@ func _update_nav_display(ship: GameState.ShipState) -> void:
 	vel_value.text = "%.0f m/s" % vel.length()
 	
 	# Calculate heading from rotation
-	var quat := ship.rotation.to_quaternion()
-	var fwd: Vector3 = quat * Vector3.FORWARD
-	var heading := fmod(rad_to_deg(atan2(fwd.x, -fwd.z)) + 360.0, 360.0)
+	var heading := NavUtils.heading_deg(ship.rotation.to_quaternion())
 	heading_value.text = "%03.0f°" % heading
 	
 	if _target_heading >= 0:
@@ -151,13 +149,7 @@ func _update_waypoints() -> void:
 
 
 func _calculate_distance_to_waypoint(waypoint: Dictionary) -> float:
-	var ship := GameState.get_player_ship()
-	if ship == null:
-		return 0.0
-	
-	var ship_pos := ship.position.to_vector3()
-	var wp_pos := Vector3(waypoint.get("x", 0), waypoint.get("y", 0), waypoint.get("z", 0))
-	return ship_pos.distance_to(wp_pos)
+	return NavUtils.waypoint_distance(waypoint)
 
 
 func _draw_compass() -> void:
@@ -190,9 +182,7 @@ func _draw_compass() -> void:
 		compass.draw_line(inner, outer, Colors.PRIMARY, 1.0)
 	
 	# Draw heading indicator (ship)
-	var ship_quat := ship.rotation.to_quaternion()
-	var ship_fwd: Vector3 = ship_quat * Vector3.FORWARD
-	var heading_rad: float = atan2(ship_fwd.x, -ship_fwd.z)
+	var heading_rad := NavUtils.heading_rad(ship.rotation.to_quaternion())
 	var indicator_points := PackedVector2Array([
 		center + Vector2(0, -radius * 0.6).rotated(heading_rad),
 		center + Vector2(-10, 10).rotated(heading_rad),
@@ -255,6 +245,3 @@ func _on_autopilot_toggled(enabled: bool) -> void:
 		autopilot_status.text = "DISENGAGED"
 		autopilot_status.add_theme_color_override("font_color", Colors.STATUS_OFFLINE)
 
-
-func _on_state_updated() -> void:
-	pass  # Updates handled in _process

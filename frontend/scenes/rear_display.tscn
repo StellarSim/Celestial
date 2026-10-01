@@ -297,10 +297,6 @@ text = "Mode: Tactical"
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="BackButton" type="Button" parent="MainLayout/Footer/FooterContent"]
-layout_mode = 2
-text = "MENU"
-
 [node name="AlertOverlay" type="ColorRect" parent="."]
 visible = false
 layout_mode = 1

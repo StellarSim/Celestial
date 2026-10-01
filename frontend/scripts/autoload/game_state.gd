@@ -23,6 +23,12 @@ var is_paused: bool = false
 var alert_level: String = "normal"
 var mission: Dictionary = {}
 
+# GM discovery state (snapshot list, mission picker).
+var snapshots: Array = []
+var snapshot_count: int = 0
+var missions: Array = []
+var active_mission: String = ""
+
 # Session-level state shared by every station.
 var orders: Array = []
 var waypoints: Array = []
@@ -447,6 +453,14 @@ func apply_state_update(data: Dictionary) -> void:
 		autopilot = data.autopilot
 	if data.has("auto_fire"):
 		auto_fire = data.auto_fire
+	if data.has("snapshots"):
+		snapshots = data.snapshots
+	if data.has("snapshot_count"):
+		snapshot_count = int(data.snapshot_count)
+	if data.has("missions"):
+		missions = data.missions
+	if data.has("active_mission"):
+		active_mission = str(data.active_mission)
 	
 	# Update ships (spec: array; tolerate keyed map from older builds)
 	if data.has("ships"):
@@ -578,6 +592,10 @@ func clear_state() -> void:
 	is_paused = false
 	alert_level = "normal"
 	mission = {}
+	snapshots = []
+	snapshot_count = 0
+	missions = []
+	active_mission = ""
 	orders = []
 	waypoints = []
 	repair_teams = []

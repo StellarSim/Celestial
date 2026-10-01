@@ -17,6 +17,12 @@ const SHIP_CLASSES := ["player_cruiser", "enemy_frigate", "enemy_dreadnought"]
 @onready var ship_class_select: OptionButton = $MainSplit/ControlPanel/PanelScroll/PanelContent/SpawnSection/SpawnRow/ShipClassSelect
 @onready var connection_dot: ColorRect = $MainSplit/ControlPanel/PanelScroll/PanelContent/Header/ConnectionDot
 @onready var disconnect_overlay: ColorRect = $DisconnectOverlay
+@onready var mission_info: Label = $MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionInfo
+@onready var mission_select: OptionButton = $MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionPicker/MissionSelect
+@onready var start_btn: Button = $MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionPicker/StartBtn
+@onready var event_name: LineEdit = $MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/EventRow/EventName
+@onready var trigger_btn: Button = $MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/EventRow/TriggerBtn
+@onready var inspector_text: TextEdit = $MainSplit/ControlPanel/PanelScroll/PanelContent/InspectorSection/InspectorText
 
 # Camera control
 var camera_speed: float = 100.0
@@ -27,6 +33,10 @@ var mouse_captured: bool = false
 # Ship visualization
 var _ship_instances: Dictionary = {}
 var _selected_ship_id: String = ""
+
+# State inspector auto-refresh pacing (seconds).
+var _inspector_timer: float = 0.0
+const INSPECTOR_INTERVAL := 2.0
 
 
 func _ready() -> void:
@@ -40,6 +50,10 @@ func _process(delta: float) -> void:
 	_update_camera(delta)
 	_update_time_display()
 	_update_ships_visual(delta)
+	_inspector_timer += delta
+	if _inspector_timer >= INSPECTOR_INTERVAL:
+		_inspector_timer = 0.0
+		_refresh_inspector()
 
 
 func _input(event: InputEvent) -> void:
@@ -59,6 +73,10 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion and mouse_captured:
 		gm_camera.rotate_y(-event.relative.x * camera_rotation_speed)
 		gm_camera.rotate_object_local(Vector3.RIGHT, -event.relative.y * camera_rotation_speed)
+
+	if NavUtils.is_menu_exit(event, get_viewport()):
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		NavUtils.exit_to_menu(get_tree())
 
 
 func _setup_ui() -> void:
@@ -106,9 +124,11 @@ func _connect_signals() -> void:
 	$MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionButtons/WinBtn.pressed.connect(_on_win_pressed)
 	$MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionButtons/LoseBtn.pressed.connect(_on_lose_pressed)
 	$MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionButtons/RestartBtn.pressed.connect(_on_restart_pressed)
+	start_btn.pressed.connect(_on_mission_start_pressed)
+	trigger_btn.pressed.connect(_on_trigger_pressed)
 	
-	# Back button
-	$MainSplit/ControlPanel/PanelScroll/PanelContent/BackButton.pressed.connect(_on_back_pressed)
+	# State inspector
+	$MainSplit/ControlPanel/PanelScroll/PanelContent/InspectorSection/RefreshBtn.pressed.connect(_refresh_inspector)
 
 
 func _create_grid() -> void:
@@ -194,12 +214,8 @@ func _update_camera(delta: float) -> void:
 
 
 func _update_time_display() -> void:
-	var total_seconds := int(GameState.simulation_time)
-	var hours := total_seconds / 3600
-	var minutes := (total_seconds % 3600) / 60
-	var seconds := total_seconds % 60
-	time_value.text = "%02d:%02d:%02d" % [hours, minutes, seconds]
-	
+	time_value.text = NavUtils.format_clock(GameState.simulation_time)
+
 	paused_label.visible = GameState.is_paused
 
 
@@ -236,24 +252,118 @@ func _update_ships_tree() -> void:
 		item.set_metadata(0, ship_id)
 		
 		# Color based on faction
-		if ship.is_player:
-			item.set_custom_color(0, Colors.FACTION_PLAYER)
-		else:
-			item.set_custom_color(0, Colors.FACTION_HOSTILE)
+		item.set_custom_color(0, Colors.get_faction_color(ship.faction))
 
 
 func _on_connected() -> void:
-	disconnect_overlay.visible = false
-	connection_dot.color = Colors.STATUS_ONLINE
+	NavUtils.set_connection_state(disconnect_overlay, true, connection_dot)
 
 
 func _on_disconnected() -> void:
-	disconnect_overlay.visible = true
-	connection_dot.color = Colors.STATUS_OFFLINE
+	NavUtils.set_connection_state(disconnect_overlay, false, connection_dot)
 
 
 func _on_state_updated() -> void:
 	_update_ships_tree()
+	_update_snapshot_list()
+	_update_mission_picker()
+	_update_mission_info()
+
+
+func _update_snapshot_list() -> void:
+	var selected_index := -1
+	var selected := snapshot_list.get_selected_items()
+	if not selected.is_empty():
+		selected_index = snapshot_list.get_item_metadata(selected[0])
+
+	snapshot_list.clear()
+	for snap in GameState.snapshots:
+		if not (snap is Dictionary):
+			continue
+		var idx := int(snap.get("index", snapshot_list.item_count))
+		var t := float(snap.get("time", 0.0))
+		var total_seconds := int(t)
+		var text := "Snapshot %d - %02d:%02d:%02d" % [idx, total_seconds / 3600, (total_seconds % 3600) / 60, total_seconds % 60]
+		snapshot_list.add_item(text)
+		snapshot_list.set_item_metadata(snapshot_list.item_count - 1, idx)
+		if idx == selected_index:
+			snapshot_list.select(snapshot_list.item_count - 1)
+
+	restore_btn.disabled = snapshot_list.get_selected_items().is_empty()
+
+
+func _update_mission_picker() -> void:
+	var current := ""
+	if mission_select.item_count > 0 and mission_select.selected >= 0:
+		current = mission_select.get_item_text(mission_select.selected)
+
+	mission_select.clear()
+	for mission_id in GameState.missions:
+		mission_select.add_item(str(mission_id))
+
+	if mission_select.item_count == 0:
+		return
+
+	var active := GameState.active_mission
+	var select_idx := -1
+	for i in range(mission_select.item_count):
+		if mission_select.get_item_text(i) == active:
+			select_idx = i
+			break
+	if select_idx < 0:
+		for i in range(mission_select.item_count):
+			if mission_select.get_item_text(i) == current:
+				select_idx = i
+				break
+	if select_idx < 0:
+		select_idx = 0
+	mission_select.select(select_idx)
+
+
+func _update_mission_info() -> void:
+	if GameState.mission.is_empty():
+		if GameState.active_mission.is_empty():
+			mission_info.text = "No mission loaded"
+		else:
+			mission_info.text = "Mission: %s" % GameState.active_mission
+		return
+	var done := 0
+	var total := 0
+	for obj in GameState.get_mission_objectives():
+		total += 1
+		if obj.get("complete", false):
+			done += 1
+	mission_info.text = "%s (%d/%d objectives)" % [GameState.get_mission_name(), done, total]
+
+
+func _refresh_inspector() -> void:
+	var ships := {}
+	for ship_id in GameState.ships:
+		var ship = GameState.ships[ship_id]
+		var pos: Dictionary = ship.position.to_dict()
+		ships[ship_id] = {
+			"name": ship.name,
+			"faction": ship.faction,
+			"class": ship.ship_class,
+			"hull": [ship.hull_integrity, ship.max_hull],
+			"shields": [ship.shields, ship.max_shields],
+			"position": [pos.x, pos.y, pos.z],
+			"target": ship.target_id,
+			"alert": ship.alert_level,
+		}
+	var state := {
+		"time": GameState.simulation_time,
+		"paused": GameState.is_paused,
+		"alert_level": GameState.alert_level,
+		"active_mission": GameState.active_mission,
+		"missions": GameState.missions,
+		"snapshot_count": GameState.snapshot_count,
+		"ships": ships,
+		"projectiles": GameState.projectiles.size(),
+		"orders": GameState.orders,
+		"waypoints": GameState.waypoints.size(),
+	}
+	inspector_text.text = JSON.stringify(state, "\t")
 
 
 func _on_paused_changed(is_paused: bool) -> void:
@@ -295,10 +405,7 @@ func _create_ship_visual(ship) -> Node3D:
 	box.size = dims
 	
 	var material := StandardMaterial3D.new()
-	if ship.is_player:
-		material.albedo_color = Colors.FACTION_PLAYER
-	else:
-		material.albedo_color = Colors.FACTION_HOSTILE
+	material.albedo_color = Colors.get_faction_color(ship.faction)
 	material.metallic = 0.5
 	material.roughness = 0.5
 	box.material = material
@@ -334,8 +441,8 @@ func _on_restore_pressed() -> void:
 	var selected := snapshot_list.get_selected_items()
 	if selected.is_empty():
 		return
-	
-	NetworkClient.send_gm_command("restore_snapshot", {"snapshot_index": selected[0]})
+
+	NetworkClient.send_gm_command("restore_snapshot", {"snapshot_index": snapshot_list.get_item_metadata(selected[0])})
 
 
 func _on_ship_selected() -> void:
@@ -394,11 +501,24 @@ func _on_lose_pressed() -> void:
 	NetworkClient.send_gm_command("mission_lose")
 
 
+func _on_mission_start_pressed() -> void:
+	if mission_select.item_count == 0 or mission_select.selected < 0:
+		return
+	NetworkClient.send_gm_command("start_mission", {
+		"mission": mission_select.get_item_text(mission_select.selected)
+	})
+
+
+func _on_trigger_pressed() -> void:
+	var event := event_name.text.strip_edges()
+	if event.is_empty():
+		return
+	NetworkClient.send_gm_command("trigger_mission_event", {
+		"event": event,
+		"data": {}
+	})
+	event_name.clear()
+
+
 func _on_restart_pressed() -> void:
 	NetworkClient.send_gm_command("stop_mission")
-
-
-func _on_back_pressed() -> void:
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	NetworkClient.disconnect_from_server()
-	get_tree().change_scene_to_file("res://scenes/main.tscn")

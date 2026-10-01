@@ -68,6 +68,8 @@ func _process(_delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("debug_toggle"):
 		debug_overlay.visible = not debug_overlay.visible
+	if NavUtils.is_menu_exit(event, get_viewport()):
+		NavUtils.exit_to_menu(get_tree())
 
 
 func _connect_signals() -> void:
@@ -76,11 +78,9 @@ func _connect_signals() -> void:
 	GameState.state_updated.connect(_on_state_updated)
 	GameState.paused_changed.connect(_on_paused_changed)
 	GameState.alert_level_changed.connect(_on_alert_changed)
-	
-	$MainLayout/BottomBar/BottomBarContent/BackButton.pressed.connect(_on_back_pressed)
+
 	$MainLayout/BottomBar/BottomBarContent/AlertButtons/RedAlertBtn.pressed.connect(_on_red_alert_pressed)
 	$MainLayout/BottomBar/BottomBarContent/AlertButtons/YellowAlertBtn.pressed.connect(_on_yellow_alert_pressed)
-	$DisconnectOverlay/DisconnectContent/MenuButton.pressed.connect(_on_back_pressed)
 
 
 func _load_station_panel() -> void:
@@ -137,11 +137,7 @@ func _update_status_bars() -> void:
 
 
 func _update_time_display() -> void:
-	var total_seconds := int(GameState.simulation_time)
-	var hours := total_seconds / 3600
-	var minutes := (total_seconds % 3600) / 60
-	var seconds := total_seconds % 60
-	time_label.text = "%02d:%02d:%02d" % [hours, minutes, seconds]
+	time_label.text = NavUtils.format_clock(GameState.simulation_time)
 
 
 func _update_debug_info() -> void:
@@ -153,15 +149,11 @@ func _update_debug_info() -> void:
 
 
 func _on_connected() -> void:
-	disconnect_overlay.visible = false
-	connection_status_dot.color = Colors.STATUS_ONLINE
-	connection_status_text.text = "Connected"
+	NavUtils.set_connection_state(disconnect_overlay, true, connection_status_dot, connection_status_text)
 
 
 func _on_disconnected() -> void:
-	disconnect_overlay.visible = true
-	connection_status_dot.color = Colors.STATUS_OFFLINE
-	connection_status_text.text = "Disconnected"
+	NavUtils.set_connection_state(disconnect_overlay, false, connection_status_dot, connection_status_text)
 
 
 func _on_state_updated() -> void:
@@ -189,17 +181,9 @@ func _on_alert_changed(level: String) -> void:
 
 
 func _start_alert_flash(color: Color) -> void:
-	alert_overlay.visible = true
-	alert_overlay.color = Color(color.r, color.g, color.b, 0.0)
-	
-	_alert_tween = create_tween().set_loops()
-	_alert_tween.tween_property(alert_overlay, "color:a", 0.15, 0.5)
-	_alert_tween.tween_property(alert_overlay, "color:a", 0.0, 0.5)
-
-
-func _on_back_pressed() -> void:
-	NetworkClient.disconnect_from_server()
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+	if _alert_tween:
+		_alert_tween.kill()
+	_alert_tween = NavUtils.start_alert_flash(self, alert_overlay, color, 0.15, 0.5)
 
 
 func _on_red_alert_pressed() -> void:

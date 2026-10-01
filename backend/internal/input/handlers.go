@@ -263,10 +263,10 @@ func (ar *ActionRouter) updateAutoFire() {
 	}
 
 	sh := ar.getPlayerShip()
-	if sh == nil || sh.TargetID == "" {
+	if sh == nil || sh.GetTargetID() == "" {
 		return
 	}
-	target := ar.simulator.GetShip(sh.TargetID)
+	target := ar.simulator.GetShip(sh.GetTargetID())
 	if target == nil {
 		return
 	}
@@ -278,7 +278,7 @@ func (ar *ActionRouter) updateAutoFire() {
 		if bay.Cooldown > 0 || bay.AmmoCount <= 0 {
 			continue
 		}
-		if !sh.InWeaponRange(bay.ID, target.Position) {
+		if !sh.InWeaponRange(bay.ID, target.GetPosition()) {
 			continue
 		}
 		if !sh.FireWeapon(bay.ID, target.ID) {
@@ -377,7 +377,7 @@ func (ar *ActionRouter) handleReleaseDocking(action *Action) error {
 	if err != nil {
 		return err
 	}
-	sh.Docked = false
+	sh.SetDocked(false)
 	return nil
 }
 
@@ -488,7 +488,7 @@ func (ar *ActionRouter) handleTorpedoFire(action *Action) error {
 
 	targetID := dictString(d, "target_id")
 	if targetID == "" {
-		targetID = sh.TargetID
+		targetID = sh.GetTargetID()
 	}
 	if targetID == "" {
 		return fmt.Errorf("no target set")
@@ -497,7 +497,7 @@ func (ar *ActionRouter) handleTorpedoFire(action *Action) error {
 	if target == nil {
 		return fmt.Errorf("target not found: %s", targetID)
 	}
-	if !sh.InWeaponRange(bay.ID, target.Position) {
+	if !sh.InWeaponRange(bay.ID, target.GetPosition()) {
 		return fmt.Errorf("target out of range")
 	}
 	if !sh.FireWeapon(bay.ID, targetID) {
@@ -552,7 +552,7 @@ func (ar *ActionRouter) handlePhaserFire(action *Action) error {
 
 	targetID := dictString(d, "target_id")
 	if targetID == "" {
-		targetID = sh.TargetID
+		targetID = sh.GetTargetID()
 	}
 	if targetID == "" {
 		return fmt.Errorf("no target set")
@@ -561,15 +561,16 @@ func (ar *ActionRouter) handlePhaserFire(action *Action) error {
 	if target == nil {
 		return fmt.Errorf("target not found: %s", targetID)
 	}
-	if !sh.InWeaponRange(array.ID, target.Position) {
+	if !sh.InWeaponRange(array.ID, target.GetPosition()) {
 		return fmt.Errorf("target out of range")
 	}
 	if !sh.FireWeapon(array.ID, targetID) {
 		return fmt.Errorf("%s cannot fire", array.ID)
 	}
 
-	facing := target.FacingFor(sh.Position)
+	facing := target.FacingFor(sh.GetPosition())
 	target.ApplyTypedDamage(array.Damage, facing, "energy")
+	ar.simulator.SpawnPhaserBeam(sh, target)
 	return nil
 }
 
@@ -599,7 +600,7 @@ func (ar *ActionRouter) handleSetAlert(action *Action) error {
 	ar.simulator.SetAlertLevel(level)
 	sh := ar.getPlayerShip()
 	if sh != nil {
-		sh.AlertLevel = level
+		sh.SetAlertLevel(level)
 	}
 	return nil
 }

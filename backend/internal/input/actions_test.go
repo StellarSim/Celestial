@@ -258,6 +258,53 @@ func TestPhaserFireDamagesTarget(t *testing.T) {
 	}
 }
 
+func TestPhaserFireSpawnsBeamProjectile(t *testing.T) {
+	r, sim, _ := newTestRouter(t)
+
+	route(t, r, "weapons", "weapons", "set_target", map[string]interface{}{"target_id": "raider"})
+
+	if err := route(t, r, "weapons", "phaser", "fire", map[string]interface{}{"array_id": "phaser_1"}); err != nil {
+		t.Fatalf("phaser fire failed: %v", err)
+	}
+
+	projs := sim.GetAllProjectiles()
+	if len(projs) != 1 {
+		t.Fatalf("phaser fire should publish one beam projectile, got %d", len(projs))
+	}
+	for _, p := range projs {
+		if p.Type != "phaser" {
+			t.Errorf("beam projectile type = %q, want phaser", p.Type)
+		}
+		if p.TargetID != "raider" {
+			t.Errorf("beam projectile target = %q, want raider", p.TargetID)
+		}
+		if p.Damage != 0 {
+			t.Errorf("beam projectile carries damage %v, want 0 (resolved instantly)", p.Damage)
+		}
+	}
+
+	// The beam is transient and must not deal further damage as it expires.
+	hullBefore := 0.0
+	for _, sec := range sim.GetShip("raider").HullSnapshot() {
+		hullBefore += sec.Health
+	}
+	for i := 0; i < 200; i++ {
+		sim.Tick()
+	}
+	for _, p := range sim.GetAllProjectiles() {
+		if p.SourceID == "player" {
+			t.Errorf("player beam projectile %q should expire, still present", p.ID)
+		}
+	}
+	hullAfter := 0.0
+	for _, sec := range sim.GetShip("raider").HullSnapshot() {
+		hullAfter += sec.Health
+	}
+	if hullAfter != hullBefore {
+		t.Errorf("expiring beam changed hull %v -> %v, want no further damage", hullBefore, hullAfter)
+	}
+}
+
 func TestPhaserFireHonoursRange(t *testing.T) {
 	r, sim, _ := newTestRouter(t)
 

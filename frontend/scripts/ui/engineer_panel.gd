@@ -1,4 +1,4 @@
-extends Control
+extends StationPanel
 ## Engineer station panel for power management and damage control.
 
 const BREAKERS := ["reactor", "engines", "shields", "weapons", "sensors", "comms", "life_support", "navigation"]
@@ -31,6 +31,7 @@ var _breaker_statuses: Dictionary = {}
 
 
 func _ready() -> void:
+	super._ready()
 	_setup_breakers()
 	_connect_signals()
 
@@ -56,7 +57,6 @@ func _setup_breakers() -> void:
 
 
 func _connect_signals() -> void:
-	GameState.state_updated.connect(_on_state_updated)
 	
 	bow_section.pressed.connect(func(): _select_section("forward"))
 	stern_section.pressed.connect(func(): _select_section("aft"))
@@ -131,9 +131,9 @@ func _update_section_button(button: Button, name: String, section) -> void:
 	var status_text := "%s\n%.0f%%" % [name, health]
 	
 	if fires > 0:
-		status_text += "\n🔥 %d" % fires
+		status_text += "\nFIRE %d" % fires
 	if breaches > 0:
-		status_text += "\n⚠ %d" % breaches
+		status_text += "\nBREACH %d" % breaches
 	
 	button.text = status_text
 	
@@ -221,9 +221,6 @@ func _on_extinguish_pressed() -> void:
 	NetworkClient.send_action("damage", "extinguish", {"section": _selected_section})
 	_add_log_entry("Extinguishing fire in %s section" % _selected_section.to_upper())
 
-
-func _on_state_updated() -> void:
-	pass  # Updates handled in _process
 
 
 func _add_log_entry(message: String) -> void:

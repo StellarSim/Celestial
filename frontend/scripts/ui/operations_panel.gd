@@ -1,4 +1,4 @@
-extends Control
+extends StationPanel
 ## Operations station panel - sensors, shields, and ship systems monitoring.
 
 const SYSTEMS := ["reactor", "engines", "weapons", "shields", "sensors", "life_support"]
@@ -32,6 +32,7 @@ var _system_bars: Dictionary = {}
 
 
 func _ready() -> void:
+	super._ready()
 	_setup_system_bars()
 	_connect_signals()
 	passive_btn.button_pressed = true
@@ -58,7 +59,6 @@ func _setup_system_bars() -> void:
 
 
 func _connect_signals() -> void:
-	GameState.state_updated.connect(_on_state_updated)
 	
 	passive_btn.pressed.connect(func(): _set_sensor_mode("passive"))
 	active_btn.pressed.connect(func(): _set_sensor_mode("active"))
@@ -108,40 +108,20 @@ func _update_contact_list() -> void:
 	var player_ship := GameState.get_player_ship()
 	if player_ship == null:
 		return
-	
+
 	contact_list.clear()
 	var player_pos := player_ship.position.to_vector3()
-	
-	# Sort ships by distance
-	var ships_by_distance: Array[Dictionary] = []
-	for ship_id in GameState.ships:
-		if ship_id == GameState.player_ship_id:
-			continue
-		var ship: GameState.ShipState = GameState.ships[ship_id]
-		var dist := player_pos.distance_to(ship.position.to_vector3())
-		ships_by_distance.append({"id": ship_id, "ship": ship, "distance": dist})
-	
-	ships_by_distance.sort_custom(func(a, b): return a.distance < b.distance)
-	
-	for entry in ships_by_distance:
+
+	for entry in NavUtils.contacts_by_distance():
 		var ship: GameState.ShipState = entry.ship
-		var dist: float = entry.distance
-		
+
 		var faction_color: Color = Colors.get_faction_color(ship.faction)
-		var bearing := _calculate_bearing(player_ship, ship)
-		
-		var display := "%s | %.1f km | %03.0f°" % [ship.name, dist / 1000.0, bearing]
+		var bearing := NavUtils.bearing_to(player_pos, ship.position.to_vector3())
+
+		var display := "%s | %.1f km | %03.0f°" % [ship.name, entry.distance / 1000.0, bearing]
 		var idx := contact_list.add_item(display)
 		contact_list.set_item_custom_fg_color(idx, faction_color)
 		contact_list.set_item_metadata(idx, entry.id)
-
-
-func _calculate_bearing(from_ship: GameState.ShipState, to_ship: GameState.ShipState) -> float:
-	var from_pos := from_ship.position.to_vector3()
-	var to_pos := to_ship.position.to_vector3()
-	var dir := (to_pos - from_pos).normalized()
-	var bearing := rad_to_deg(atan2(dir.x, dir.z))
-	return fmod(bearing + 360, 360)
 
 
 func _update_scan_progress(ship: GameState.ShipState) -> void:
@@ -313,6 +293,3 @@ func _on_beam_down() -> void:
 func _on_emergency_transport() -> void:
 	NetworkClient.send_action("transporter", "emergency", {})
 
-
-func _on_state_updated() -> void:
-	pass  # Updates handled in _process

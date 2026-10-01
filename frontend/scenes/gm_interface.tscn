@@ -262,13 +262,54 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "RESTART"
 
+[node name="MissionPicker" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MissionSelect" type="OptionButton" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionPicker"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StartBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionPicker"]
+layout_mode = 2
+text = "START"
+
+[node name="EventRow" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="EventName" type="LineEdit" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/EventRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "event name"
+
+[node name="TriggerBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/EventRow"]
+layout_mode = 2
+text = "TRIGGER"
+
+[node name="InspectorSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/InspectorSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "STATE INSPECTOR"
+
+[node name="InspectorText" type="TextEdit" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/InspectorSection"]
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+editable = false
+selecting_enabled = true
+
+[node name="RefreshBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/InspectorSection"]
+layout_mode = 2
+text = "REFRESH"
+
 [node name="Spacer" type="Control" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
 layout_mode = 2
 size_flags_vertical = 3
-
-[node name="BackButton" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
-layout_mode = 2
-text = "RETURN TO MENU"
 
 [node name="CameraControls" type="PanelContainer" parent="."]
 layout_mode = 1

@@ -1,4 +1,4 @@
-extends Control
+extends StationPanel
 ## Relay station panel - sector map, waypoint management, and probes.
 
 @onready var tactical_map: Control = $MainSplit/MapSection/MapContent/TacticalMap
@@ -37,6 +37,7 @@ var _waypoints: Array[Dictionary] = []
 
 
 func _ready() -> void:
+	super._ready()
 	_connect_signals()
 
 
@@ -46,7 +47,6 @@ func _process(_delta: float) -> void:
 
 
 func _connect_signals() -> void:
-	GameState.state_updated.connect(_on_state_updated)
 	tactical_map.draw.connect(_draw_tactical_map)
 	
 	zoom_out_btn.pressed.connect(_on_zoom_out)
@@ -83,23 +83,17 @@ func _update_zoom_label() -> void:
 
 
 func _update_waypoint_list() -> void:
-	var player_ship := GameState.get_player_ship()
-	if player_ship == null:
+	if GameState.get_player_ship() == null:
 		return
-	
+
 	waypoint_list.clear()
-	var player_pos := player_ship.position.to_vector3()
-	
+
 	for wp in GameState.get_mission_waypoints():
-		var wp_pos := Vector3(wp.get("x", 0), wp.get("y", 0), wp.get("z", 0))
-		var dist := player_pos.distance_to(wp_pos)
-		waypoint_list.add_item("%s (%.1f km)" % [wp.get("name", "Unknown"), dist / 1000.0])
-	
+		waypoint_list.add_item("%s (%.1f km)" % [wp.get("name", "Unknown"), NavUtils.waypoint_distance(wp) / 1000.0])
+
 	# Draft waypoints relay has drawn but not yet handed to Flight.
 	for wp in _waypoints:
-		var wp_pos := Vector3(wp.get("x", 0), wp.get("y", 0), wp.get("z", 0))
-		var dist := player_pos.distance_to(wp_pos)
-		waypoint_list.add_item("%s (%.1f km)" % [wp.get("name", "Draft"), dist / 1000.0])
+		waypoint_list.add_item("%s (%.1f km)" % [wp.get("name", "Draft"), NavUtils.waypoint_distance(wp) / 1000.0])
 
 
 func _update_selected_info() -> void:
@@ -125,10 +119,8 @@ func _update_selected_info() -> void:
 	var player_pos := player_ship.position.to_vector3()
 	var contact_pos := contact.position.to_vector3()
 	var dist := player_pos.distance_to(contact_pos)
-	
-	var dir := (contact_pos - player_pos).normalized()
-	var bearing := rad_to_deg(atan2(dir.x, dir.z))
-	bearing = fmod(bearing + 360, 360)
+
+	var bearing := NavUtils.bearing_to(player_pos, contact_pos)
 	
 	selected_name.text = contact.name
 	selected_name.add_theme_color_override("font_color", Colors.get_faction_color(contact.faction))
@@ -235,9 +227,7 @@ func _draw_contacts(center: Vector2) -> void:
 			tactical_map.draw_arc(screen_pos, 15, 0, TAU, 16, color, 2.0)
 		
 		# Draw as triangle pointing in direction of movement
-		var ship_quat := ship.rotation.to_quaternion()
-		var ship_fwd: Vector3 = ship_quat * Vector3.FORWARD
-		var ship_heading: float = atan2(ship_fwd.x, -ship_fwd.z)
+		var ship_heading := NavUtils.heading_rad(ship.rotation.to_quaternion())
 		var points := PackedVector2Array([
 			screen_pos + Vector2(0, -size).rotated(ship_heading),
 			screen_pos + Vector2(-size * 0.6, size * 0.6).rotated(ship_heading),
@@ -251,9 +241,7 @@ func _draw_player_ship(center: Vector2) -> void:
 	if player_ship == null:
 		return
 	
-	var player_quat := player_ship.rotation.to_quaternion()
-	var player_fwd: Vector3 = player_quat * Vector3.FORWARD
-	var heading: float = atan2(player_fwd.x, -player_fwd.z)
+	var heading := NavUtils.heading_rad(player_ship.rotation.to_quaternion())
 	
 	# Draw player ship in center
 	var size := 10.0
@@ -415,6 +403,3 @@ func _on_set_waypoint_from_contact() -> void:
 func _on_launch_probe() -> void:
 	NetworkClient.send_action("sensors", "launch_probe", {})
 
-
-func _on_state_updated() -> void:
-	pass  # Updates handled in _process

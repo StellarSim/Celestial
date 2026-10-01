@@ -271,8 +271,12 @@ func (s *Simulator) updateProjectiles() {
 			if ok {
 				dist := distance(proj.Position, target.Position)
 				if dist < projectileHitRadius {
-					facing := target.FacingFor(proj.Position)
-					target.ApplyTypedDamage(proj.Damage, facing, "explosive")
+					// Phaser beams are visuals only; their damage was
+					// resolved instantly at fire time.
+					if proj.Type != "phaser" {
+						facing := target.FacingFor(proj.Position)
+						target.ApplyTypedDamage(proj.Damage, facing, "explosive")
+					}
 					toDelete = append(toDelete, id)
 				}
 			}
@@ -398,11 +402,62 @@ func (t tickSpawner) SpawnTorpedo(shooter *ship.Ship, target *ship.Ship, weaponI
 	t.sim.spawnTorpedoLocked(shooter, target, weaponID)
 }
 
+func (t tickSpawner) SpawnPhaserBeam(shooter *ship.Ship, target *ship.Ship) {
+	t.sim.spawnPhaserLocked(shooter, target)
+}
+
 // SpawnTorpedo launches a torpedo projectile from shooter toward target.
 func (s *Simulator) SpawnTorpedo(shooter *ship.Ship, target *ship.Ship, weaponID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.spawnTorpedoLocked(shooter, target, weaponID)
+}
+
+// SpawnPhaserBeam publishes a transient "phaser" projectile so clients can
+// render the beam. Phaser damage is resolved instantly at fire time, so the
+// projectile carries no damage and the tick never applies any for it.
+func (s *Simulator) SpawnPhaserBeam(shooter *ship.Ship, target *ship.Ship) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.spawnPhaserLocked(shooter, target)
+}
+
+// spawnPhaserLocked must be called with s.mu held.
+func (s *Simulator) spawnPhaserLocked(shooter *ship.Ship, target *ship.Ship) {
+	fwd := shooter.Forward()
+	origin := shooter.GetPosition()
+	launchPos := ship.Vector3{
+		X: origin.X + fwd.X*50,
+		Y: origin.Y + fwd.Y*50,
+		Z: origin.Z + fwd.Z*50,
+	}
+
+	targetPos := target.GetPosition()
+	toTarget := ship.Vector3{
+		X: targetPos.X - launchPos.X,
+		Y: targetPos.Y - launchPos.Y,
+		Z: targetPos.Z - launchPos.Z,
+	}
+	dist := math.Sqrt(toTarget.X*toTarget.X + toTarget.Y*toTarget.Y + toTarget.Z*toTarget.Z)
+	if dist < 0.0001 {
+		return
+	}
+	dir := ship.Vector3{X: toTarget.X / dist, Y: toTarget.Y / dist, Z: toTarget.Z / dist}
+
+	const beamSpeed = 6000.0
+	velocity := ship.Vector3{X: dir.X * beamSpeed, Y: dir.Y * beamSpeed, Z: dir.Z * beamSpeed}
+
+	id := fmt.Sprintf("phaser_%s_%.0f", shooter.ID, s.CurrentTime)
+	s.Projectiles[id] = &Projectile{
+		ID:          id,
+		Type:        "phaser",
+		Position:    launchPos,
+		Velocity:    velocity,
+		Damage:      0,
+		SourceID:    shooter.ID,
+		TargetID:    target.ID,
+		MaxLifetime: 1.0,
+	}
 }
 
 // spawnTorpedoLocked must be called with s.mu held.
@@ -579,6 +634,21 @@ func (s *Simulator) RestoreSnapshot(index int) error {
 
 	log.Printf("Restored snapshot from time %.2f", snapshot.Time)
 	return nil
+}
+
+// SnapshotInfo describes every stored snapshot for the GM client.
+func (s *Simulator) SnapshotInfo() []map[string]interface{} {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	out := make([]map[string]interface{}, 0, len(s.Snapshots))
+	for i, snap := range s.Snapshots {
+		out = append(out, map[string]interface{}{
+			"index": i,
+			"time":  snap.Time,
+		})
+	}
+	return out
 }
 
 func copyAIControllers(src map[string]*ai.Controller) map[string]*ai.Controller {
