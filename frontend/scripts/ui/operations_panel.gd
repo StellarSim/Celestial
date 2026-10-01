@@ -292,4 +292,3 @@ func _on_beam_down() -> void:
 
 func _on_emergency_transport() -> void:
 	NetworkClient.send_action("transporter", "emergency", {})
-

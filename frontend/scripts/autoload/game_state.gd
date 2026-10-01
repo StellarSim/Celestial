@@ -42,6 +42,7 @@ var auto_fire: bool = false
 # Game objects
 var ships: Dictionary = {}  # ship_id -> ShipState
 var projectiles: Dictionary = {}  # projectile_id -> ProjectileState
+var space_objects: Array = []
 var player_ship_id: String = ""
 
 # Previous state for interpolation
@@ -462,6 +463,8 @@ func apply_state_update(data: Dictionary) -> void:
 		autopilot = data.autopilot
 	if data.has("auto_fire"):
 		auto_fire = data.auto_fire
+	if data.has("objects"):
+		space_objects = data.objects
 	if data.has("snapshots"):
 		snapshots = data.snapshots
 	if data.has("snapshot_count"):
@@ -596,6 +599,7 @@ func get_mission_objectives() -> Array:
 func clear_state() -> void:
 	ships.clear()
 	projectiles.clear()
+	space_objects = []
 	player_ship_id = ""
 	simulation_time = 0.0
 	is_paused = false

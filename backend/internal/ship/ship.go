@@ -817,6 +817,67 @@ func (s *Ship) SetShieldsEnabled(enabled bool) {
 	s.Shields.Enabled = enabled
 }
 
+// Moves the ship instantly and clears velocity (GM teleport).
+func (s *Ship) SetPosition(p Vector3) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Position = p
+	s.Velocity = Vector3{}
+}
+
+// Refills every emitter to max.
+func (s *Ship) RestoreShields() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.Shields == nil {
+		return
+	}
+	for _, e := range s.Shields.Emitters {
+		e.Strength = e.MaxStrength
+	}
+	s.Shields.Enabled = true
+}
+
+// Drains every emitter by amount.
+func (s *Ship) DamageShields(amount float64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.Shields == nil {
+		return
+	}
+	for _, e := range s.Shields.Emitters {
+		e.Strength = math.Max(0, e.Strength-amount)
+	}
+}
+
+// Repairs every section to max and clears damage flags.
+func (s *Ship) RestoreHull() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.Hull == nil {
+		return
+	}
+	for _, sec := range s.Hull.Sections {
+		sec.Health = sec.MaxHealth
+		sec.Breached = false
+		sec.OnFire = false
+	}
+}
+
+// Updates the display name.
+func (s *Ship) SetName(name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Name = name
+}
+
+// Updates the faction tag.
+func (s *Ship) SetFaction(faction string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Faction = faction
+}
+
 // MutateWeapon applies fn to a weapon under the ship lock.
 func (s *Ship) MutateWeapon(weaponID string, fn func(*Weapon) error) error {
 	s.mu.Lock()

@@ -246,4 +246,3 @@ func _on_autopilot_toggled(enabled: bool) -> void:
 	else:
 		autopilot_status.text = "DISENGAGED"
 		autopilot_status.add_theme_color_override("font_color", Colors.STATUS_OFFLINE)
-

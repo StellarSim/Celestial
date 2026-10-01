@@ -13,331 +13,748 @@ grow_vertical = 2
 theme = ExtResource("1_theme")
 script = ExtResource("2_script")
 
-[node name="MainSplit" type="HSplitContainer" parent="."]
+[node name="MainLayout" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-split_offset = -400
+theme_override_constants/separation = 6
 
-[node name="ViewportContainer" type="SubViewportContainer" parent="MainSplit"]
+[node name="TopBar" type="PanelContainer" parent="MainLayout"]
+layout_mode = 2
+
+[node name="TopBarContent" type="HBoxContainer" parent="MainLayout/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Title" type="Label" parent="MainLayout/TopBar/TopBarContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
+theme_override_font_sizes/font_size = 15
+text = "GM"
+
+[node name="ConnectionDot" type="ColorRect" parent="MainLayout/TopBar/TopBarContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(10, 10)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.3, 0.8, 0.4, 1)
+
+[node name="MissionInfo" type="Label" parent="MainLayout/TopBar/TopBarContent"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.6, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "No mission"
+clip_text = true
+
+[node name="TimeValue" type="Label" parent="MainLayout/TopBar/TopBarContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "00:00:00"
+
+[node name="PausedLabel" type="Label" parent="MainLayout/TopBar/TopBarContent"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.7, 0.2, 1)
+theme_override_font_sizes/font_size = 12
+text = "PAUSED"
+
+[node name="PauseBtn" type="Button" parent="MainLayout/TopBar/TopBarContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(84, 26)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "PAUSE"
+
+[node name="SnapshotBtn" type="Button" parent="MainLayout/TopBar/TopBarContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 26)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "SNAPSHOTS"
+
+[node name="MissionBtn" type="Button" parent="MainLayout/TopBar/TopBarContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 26)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "MISSION"
+
+[node name="Body" type="HBoxContainer" parent="MainLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="LeftPanel" type="PanelContainer" parent="MainLayout/Body"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+
+[node name="LeftScroll" type="ScrollContainer" parent="MainLayout/Body/LeftPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="LeftContent" type="VBoxContainer" parent="MainLayout/Body/LeftPanel/LeftScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="ShipsHeader" type="Label" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "SHIPS"
+
+[node name="FilterEdit" type="LineEdit" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+placeholder_text = "filter..."
+
+[node name="ShipsList" type="Tree" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 12
+hide_root = true
+
+[node name="ShipQuickRow" type="HBoxContainer" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="JumpBtn" type="Button" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent/ShipQuickRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "JUMP"
+
+[node name="DestroyBtn" type="Button" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent/ShipQuickRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "DELETE"
+
+[node name="SpawnHeader" type="Label" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "SPAWN"
+
+[node name="SpawnKindRow" type="HBoxContainer" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SpawnKind" type="OptionButton" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent/SpawnKindRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+
+[node name="SpawnClass" type="OptionButton" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent/SpawnKindRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+
+[node name="SpawnName" type="LineEdit" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+placeholder_text = "name (optional)"
+
+[node name="SpawnFactionRow" type="HBoxContainer" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SpawnFaction" type="OptionButton" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent/SpawnFactionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+
+[node name="SpawnAt" type="OptionButton" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent/SpawnFactionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+
+[node name="SpawnBtn" type="Button" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "SPAWN"
+
+[node name="ObjectsHeader" type="Label" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "OBJECTS"
+
+[node name="ObjectsList" type="ItemList" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+allow_reselect = true
+
+[node name="RemoveObjBtn" type="Button" parent="MainLayout/Body/LeftPanel/LeftScroll/LeftContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "REMOVE OBJECT"
+
+[node name="CenterPanel" type="VBoxContainer" parent="MainLayout/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="ViewportContainer" type="SubViewportContainer" parent="MainLayout/Body/CenterPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
 stretch = true
 
-[node name="SubViewport" type="SubViewport" parent="MainSplit/ViewportContainer"]
+[node name="SubViewport" type="SubViewport" parent="MainLayout/Body/CenterPanel/ViewportContainer"]
+unique_name_in_owner = true
 handle_input_locally = false
 size = Vector2i(1280, 720)
 render_target_update_mode = 4
 
-[node name="World" type="Node3D" parent="MainSplit/ViewportContainer/SubViewport"]
+[node name="World" type="Node3D" parent="MainLayout/Body/CenterPanel/ViewportContainer/SubViewport"]
+unique_name_in_owner = true
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="MainSplit/ViewportContainer/SubViewport/World"]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="MainLayout/Body/CenterPanel/ViewportContainer/SubViewport/World"]
+unique_name_in_owner = true
 
-[node name="GMCamera" type="Camera3D" parent="MainSplit/ViewportContainer/SubViewport/World"]
+[node name="GMCamera" type="Camera3D" parent="MainLayout/Body/CenterPanel/ViewportContainer/SubViewport/World"]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 500, 1000)
 current = true
 fov = 60.0
 far = 100000.0
 
-[node name="Ships" type="Node3D" parent="MainSplit/ViewportContainer/SubViewport/World"]
+[node name="Ships" type="Node3D" parent="MainLayout/Body/CenterPanel/ViewportContainer/SubViewport/World"]
+unique_name_in_owner = true
 
-[node name="GridHelper" type="Node3D" parent="MainSplit/ViewportContainer/SubViewport/World"]
+[node name="Objects" type="Node3D" parent="MainLayout/Body/CenterPanel/ViewportContainer/SubViewport/World"]
+unique_name_in_owner = true
 
-[node name="ControlPanel" type="PanelContainer" parent="MainSplit"]
-custom_minimum_size = Vector2(400, 0)
+[node name="GridHelper" type="Node3D" parent="MainLayout/Body/CenterPanel/ViewportContainer/SubViewport/World"]
+unique_name_in_owner = true
+
+[node name="HintBar" type="PanelContainer" parent="MainLayout/Body/CenterPanel"]
 layout_mode = 2
 
-[node name="PanelScroll" type="ScrollContainer" parent="MainSplit/ControlPanel"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="PanelContent" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 15
-
-[node name="Header" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
-layout_mode = 2
-
-[node name="Title" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/Header"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.7, 0.9, 1)
-theme_override_font_sizes/font_size = 24
-text = "GAME MASTER"
-
-[node name="Spacer" type="Control" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/Header"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="ConnectionDot" type="ColorRect" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/Header"]
-custom_minimum_size = Vector2(12, 12)
-layout_mode = 2
-color = Color(0.3, 0.8, 0.4, 1)
-
-[node name="SimulationSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
-theme_override_font_sizes/font_size = 12
-text = "SIMULATION CONTROL"
-
-[node name="TimeDisplay" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection"]
-layout_mode = 2
-
-[node name="TimeLabel" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection/TimeDisplay"]
-layout_mode = 2
-text = "Time:"
-
-[node name="TimeValue" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection/TimeDisplay"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
-text = "00:00:00"
-
-[node name="Spacer" type="Control" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection/TimeDisplay"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="PausedLabel" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection/TimeDisplay"]
-visible = false
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.7, 0.2, 1)
-text = "PAUSED"
-
-[node name="ControlButtons" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="PauseBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection/ControlButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "PAUSE"
-
-[node name="ResumeBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SimulationSection/ControlButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "RESUME"
-
-[node name="SnapshotSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SnapshotSection"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
-theme_override_font_sizes/font_size = 12
-text = "TIME ROLLBACK"
-
-[node name="SnapshotList" type="ItemList" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SnapshotSection"]
-custom_minimum_size = Vector2(0, 120)
-layout_mode = 2
-allow_reselect = true
-
-[node name="RestoreBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SnapshotSection"]
-layout_mode = 2
-disabled = true
-text = "RESTORE SELECTED"
-
-[node name="ShipsSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/ShipsSection"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
-theme_override_font_sizes/font_size = 12
-text = "SHIPS"
-
-[node name="ShipsList" type="Tree" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/ShipsSection"]
-custom_minimum_size = Vector2(0, 200)
-layout_mode = 2
-hide_root = true
-
-[node name="ShipActions" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/ShipsSection"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="DamageBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/ShipsSection/ShipActions"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "DAMAGE"
-
-[node name="HealBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/ShipsSection/ShipActions"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "HEAL"
-
-[node name="DestroyBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/ShipsSection/ShipActions"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "DESTROY"
-
-[node name="SpawnSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SpawnSection"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
-theme_override_font_sizes/font_size = 12
-text = "SPAWN"
-
-[node name="SpawnRow" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SpawnSection"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="ShipClassSelect" type="OptionButton" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SpawnSection/SpawnRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="SpawnBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/SpawnSection/SpawnRow"]
-layout_mode = 2
-text = "SPAWN"
-
-[node name="AlertSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/AlertSection"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
-theme_override_font_sizes/font_size = 12
-text = "ALERTS"
-
-[node name="AlertButtons" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/AlertSection"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="GreenBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/AlertSection/AlertButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "GREEN"
-
-[node name="YellowBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/AlertSection/AlertButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "YELLOW"
-
-[node name="RedBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/AlertSection/AlertButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "RED"
-
-[node name="MissionSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
-theme_override_font_sizes/font_size = 12
-text = "MISSION"
-
-[node name="MissionInfo" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection"]
-layout_mode = 2
-text = "No mission loaded"
-
-[node name="MissionButtons" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="WinBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "WIN"
-
-[node name="LoseBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "LOSE"
-
-[node name="RestartBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "RESTART"
-
-[node name="MissionPicker" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="MissionSelect" type="OptionButton" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionPicker"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="StartBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/MissionPicker"]
-layout_mode = 2
-text = "START"
-
-[node name="EventRow" type="HBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="EventName" type="LineEdit" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/EventRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "event name"
-
-[node name="TriggerBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/MissionSection/EventRow"]
-layout_mode = 2
-text = "TRIGGER"
-
-[node name="InspectorSection" type="VBoxContainer" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="SectionHeader" type="Label" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/InspectorSection"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
-theme_override_font_sizes/font_size = 12
-text = "STATE INSPECTOR"
-
-[node name="InspectorText" type="TextEdit" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/InspectorSection"]
-custom_minimum_size = Vector2(0, 220)
-layout_mode = 2
-editable = false
-selecting_enabled = true
-
-[node name="RefreshBtn" type="Button" parent="MainSplit/ControlPanel/PanelScroll/PanelContent/InspectorSection"]
-layout_mode = 2
-text = "REFRESH"
-
-[node name="Spacer" type="Control" parent="MainSplit/ControlPanel/PanelScroll/PanelContent"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="CameraControls" type="PanelContainer" parent="."]
-layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = -90.0
-offset_right = 310.0
-offset_bottom = -10.0
-grow_vertical = 0
-
-[node name="CameraContent" type="VBoxContainer" parent="CameraControls"]
-layout_mode = 2
-
-[node name="CameraLabel" type="Label" parent="CameraControls/CameraContent"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Camera: Free Fly"
-
-[node name="Instructions" type="Label" parent="CameraControls/CameraContent"]
+[node name="HintLabel" type="Label" parent="MainLayout/Body/CenterPanel/HintBar"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
 theme_override_font_sizes/font_size = 11
-text = "WASD: Move | QE: Up/Down
-Mouse: Look | Scroll: Speed"
+text = "LMB: select ship | RMB drag: look | WASD/QE: fly | wheel: speed | double-click list: jump"
+
+[node name="RightPanel" type="PanelContainer" parent="MainLayout/Body"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+
+[node name="RightScroll" type="ScrollContainer" parent="MainLayout/Body/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="RightContent" type="VBoxContainer" parent="MainLayout/Body/RightPanel/RightScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="SelHeader" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "SELECTED"
+
+[node name="SelName" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "none"
+clip_text = true
+
+[node name="InfoGrid" type="GridContainer" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 2
+columns = 2
+
+[node name="FactionKey" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/InfoGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "Faction"
+
+[node name="FactionVal" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/InfoGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "-"
+
+[node name="ClassKey" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/InfoGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "Class"
+
+[node name="ClassVal" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/InfoGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "-"
+
+[node name="TargetKey" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/InfoGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "Target"
+
+[node name="TargetVal" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/InfoGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "-"
+
+[node name="AlertKey" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/InfoGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "Alert"
+
+[node name="AlertVal" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/InfoGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "-"
+
+[node name="PosKey" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/InfoGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "Position"
+
+[node name="PosVal" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/InfoGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "-"
+
+[node name="HullLabel" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "HULL"
+
+[node name="HullRow" type="HBoxContainer" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HullBar" type="ProgressBar" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/HullRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 12)
+show_percentage = false
+
+[node name="HullVal" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/HullRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "-"
+horizontal_alignment = 2
+
+[node name="ShieldLabel" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "SHIELDS"
+
+[node name="ShieldRow" type="HBoxContainer" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ShieldBar" type="ProgressBar" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/ShieldRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 12)
+show_percentage = false
+
+[node name="ShieldVal" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/ShieldRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "-"
+horizontal_alignment = 2
+
+[node name="MoveHeader" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "MOVE"
+
+[node name="PosEditGrid" type="GridContainer" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 4
+columns = 3
+
+[node name="PosX" type="SpinBox" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/PosEditGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -30000.0
+max_value = 30000.0
+step = 50.0
+
+[node name="PosY" type="SpinBox" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/PosEditGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -30000.0
+max_value = 30000.0
+step = 50.0
+
+[node name="PosZ" type="SpinBox" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/PosEditGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -30000.0
+max_value = 30000.0
+step = 50.0
+
+[node name="MoveBtnRow" type="HBoxContainer" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TeleportBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/MoveBtnRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "MOVE"
+tooltip_text = "Teleport selected ship to XYZ"
+
+[node name="HereBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/MoveBtnRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "HERE"
+tooltip_text = "Move selected ship to camera"
+
+[node name="JumpToBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/MoveBtnRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "JUMP"
+tooltip_text = "Jump camera to selected ship"
+
+[node name="EditHeader" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "EDIT"
+
+[node name="NameRow" type="HBoxContainer" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="NameEdit" type="LineEdit" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/NameRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+placeholder_text = "ship name"
+
+[node name="RenameBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/NameRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "SET"
+
+[node name="FactionRow" type="HBoxContainer" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="FactionSelect" type="OptionButton" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/FactionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+
+[node name="FactionBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/FactionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "SET"
+
+[node name="DmgRow" type="HBoxContainer" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="DmgAmount" type="SpinBox" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/DmgRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 10.0
+max_value = 100000.0
+step = 50.0
+value = 250.0
+
+[node name="DamageBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/DmgRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "DMG"
+
+[node name="HealBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/DmgRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "HEAL"
+
+[node name="FullBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/DmgRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "FULL"
+
+[node name="ShieldBtnRow" type="HBoxContainer" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ShieldDrainBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/ShieldBtnRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "SHIELDS 0"
+
+[node name="ShieldFullBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/ShieldBtnRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "SHIELDS FULL"
+
+[node name="QuickAlertRow" type="HBoxContainer" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GreenBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/QuickAlertRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "GREEN"
+
+[node name="YellowBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/QuickAlertRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "YELLOW"
+
+[node name="RedBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/QuickAlertRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "RED"
+
+[node name="OpsHeader" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "MISSION OPS"
+
+[node name="WinLoseRow" type="HBoxContainer" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="WinBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/WinLoseRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "WIN"
+
+[node name="LoseBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/WinLoseRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "LOSE"
+
+[node name="EventRow" type="HBoxContainer" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EventName" type="LineEdit" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/EventRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+placeholder_text = "event"
+
+[node name="TriggerBtn" type="Button" parent="MainLayout/Body/RightPanel/RightScroll/RightContent/EventRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "FIRE"
+
+[node name="DiagHeader" type="Label" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "STATE"
+
+[node name="InspectorText" type="TextEdit" parent="MainLayout/Body/RightPanel/RightScroll/RightContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+editable = false
+selecting_enabled = true
+
+[node name="MissionPopup" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -170.0
+offset_top = -110.0
+offset_right = 170.0
+offset_bottom = 110.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MissionBox" type="VBoxContainer" parent="MissionPopup"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MissionTitle" type="Label" parent="MissionPopup/MissionBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Mission"
+horizontal_alignment = 1
+
+[node name="MissionSelect" type="OptionButton" parent="MissionPopup/MissionBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MissionPopupInfo" type="Label" parent="MissionPopup/MissionBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "Starts on server. Used at session start."
+autowrap_mode = 2
+
+[node name="MissionPopupRow" type="HBoxContainer" parent="MissionPopup/MissionBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="StartBtn" type="Button" parent="MissionPopup/MissionBox/MissionPopupRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "START"
+
+[node name="StopBtn" type="Button" parent="MissionPopup/MissionBox/MissionPopupRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "STOP"
+
+[node name="MissionCloseBtn" type="Button" parent="MissionPopup/MissionBox/MissionPopupRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "CLOSE"
+
+[node name="SnapshotPopup" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -170.0
+offset_top = -140.0
+offset_right = 170.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SnapBox" type="VBoxContainer" parent="SnapshotPopup"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SnapTitle" type="Label" parent="SnapshotPopup/SnapBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Snapshots"
+horizontal_alignment = 1
+
+[node name="SnapshotList" type="ItemList" parent="SnapshotPopup/SnapBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+size_flags_vertical = 3
+allow_reselect = true
+
+[node name="SnapRow" type="HBoxContainer" parent="SnapshotPopup/SnapBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CreateSnapBtn" type="Button" parent="SnapshotPopup/SnapBox/SnapRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "CREATE"
+
+[node name="RestoreBtn" type="Button" parent="SnapshotPopup/SnapBox/SnapRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "RESTORE"
+
+[node name="SnapCloseBtn" type="Button" parent="SnapshotPopup/SnapBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "CLOSE"
 
 [node name="DisconnectOverlay" type="ColorRect" parent="."]
+unique_name_in_owner = true
 visible = false
 layout_mode = 1
 anchors_preset = 15

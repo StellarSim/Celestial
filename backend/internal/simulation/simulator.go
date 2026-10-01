@@ -534,6 +534,27 @@ func (s *Simulator) RemoveObject(id string) {
 	log.Printf("Removed object: %s", id)
 }
 
+// Moves a ship instantly (GM move tool).
+func (s *Simulator) TeleportShip(id string, pos ship.Vector3) error {
+	sh := s.GetShip(id)
+	if sh == nil {
+		return fmt.Errorf("ship not found: %s", id)
+	}
+	sh.SetPosition(pos)
+	return nil
+}
+
+// Returns a copy of the object map for broadcasts.
+func (s *Simulator) GetAllObjects() map[string]*Object {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make(map[string]*Object, len(s.Objects))
+	for k, v := range s.Objects {
+		out[k] = v
+	}
+	return out
+}
+
 // GetObject returns a copy of an object by id.
 func (s *Simulator) GetObject(id string) (Object, bool) {
 	s.mu.RLock()

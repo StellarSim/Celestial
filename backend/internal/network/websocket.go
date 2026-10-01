@@ -336,6 +336,63 @@ func (ws *WebSocketServer) handleGMCommand(client *Client, raw map[string]interf
 			return
 		}
 		ws.sendFeedback(client, "success", command, "")
+	case "teleport_ship", "move_ship":
+		if err := ws.handleTeleportShip(raw); err != nil {
+			ws.sendError(client, err.Error())
+			return
+		}
+		ws.sendFeedback(client, "success", command, "")
+	case "rename_ship":
+		shipID, _ := raw["ship_id"].(string)
+		name, _ := raw["name"].(string)
+		if shipID == "" || name == "" {
+			ws.sendError(client, "rename_ship requires ship_id and name")
+			return
+		}
+		sh := ws.simulator.GetShip(shipID)
+		if sh == nil {
+			ws.sendError(client, "ship not found: "+shipID)
+			return
+		}
+		sh.SetName(name)
+		ws.sendFeedback(client, "success", command, "")
+	case "set_faction":
+		shipID, _ := raw["ship_id"].(string)
+		faction, _ := raw["faction"].(string)
+		if faction == "" {
+			faction, _ = raw["value"].(string)
+		}
+		if shipID == "" || faction == "" {
+			ws.sendError(client, "set_faction requires ship_id and faction")
+			return
+		}
+		sh := ws.simulator.GetShip(shipID)
+		if sh == nil {
+			ws.sendError(client, "ship not found: "+shipID)
+			return
+		}
+		sh.SetFaction(faction)
+		ws.sendFeedback(client, "success", command, "")
+	case "spawn_object":
+		if err := ws.handleSpawnObject(raw); err != nil {
+			ws.sendError(client, err.Error())
+			return
+		}
+		ws.sendFeedback(client, "success", command, "")
+	case "remove_object":
+		objID, _ := raw["object_id"].(string)
+		if objID == "" {
+			objID, _ = raw["ship_id"].(string)
+		}
+		if objID == "" {
+			objID, _ = raw["id"].(string)
+		}
+		if objID == "" {
+			ws.sendError(client, "remove_object requires object_id")
+			return
+		}
+		ws.simulator.RemoveObject(objID)
+		ws.sendFeedback(client, "success", command, "")
 	case "set_alert":
 		level, _ := raw["level"].(string)
 		if level == "" {
@@ -512,9 +569,102 @@ func modifyShipHull(sh *ship.Ship, system, section string, amount float64) error
 			sh.RepairSection(sec, amount)
 		}
 		return nil
+	case "hull_restore", "hull_full", "repair_all":
+		sh.RestoreHull()
+		return nil
+	case "shields", "shield":
+		if amount < 0 {
+			sh.DamageShields(-amount)
+			return nil
+		}
+		if amount >= 99999 {
+			sh.RestoreShields()
+			return nil
+		}
+		sh.RestoreShields()
+		if amount > 0 {
+			sh.DamageShields(shieldMax(sh) - amount)
+		}
+		return nil
+	case "shields_restore", "shields_full":
+		sh.RestoreShields()
+		return nil
+	case "shields_drain":
+		sh.DamageShields(amount)
+		return nil
 	default:
 		return fmt.Errorf("modify_ship: unsupported system %q", system)
 	}
+}
+
+func shieldMax(sh *ship.Ship) float64 {
+	total := 0.0
+	for _, e := range sh.ShieldsSnapshot() {
+		total += e.MaxStrength
+	}
+	return total
+}
+
+func (ws *WebSocketServer) handleTeleportShip(raw map[string]interface{}) error {
+	shipID, _ := raw["ship_id"].(string)
+	if shipID == "" {
+		return fmt.Errorf("teleport_ship requires ship_id")
+	}
+	posMap, _ := raw["position"].(map[string]interface{})
+	if posMap == nil {
+		return fmt.Errorf("teleport_ship requires position")
+	}
+	x, ok := toFloat(posMap["x"])
+	if !ok {
+		return fmt.Errorf("teleport_ship position.x must be a number")
+	}
+	y, ok := toFloat(posMap["y"])
+	if !ok {
+		return fmt.Errorf("teleport_ship position.y must be a number")
+	}
+	z, ok := toFloat(posMap["z"])
+	if !ok {
+		return fmt.Errorf("teleport_ship position.z must be a number")
+	}
+	return ws.simulator.TeleportShip(shipID, ship.Vector3{X: x, Y: y, Z: z})
+}
+
+func (ws *WebSocketServer) handleSpawnObject(raw map[string]interface{}) error {
+	objID, _ := raw["object_id"].(string)
+	if objID == "" {
+		objID, _ = raw["ship_id"].(string)
+	}
+	if objID == "" {
+		objID, _ = raw["id"].(string)
+	}
+	objType, _ := raw["object_type"].(string)
+	if objType == "" {
+		objType, _ = raw["type"].(string)
+	}
+	if objType == "" {
+		objType = "waypoint"
+	}
+	if objID == "" {
+		return fmt.Errorf("spawn_object requires object_id")
+	}
+	posMap, _ := raw["position"].(map[string]interface{})
+	if posMap == nil {
+		return fmt.Errorf("spawn_object requires position")
+	}
+	x, ok := toFloat(posMap["x"])
+	if !ok {
+		return fmt.Errorf("spawn_object position.x must be a number")
+	}
+	y, ok := toFloat(posMap["y"])
+	if !ok {
+		return fmt.Errorf("spawn_object position.y must be a number")
+	}
+	z, ok := toFloat(posMap["z"])
+	if !ok {
+		return fmt.Errorf("spawn_object position.z must be a number")
+	}
+	ws.simulator.SpawnObject(objID, objType, ship.Vector3{X: x, Y: y, Z: z})
+	return nil
 }
 
 func (ws *WebSocketServer) sendFeedback(client *Client, status, action, message string) {
@@ -663,6 +813,16 @@ func (ws *WebSocketServer) buildStateMessage() map[string]interface{} {
 		})
 	}
 
+	objs := ws.simulator.GetAllObjects()
+	objArr := make([]interface{}, 0, len(objs))
+	for _, o := range objs {
+		objArr = append(objArr, map[string]interface{}{
+			"id":       o.ID,
+			"type":     o.Type,
+			"position": map[string]float64{"x": o.Position.X, "y": o.Position.Y, "z": o.Position.Z},
+		})
+	}
+
 	msg := map[string]interface{}{
 		"type":               "state_update",
 		"time":               ws.simulator.GetCurrentTime(),
@@ -670,6 +830,7 @@ func (ws *WebSocketServer) buildStateMessage() map[string]interface{} {
 		"alert_level":        alertLevel,
 		"ships":              shipArr,
 		"projectiles":        projArr,
+		"objects":            objArr,
 		"orders":             ws.actionRouter.Orders(),
 		"waypoints":          ws.actionRouter.Waypoints(),
 		"repair_teams":       ws.actionRouter.RepairTeams(),
