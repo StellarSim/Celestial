@@ -50,22 +50,22 @@ func _process(_delta: float) -> void:
 
 func _connect_signals() -> void:
 	tactical_map.draw.connect(_draw_tactical_map)
-	
+
 	zoom_out_btn.pressed.connect(_on_zoom_out)
 	zoom_in_btn.pressed.connect(_on_zoom_in)
 	center_btn.pressed.connect(_on_center_player)
 	show_waypoints_btn.toggled.connect(func(v): _show_waypoints = v)
 	show_grid_btn.toggled.connect(func(v): _show_grid = v)
-	
+
 	add_waypoint_btn.pressed.connect(_on_add_waypoint)
 	remove_waypoint_btn.pressed.connect(_on_remove_waypoint)
 	send_to_flight_btn.pressed.connect(_on_send_to_flight)
 	waypoint_list.item_selected.connect(_on_waypoint_selected)
-	
+
 	mark_target_btn.pressed.connect(_on_mark_target)
 	set_waypoint_btn.pressed.connect(_on_set_waypoint_from_contact)
 	launch_probe_btn.pressed.connect(_on_launch_probe)
-	
+
 	tactical_map.gui_input.connect(_on_map_input)
 
 
@@ -73,7 +73,7 @@ func _update_display() -> void:
 	var ship := GameState.get_player_ship()
 	if ship == null:
 		return
-	
+
 	_update_zoom_label()
 	_update_waypoint_list()
 	_update_selected_info()
@@ -108,22 +108,22 @@ func _update_selected_info() -> void:
 		mark_target_btn.disabled = true
 		set_waypoint_btn.disabled = true
 		return
-	
+
 	var contact: GameState.ShipState = GameState.ships.get(_selected_contact_id)
 	if contact == null:
 		_selected_contact_id = ""
 		return
-	
+
 	var player_ship := GameState.get_player_ship()
 	if player_ship == null:
 		return
-	
+
 	var player_pos := player_ship.position.to_vector3()
 	var contact_pos := contact.position.to_vector3()
 	var dist := player_pos.distance_to(contact_pos)
 
 	var bearing := NavUtils.bearing_to(player_pos, contact_pos)
-	
+
 	selected_name.text = contact.name
 	selected_name.add_theme_color_override("font_color", Colors.get_faction_color(contact.faction))
 	dist_value.text = "%.1f km" % (dist / 1000.0)
@@ -132,7 +132,7 @@ func _update_selected_info() -> void:
 	faction_value.text = contact.faction.capitalize()
 	var faction_color: Color = Colors.get_faction_color(contact.faction)
 	faction_value.add_theme_color_override("font_color", faction_color)
-	
+
 	mark_target_btn.disabled = false
 	set_waypoint_btn.disabled = false
 
@@ -147,21 +147,21 @@ func _draw_tactical_map() -> void:
 	var ship := GameState.get_player_ship()
 	if ship == null:
 		return
-	
+
 	var map_rect := tactical_map.get_rect()
 	var map_center := map_rect.size / 2
-	
+
 	# Draw grid
 	if _show_grid:
 		_draw_grid(map_rect, map_center)
-	
+
 	# Draw waypoints
 	if _show_waypoints:
 		_draw_waypoints(map_center)
-	
+
 	# Draw all contacts
 	_draw_contacts(map_center)
-	
+
 	# Draw player ship
 	_draw_player_ship(map_center)
 
@@ -212,24 +212,24 @@ func _draw_contacts(center: Vector2) -> void:
 	var player_ship := GameState.get_player_ship()
 	if player_ship == null:
 		return
-	
+
 	var player_pos := player_ship.position.to_vector3()
-	
+
 	for ship_id in GameState.ships:
 		if ship_id == GameState.player_ship_id:
 			continue
-		
+
 		var ship: GameState.ShipState = GameState.ships[ship_id]
 		var ship_pos := ship.position.to_vector3()
 		var screen_pos := _world_to_screen(ship_pos, player_pos, center)
-		
+
 		var color: Color = Colors.get_faction_color(ship.faction)
 		var size := 6.0
-		
+
 		if ship_id == _selected_contact_id:
 			size = 10.0
 			tactical_map.draw_arc(screen_pos, 15, 0, TAU, 16, color, 2.0)
-		
+
 		# Draw as triangle pointing in direction of movement
 		var ship_heading := NavUtils.heading_rad(ship.rotation.to_quaternion())
 		var points := PackedVector2Array([
@@ -244,23 +244,24 @@ func _draw_player_ship(center: Vector2) -> void:
 	var player_ship := GameState.get_player_ship()
 	if player_ship == null:
 		return
-	
+
 	var heading := NavUtils.heading_rad(player_ship.rotation.to_quaternion())
-	
-	# Draw player ship in center
+
+	# Panned position
+	var ship_screen := center + _map_center
 	var size := 10.0
 	var points := PackedVector2Array([
-		center + Vector2(0, -size).rotated(heading),
-		center + Vector2(-size * 0.6, size * 0.6).rotated(heading),
-		center + Vector2(size * 0.6, size * 0.6).rotated(heading)
+		ship_screen + Vector2(0, -size).rotated(heading),
+		ship_screen + Vector2(-size * 0.6, size * 0.6).rotated(heading),
+		ship_screen + Vector2(size * 0.6, size * 0.6).rotated(heading)
 	])
 	tactical_map.draw_colored_polygon(points, Colors.FACTION_PLAYER)
 	tactical_map.draw_polyline(points + PackedVector2Array([points[0]]), Colors.PRIMARY, 2.0)
-	
+
 	# Draw range rings
 	for r in [5000, 10000, 20000]:  # meters
 		var screen_r: float = r * _map_scale * _zoom_level
-		tactical_map.draw_arc(center, screen_r, 0, TAU, 32, Color(Colors.PRIMARY, 0.3), 1.0)
+		tactical_map.draw_arc(ship_screen, screen_r, 0, TAU, 32, Color(Colors.PRIMARY, 0.3), 1.0)
 
 
 func _world_to_screen(world_pos: Vector3, player_pos: Vector3, screen_center: Vector2) -> Vector2:
@@ -320,25 +321,25 @@ func _try_select_contact(screen_pos: Vector2) -> void:
 	var player_ship := GameState.get_player_ship()
 	if player_ship == null:
 		return
-	
+
 	var map_center := tactical_map.size / 2
 	var player_pos := player_ship.position.to_vector3()
-	
+
 	var closest_id := ""
 	var closest_dist := 20.0  # Minimum click distance
-	
+
 	for ship_id in GameState.ships:
 		if ship_id == GameState.player_ship_id:
 			continue
-		
+
 		var ship: GameState.ShipState = GameState.ships[ship_id]
 		var ship_screen := _world_to_screen(ship.position.to_vector3(), player_pos, map_center)
 		var dist := screen_pos.distance_to(ship_screen)
-		
+
 		if dist < closest_dist:
 			closest_dist = dist
 			closest_id = ship_id
-	
+
 	_selected_contact_id = closest_id
 
 
@@ -373,10 +374,10 @@ func _on_remove_waypoint() -> void:
 	var selected := waypoint_list.get_selected_items()
 	if selected.is_empty():
 		return
-	
+
 	var mission_wp_count: int = GameState.get_mission_waypoints().size()
 	var idx: int = selected[0] - mission_wp_count
-	
+
 	if idx >= 0 and idx < _waypoints.size():
 		_waypoints.remove_at(idx)
 
@@ -409,11 +410,11 @@ func _on_mark_target() -> void:
 func _on_set_waypoint_from_contact() -> void:
 	if _selected_contact_id.is_empty():
 		return
-	
+
 	var contact: GameState.ShipState = GameState.ships.get(_selected_contact_id)
 	if contact == null:
 		return
-	
+
 	var pos := contact.position.to_vector3()
 	_waypoints.append({
 		"name": contact.name,
@@ -425,4 +426,3 @@ func _on_set_waypoint_from_contact() -> void:
 
 func _on_launch_probe() -> void:
 	NetworkClient.send_action("sensors", "launch_probe", {})
-
