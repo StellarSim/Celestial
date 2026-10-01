@@ -627,9 +627,25 @@ func (s *Simulator) RestoreSnapshot(index int) error {
 
 	snapshot := s.Snapshots[index]
 	s.CurrentTime = snapshot.Time
-	s.Ships = snapshot.Ships
-	s.Projectiles = snapshot.Projectiles
-	s.Objects = snapshot.Objects
+	// Deep-copy on restore so post-restore ticks never mutate the stored
+	// snapshot. The old code aliased the snapshot maps directly.
+	restoredShips := make(map[string]*ship.Ship, len(snapshot.Ships))
+	for k, v := range snapshot.Ships {
+		restoredShips[k] = v.Clone()
+	}
+	restoredProjs := make(map[string]*Projectile, len(snapshot.Projectiles))
+	for k, v := range snapshot.Projectiles {
+		cp := *v
+		restoredProjs[k] = &cp
+	}
+	restoredObjs := make(map[string]*Object, len(snapshot.Objects))
+	for k, v := range snapshot.Objects {
+		cp := *v
+		restoredObjs[k] = &cp
+	}
+	s.Ships = restoredShips
+	s.Projectiles = restoredProjs
+	s.Objects = restoredObjs
 	s.AIControllers = copyAIControllers(snapshot.AIControllers)
 
 	log.Printf("Restored snapshot from time %.2f", snapshot.Time)

@@ -81,6 +81,11 @@ func (e *Engine) StartMission(missionID string) error {
 		return fmt.Errorf("mission not found: %s", missionID)
 	}
 
+	// Close any previous Lua state before starting a new one.
+	if e.L != nil {
+		e.L.Close()
+		e.L = nil
+	}
 	e.active = mission
 	// A restart begins from a clean objective list.
 	mission.Objectives = make([]Objective, 0)
@@ -389,6 +394,27 @@ func (e *Engine) luaMissionLose(L *lua.LState) int {
 	log.Printf("Mission failed: %s", reason)
 	e.emitEvent("mission_lose", map[string]interface{}{"reason": reason})
 	return 0
+}
+
+// Completes all objectives and emits a win event for GM tooling.
+// It does not stop the mission; the GM stops or restarts explicitly.
+func (e *Engine) MissionWin() {
+	if e.active != nil {
+		for i := range e.active.Objectives {
+			e.active.Objectives[i].Completed = true
+		}
+	}
+	log.Println("Mission completed successfully (GM)!")
+	e.emitEvent("mission_win", map[string]interface{}{"source": "gm"})
+}
+
+// Emits a lose event for GM tooling.
+func (e *Engine) MissionLose(reason string) {
+	if reason == "" {
+		reason = "Mission failed by GM"
+	}
+	log.Printf("Mission failed (GM): %s", reason)
+	e.emitEvent("mission_lose", map[string]interface{}{"reason": reason, "source": "gm"})
 }
 
 func (e *Engine) luaLog(L *lua.LState) int {

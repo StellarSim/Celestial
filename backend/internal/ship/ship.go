@@ -229,6 +229,7 @@ func NewShip(id, classID, name string, class *config.ShipClass, isPlayer bool) *
 
 	for _, wpnCfg := range class.Weapons {
 		facing := Vector3{X: 0, Y: 0, Z: 1}
+		loaded := wpnCfg.AmmoCapacity > 0 && wpnCfg.Type == "torpedo"
 		sh.Weapons[wpnCfg.ID] = &Weapon{
 			ID:           wpnCfg.ID,
 			Type:         wpnCfg.Type,
@@ -240,6 +241,9 @@ func NewShip(id, classID, name string, class *config.ShipClass, isPlayer bool) *
 			Health:       wpnCfg.Health,
 			Enabled:      true,
 			PowerDraw:    wpnCfg.PowerDraw,
+			Armed:        false,
+			Loaded:       loaded,
+			Locked:       false,
 			AmmoCapacity: wpnCfg.AmmoCapacity,
 			AmmoCount:    wpnCfg.AmmoCapacity,
 			Facing:       facing,
@@ -443,10 +447,17 @@ func (s *Ship) updatePhysics(dt float64) {
 
 func (s *Ship) updatePower(dt float64) {
 	consumption := 0.0
+	engineLoad := 0.0
+	weaponLoad := 0.0
+	shieldLoad := 0.0
+	for _, br := range s.Power.Breakers {
+		br.Load = 0
+	}
 	if s.breakerOn("engines") {
 		for _, engine := range s.Engines {
 			if engine.Enabled {
 				consumption += engine.PowerDraw
+				engineLoad += engine.PowerDraw
 			}
 		}
 	}
@@ -454,20 +465,31 @@ func (s *Ship) updatePower(dt float64) {
 		for _, weapon := range s.Weapons {
 			if weapon.Enabled {
 				consumption += weapon.PowerDraw
+				weaponLoad += weapon.PowerDraw
 			}
 		}
 	}
 	if s.breakerOn("shields") && s.Shields.Enabled {
 		consumption += s.Shields.PowerDraw
+		shieldLoad += s.Shields.PowerDraw
 	}
 	for _, subsystem := range s.Subsystems {
 		if subsystem.Enabled && s.breakerOn(subsystem.ID) {
 			consumption += subsystem.PowerDraw
+			if br, ok := s.Power.Breakers[subsystem.ID]; ok {
+				br.Load = subsystem.PowerDraw
+			}
 		}
 	}
 
 	s.Power.Consumption = consumption
-	s.Power.CurrentCapacity += (s.Power.Generation - consumption) * dt
+
+	// Reactor breaker off means zero generation. Integrate exactly once.
+	gen := s.Power.Generation
+	if !s.breakerOn("reactor") {
+		gen = 0
+	}
+	s.Power.CurrentCapacity += (gen - consumption) * dt
 	if s.Power.CurrentCapacity > s.Power.MaxCapacity {
 		s.Power.CurrentCapacity = s.Power.MaxCapacity
 	}
@@ -475,9 +497,22 @@ func (s *Ship) updatePower(dt float64) {
 		s.Power.CurrentCapacity = 0
 	}
 
-	// A reactor breaker cut kills generation.
-	if !s.breakerOn("reactor") {
-		s.Power.CurrentCapacity = math.Max(0, s.Power.CurrentCapacity-consumption*dt)
+	// Per-breaker load readout for panels.
+	if br, ok := s.Power.Breakers["reactor"]; ok {
+		if s.breakerOn("reactor") {
+			br.Load = gen
+		} else {
+			br.Load = 0
+		}
+	}
+	if br, ok := s.Power.Breakers["engines"]; ok {
+		br.Load = engineLoad
+	}
+	if br, ok := s.Power.Breakers["weapons"]; ok {
+		br.Load = weaponLoad
+	}
+	if br, ok := s.Power.Breakers["shields"]; ok {
+		br.Load = shieldLoad
 	}
 }
 
@@ -650,6 +685,13 @@ func (s *Ship) Right() Vector3 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.rightLocked()
+}
+
+// Returns the ship's world-space up vector.
+func (s *Ship) Up() Vector3 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.upLocked()
 }
 
 // FacingFor returns which damage section a world-space point falls into relative

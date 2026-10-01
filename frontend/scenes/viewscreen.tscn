@@ -2,21 +2,27 @@
 
 [ext_resource type="Theme" uid="uid://bfmjdh7ywmo2a" path="res://resources/theme.tres" id="1_theme"]
 [ext_resource type="Script" uid="uid://drf5uttxrc20i" path="res://scripts/viewscreen.gd" id="2_script"]
+[ext_resource type="Shader" uid="uid://c28ciqidye5n" path="res://shaders/nebula_sky.gdshader" id="3_nebula"]
 
-[sub_resource type="ProceduralSkyMaterial" id="1_sky"]
-sky_top_color = Color(0.01, 0.02, 0.04, 1)
-sky_horizon_color = Color(0.02, 0.03, 0.05, 1)
-ground_bottom_color = Color(0.01, 0.015, 0.02, 1)
-ground_horizon_color = Color(0.02, 0.03, 0.05, 1)
+[sub_resource type="ShaderMaterial" id="SkyMat_nebula"]
+shader = ExtResource("3_nebula")
+shader_parameter/space_color = Color(0.002, 0.002, 0.005, 1)
+shader_parameter/nebula_color_a = Color(0.2, 0.09, 0.34, 1)
+shader_parameter/nebula_color_b = Color(0.05, 0.17, 0.32, 1)
+shader_parameter/nebula_color_c = Color(0.32, 0.09, 0.17, 1)
+shader_parameter/nebula_scale = 2.0
+shader_parameter/nebula_intensity = 0.18
+shader_parameter/nebula_coverage = 0.45
+shader_parameter/drift_speed = 0.004
 
-[sub_resource type="Sky" id="2_sky"]
-sky_material = SubResource("1_sky")
+[sub_resource type="Sky" id="Sky_nebula"]
+sky_material = SubResource("SkyMat_nebula")
 
 [sub_resource type="Environment" id="3_env"]
 background_mode = 2
-sky = SubResource("2_sky")
+sky = SubResource("Sky_nebula")
 ambient_light_source = 2
-ambient_light_color = Color(0.15, 0.18, 0.25, 1)
+ambient_light_color = Color(0.2, 0.2, 0.2, 1)
 ambient_light_energy = 0.3
 tonemap_mode = 2
 tonemap_exposure = 1.1
@@ -24,9 +30,6 @@ glow_enabled = true
 glow_intensity = 0.5
 glow_strength = 0.8
 glow_bloom = 0.2
-fog_enabled = true
-fog_light_color = Color(0.1, 0.15, 0.25, 1)
-fog_density = 0.0001
 
 [sub_resource type="CameraAttributesPractical" id="4_cam_attr"]
 auto_exposure_enabled = true
@@ -55,7 +58,6 @@ shadow_enabled = true
 
 [node name="FillLight" type="DirectionalLight3D" parent="." unique_id=1974467601]
 transform = Transform3D(0.866025, 0.25, -0.433013, 0, 0.866025, 0.5, 0.5, -0.433013, 0.75, 0, -50, 0)
-light_color = Color(0.7, 0.8, 0.95, 1)
 light_energy = 0.3
 
 [node name="Ships" type="Node3D" parent="." unique_id=1822142935]
@@ -117,7 +119,6 @@ size_flags_horizontal = 3
 
 [node name="RightInfo" type="VBoxContainer" parent="UI/HUD/TopHUD" unique_id=508147201]
 layout_mode = 2
-alignment = 2
 
 [node name="Heading" type="Label" parent="UI/HUD/TopHUD/RightInfo" unique_id=1886885511]
 layout_mode = 2

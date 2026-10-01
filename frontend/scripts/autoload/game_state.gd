@@ -125,13 +125,15 @@ class PhaserArrayState:
 	var health: float = 100.0
 	var cooldown: float = 0.0
 	var power_level: float = 100.0
-	
+	var enabled: bool = true
+
 	func _init(data: Dictionary = {}) -> void:
 		if data.has("array_id"): array_id = data.array_id
 		facing = Vector3State.new(data.get("facing", {}))
 		if data.has("health"): health = data.health
 		if data.has("cooldown"): cooldown = data.cooldown
 		if data.has("power_level"): power_level = data.power_level
+		if data.has("enabled"): enabled = data.enabled
 
 
 class WeaponsState:
@@ -239,6 +241,8 @@ class ShipState:
 	
 	var power_available: float = 1000.0
 	var power_total: float = 1000.0
+	var power_generation: float = 0.0
+	var power_consumption: float = 0.0
 	
 	var engines: EngineState
 	var engines_list: Array = []
@@ -319,6 +323,8 @@ class ShipState:
 		
 		if data.has("power_available"): power_available = data.power_available
 		if data.has("power_total"): power_total = data.power_total
+		if data.has("power_generation"): power_generation = data.power_generation
+		if data.has("power_consumption"): power_consumption = data.power_consumption
 		
 		if data.has("engines"):
 			var eng_data = data.engines
@@ -436,6 +442,9 @@ func apply_state_update(data: Dictionary) -> void:
 			mission = m
 		else:
 			mission = {}
+	else:
+		# Server omits mission when none is active. Clear stale state.
+		mission = {}
 
 	if data.has("orders"):
 		orders = data.orders

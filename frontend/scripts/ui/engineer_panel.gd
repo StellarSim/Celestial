@@ -80,14 +80,18 @@ func _update_display() -> void:
 
 
 func _update_power_display(ship: GameState.ShipState) -> void:
-	var generation := ship.power_total
+	# Server owns true rates. Fall back to battery deficit only for old builds.
+	var generation := ship.power_generation
+	var consumption := ship.power_consumption
+	if generation <= 0.0 and consumption <= 0.0:
+		generation = ship.power_total
+		consumption = generation - ship.power_available
 	var available := ship.power_available
-	var consumption := generation - available
-	
+
 	generation_value.text = "%.0f MW" % generation
 	consumption_value.text = "%.0f MW" % consumption
 	available_value.text = "%.0f MW" % available
-	
+
 	# Color code available power
 	var power_ratio: float = available / generation if generation > 0 else 0.0
 	available_value.add_theme_color_override("font_color", Colors.get_power_color(power_ratio))

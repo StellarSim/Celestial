@@ -184,6 +184,16 @@ func (c *Controller) TriggerEvent(eventName string, params map[string]interface{
 	log.Printf("GM: Triggered event %s", eventName)
 }
 
+func (c *Controller) MissionWin() {
+	c.missionEngine.MissionWin()
+	log.Println("GM: Declared mission win")
+}
+
+func (c *Controller) MissionLose(reason string) {
+	c.missionEngine.MissionLose(reason)
+	log.Println("GM: Declared mission loss")
+}
+
 func (c *Controller) GetActiveMission() *mission.Mission {
 	return c.missionEngine.GetActiveMission()
 }

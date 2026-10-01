@@ -1,6 +1,7 @@
 package network
 
 import (
+	"celestial/internal/config"
 	"celestial/internal/gm"
 	"celestial/internal/input"
 	"celestial/internal/ship"
@@ -9,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,15 +20,16 @@ import (
 )
 
 type WebSocketServer struct {
-	port         int
-	simulator    *simulation.Simulator
-	gmController *gm.Controller
-	actionRouter *input.ActionRouter
-	clients      map[*Client]bool
-	mu           sync.RWMutex
-	upgrader     websocket.Upgrader
-	stopChan     chan struct{}
-	server       *http.Server
+	port          int
+	simulator     *simulation.Simulator
+	gmController  *gm.Controller
+	actionRouter  *input.ActionRouter
+	panelMappings *config.PanelMapping
+	clients       map[*Client]bool
+	mu            sync.RWMutex
+	upgrader      websocket.Upgrader
+	stopChan      chan struct{}
+	server        *http.Server
 }
 
 type Client struct {
@@ -55,7 +58,7 @@ func NewWebSocketServer(port int, sim *simulation.Simulator, gmCtrl *gm.Controll
 
 func (ws *WebSocketServer) Start() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/ws", ws.handleWebSocket)
+	ws.registerRoutes(mux)
 	mux.HandleFunc("/", ws.handleWebSocket)
 
 	ws.server = &http.Server{
@@ -69,6 +72,21 @@ func (ws *WebSocketServer) Start() {
 	log.Printf("WebSocket server starting on port %d", ws.port)
 	if err := ws.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Printf("WebSocket server error: %v", err)
+	}
+}
+
+// Attaches the panels.yaml mappings so Start serves the web
+// panels on the same port as the WebSocket endpoint.
+func (ws *WebSocketServer) SetPanelMappings(m *config.PanelMapping) {
+	ws.panelMappings = m
+}
+
+// Mounts the WebSocket endpoint and, when panel mappings are
+// attached, the web panels pages and JSON API.
+func (ws *WebSocketServer) registerRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/ws", ws.handleWebSocket)
+	if ws.panelMappings != nil {
+		NewWebPanelsHandler(ws.panelMappings, ws.simulator, ws.actionRouter).RegisterWebPanelRoutes(mux)
 	}
 }
 
@@ -376,7 +394,17 @@ func (ws *WebSocketServer) handleGMCommand(client *Client, raw map[string]interf
 		ws.gmController.TriggerEvent(event, data)
 		ws.sendFeedback(client, "success", command, "")
 	case "mission_win", "mission_lose":
-		ws.BroadcastMissionEvent(command, map[string]interface{}{})
+		reason, _ := raw["reason"].(string)
+		if reason == "" {
+			if m, ok := raw["data"].(map[string]interface{}); ok {
+				reason, _ = m["reason"].(string)
+			}
+		}
+		if command == "mission_win" {
+			ws.gmController.MissionWin()
+		} else {
+			ws.gmController.MissionLose(reason)
+		}
 		ws.sendFeedback(client, "success", command, "")
 	default:
 		ws.sendError(client, fmt.Sprintf("unknown gm command: %s", command))
@@ -738,14 +766,26 @@ func (ws *WebSocketServer) buildShipData(sh *ship.Ship, globalAlert string, st s
 		breakers[b] = true
 	}
 	powerAvail, powerTotal := 0.0, 0.0
+	powerGen, powerUse := 0.0, 0.0
 	if sh.Power != nil {
 		powerAvail = sh.Power.CurrentCapacity
 		powerTotal = sh.Power.MaxCapacity
+		powerGen = sh.Power.Generation
+		powerUse = sh.Power.Consumption
+		if !sh.BreakerOn("reactor") {
+			powerGen = 0
+		}
 	}
 
 	engines := []interface{}{}
 	if sh.Engines != nil {
-		for _, e := range sh.Engines {
+		ids := make([]string, 0, len(sh.Engines))
+		for id := range sh.Engines {
+			ids = append(ids, id)
+		}
+		sort.Strings(ids)
+		for _, id := range ids {
+			e := sh.Engines[id]
 			engines = append(engines, map[string]interface{}{
 				"engine_id": e.ID,
 				"kind":      e.Type,
@@ -759,21 +799,34 @@ func (ws *WebSocketServer) buildShipData(sh *ship.Ship, globalAlert string, st s
 	torpedoBays := []interface{}{}
 	phaserArrays := []interface{}{}
 	if sh.Weapons != nil {
-		for _, w := range sh.Weapons {
+		torpIDs := []string{}
+		phaserIDs := []string{}
+		for id, w := range sh.Weapons {
 			if w.Type == "torpedo" {
-				torpedoBays = append(torpedoBays, map[string]interface{}{
-					"bay_id": wAmmoID(w.ID), "id": w.ID,
-					"armed": w.Armed, "loaded": w.Loaded, "locked": w.Locked,
-					"ammo": w.AmmoCount, "max_ammo": w.AmmoCapacity,
-					"cooldown": w.Cooldown, "target_id": sh.TargetID,
-				})
+				torpIDs = append(torpIDs, id)
 			} else {
-				phaserArrays = append(phaserArrays, map[string]interface{}{
-					"array_id": w.ID, "id": w.ID,
-					"facing": map[string]float64{"x": 0, "y": 0, "z": 1},
-					"health": w.Health, "cooldown": w.Cooldown, "power_level": 100.0,
-				})
+				phaserIDs = append(phaserIDs, id)
 			}
+		}
+		sort.Strings(torpIDs)
+		sort.Strings(phaserIDs)
+		for _, id := range torpIDs {
+			w := sh.Weapons[id]
+			torpedoBays = append(torpedoBays, map[string]interface{}{
+				"bay_id": wAmmoID(w.ID), "id": w.ID,
+				"armed": w.Armed, "loaded": w.Loaded, "locked": w.Locked,
+				"ammo": w.AmmoCount, "max_ammo": w.AmmoCapacity,
+				"cooldown": w.Cooldown, "target_id": sh.TargetID,
+			})
+		}
+		for _, id := range phaserIDs {
+			w := sh.Weapons[id]
+			phaserArrays = append(phaserArrays, map[string]interface{}{
+				"array_id": w.ID, "id": w.ID,
+				"facing": map[string]float64{"x": 0, "y": 0, "z": 1},
+				"health": w.Health, "cooldown": w.Cooldown, "power_level": 100.0,
+				"enabled": w.Enabled,
+			})
 		}
 	}
 
@@ -841,6 +894,7 @@ func (ws *WebSocketServer) buildShipData(sh *ship.Ship, globalAlert string, st s
 		"shield_facings":   facings,
 		"shield_frequency": st.shieldFrequency,
 		"power_available":  powerAvail, "power_total": powerTotal,
+		"power_generation": powerGen, "power_consumption": powerUse,
 		"power_breakers":  breakers,
 		"engines":         engines,
 		"weapons":         map[string]interface{}{"torpedo_bays": torpedoBays, "phaser_arrays": phaserArrays},

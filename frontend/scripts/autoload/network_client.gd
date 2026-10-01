@@ -67,6 +67,7 @@ func _process(delta: float) -> void:
 
 
 func connect_to_server(url: String = "") -> void:
+	_should_reconnect = true
 	if not url.is_empty():
 		server_url = url
 	

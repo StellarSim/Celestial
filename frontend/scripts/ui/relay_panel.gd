@@ -33,7 +33,9 @@ var _show_grid: bool = true
 var _selected_contact_id: String = ""
 var _dragging: bool = false
 var _drag_start: Vector2 = Vector2.ZERO
+var _drag_moved: bool = false
 var _waypoints: Array[Dictionary] = []
+var _placing_waypoint: bool = false
 
 
 func _ready() -> void:
@@ -167,15 +169,17 @@ func _draw_tactical_map() -> void:
 func _draw_grid(rect: Rect2, center: Vector2) -> void:
 	var grid_spacing := 100.0 * _zoom_level  # pixels
 	var grid_color := Color(Colors.PRIMARY.r, Colors.PRIMARY.g, Colors.PRIMARY.b, 0.2)
-	
+
+	# Pan offset so the grid slides with contacts when the view is dragged.
+	var origin := center + _map_center
 	# Vertical lines
-	var x := fmod(center.x, grid_spacing)
+	var x := fmod(origin.x, grid_spacing)
 	while x < rect.size.x:
 		tactical_map.draw_line(Vector2(x, 0), Vector2(x, rect.size.y), grid_color, 1.0)
 		x += grid_spacing
-	
+
 	# Horizontal lines
-	var y := fmod(center.y, grid_spacing)
+	var y := fmod(origin.y, grid_spacing)
 	while y < rect.size.y:
 		tactical_map.draw_line(Vector2(0, y), Vector2(rect.size.x, y), grid_color, 1.0)
 		y += grid_spacing
@@ -288,18 +292,28 @@ func _on_map_input(event: InputEvent) -> void:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
+				if _placing_waypoint:
+					_place_waypoint_at(mb.position)
+					return
 				_dragging = true
+				_drag_moved = false
 				_drag_start = mb.position
-				_try_select_contact(mb.position)
 			else:
+				if _placing_waypoint:
+					return
+				if _dragging and not _drag_moved:
+					_try_select_contact(mb.position)
 				_dragging = false
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_UP:
 			_on_zoom_in()
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			_on_zoom_out()
-	elif event is InputEventMouseMotion and _dragging:
+	elif event is InputEventMouseMotion and _dragging and not _placing_waypoint:
 		var mm := event as InputEventMouseMotion
-		_map_center += mm.relative
+		if mm.position.distance_to(_drag_start) > 4.0:
+			_drag_moved = true
+		if _drag_moved:
+			_map_center += mm.relative
 
 
 func _try_select_contact(screen_pos: Vector2) -> void:
@@ -329,21 +343,30 @@ func _try_select_contact(screen_pos: Vector2) -> void:
 
 
 func _on_add_waypoint() -> void:
-	# Add waypoint at map center
+	# Enter place mode: the next map click drops the waypoint there.
+	# Press again to cancel.
+	_placing_waypoint = not _placing_waypoint
+	add_waypoint_btn.text = "PLACE..." if _placing_waypoint else "ADD"
+
+
+func _place_waypoint_at(screen_pos: Vector2) -> void:
 	var player_ship := GameState.get_player_ship()
 	if player_ship == null:
+		_placing_waypoint = false
+		add_waypoint_btn.text = "ADD"
 		return
-	
+
 	var map_center := tactical_map.size / 2
-	var world_pos := _screen_to_world(map_center + _map_center, player_ship.position.to_vector3(), map_center)
-	
-	var wp := {
+	var world_pos := _screen_to_world(screen_pos, player_ship.position.to_vector3(), map_center)
+
+	_waypoints.append({
 		"name": "WP-%d" % (_waypoints.size() + 1),
 		"x": world_pos.x,
 		"y": world_pos.y,
 		"z": world_pos.z
-	}
-	_waypoints.append(wp)
+	})
+	_placing_waypoint = false
+	add_waypoint_btn.text = "ADD"
 
 
 func _on_remove_waypoint() -> void:

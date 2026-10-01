@@ -193,9 +193,9 @@ func _update_weapon_status(ship: GameState.ShipState) -> void:
 		var beam_state = ship.weapons.phaser_arrays[i] if i < ship.weapons.phaser_arrays.size() else null
 		
 		if beam_state:
-			(ctrl.toggle as CheckButton).set_pressed_no_signal(beam_state.health > 0 and beam_state.cooldown <= 0)
+			(ctrl.toggle as CheckButton).set_pressed_no_signal(beam_state.enabled and beam_state.health > 0)
 			(ctrl.charge as ProgressBar).value = 100.0 - clampf(beam_state.cooldown * 50.0, 0.0, 100.0)
-			(ctrl.fire as Button).disabled = beam_state.cooldown > 0 or _locked_target_id.is_empty()
+			(ctrl.fire as Button).disabled = beam_state.cooldown > 0 or _locked_target_id.is_empty() or not beam_state.enabled
 		else:
 			(ctrl.fire as Button).disabled = true
 	
@@ -298,8 +298,12 @@ func _on_tube_type_changed(_type_idx: int, tube_idx: int) -> void:
 func _on_tube_fire(tube_idx: int) -> void:
 	if _locked_target_id.is_empty():
 		return
+	var bay_id := tube_idx + 1
+	# Ensure the tube is locked before firing so a single press works even
+	# if the auto-lock broadcast has not arrived yet.
+	NetworkClient.send_action("torpedo", "lock", {"bay_id": bay_id, "locked": true})
 	NetworkClient.send_action("torpedo", "fire", {
-		"bay_id": tube_idx + 1,
+		"bay_id": bay_id,
 		"target_id": _locked_target_id
 	})
 
@@ -314,6 +318,8 @@ func _on_fire_all_bays() -> void:
 	var ship := GameState.get_player_ship()
 	if ship == null:
 		return
+	for bay in ship.weapons.torpedo_bays:
+		NetworkClient.send_action("torpedo", "lock", {"bay_id": bay.bay_id, "locked": true})
 	for bay in ship.weapons.torpedo_bays:
 		NetworkClient.send_action("torpedo", "fire", {
 			"bay_id": bay.bay_id,

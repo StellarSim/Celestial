@@ -44,6 +44,7 @@ func _ready() -> void:
 	_connect_signals()
 	_create_grid()
 	_setup_environment()
+	_sync_ship_visuals()
 
 
 func _process(delta: float) -> void:
@@ -268,6 +269,19 @@ func _on_state_updated() -> void:
 	_update_snapshot_list()
 	_update_mission_picker()
 	_update_mission_info()
+	_sync_ship_visuals()
+
+
+func _sync_ship_visuals() -> void:
+	# Rebuild visuals for ships that already exist (re-enter after menu exit)
+	# and drop visuals for ships that are gone. Signal-only creation misses
+	# pre-existing ships because ship_added is not re-emitted for them.
+	for ship_id in GameState.ships:
+		if not _ship_instances.has(ship_id):
+			_on_ship_added(str(ship_id))
+	for ship_id in _ship_instances.keys():
+		if not GameState.ships.has(ship_id):
+			_on_ship_removed(str(ship_id))
 
 
 func _update_snapshot_list() -> void:

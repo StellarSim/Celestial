@@ -26,12 +26,20 @@ Production backend for a cinematic spaceship bridge simulator with physical cont
 The server will start on:
 - WebSocket: port 8080 (Godot clients)
 - TCP: port 9090 (ESP32 panels)
+- Web panels: port 8080 (`/panels`, one page per panel id)
 
 ### Verification
 
 ```bash
 cd backend && go build ./... && go vet ./... && go test ./...
 ```
+
+## Web Panels
+
+Browser fallback for rooms without ESP32 hardware. Open
+`http://<server>:8080/panels` and pick a panel; each page sends through the
+same action catalog as the screens and physical panels, and renders the same
+per-panel state.
 
 ## Panel Testing Tool
 

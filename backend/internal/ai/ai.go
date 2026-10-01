@@ -68,8 +68,9 @@ func (c *Controller) Update(dt float64, sh *ship.Ship, allShips map[string]*ship
 }
 
 func (c *Controller) updatePatrol(sh *ship.Ship, allShips map[string]*ship.Ship) {
+	// Drift on a steady heading. The old code applied a constant yaw rate
+	// every tick, which integrated into an infinite circling behavior.
 	sh.ApplyThrust(0, 0, 0.3)
-	sh.ApplyRotation(0, 0.1*c.Difficulty, 0)
 
 	threat := c.findNearestThreat(sh, allShips)
 	if threat != nil {
@@ -99,13 +100,20 @@ func (c *Controller) updateCombat(sh *ship.Ship, allShips map[string]*ship.Ship)
 	}
 	toTarget = normalize(toTarget)
 
-	// Use the ship's real orientation, not its position.
+	// Use the ship's orientation, not its position.
 	forward := sh.Forward()
+	right := sh.Right()
+	up := sh.Up()
 	dot := toTarget.X*forward.X + toTarget.Y*forward.Y + toTarget.Z*forward.Z
 
 	turnRate := c.Difficulty * 0.5
-	if dot < 0.9 {
-		sh.ApplyRotation(toTarget.Y*turnRate, toTarget.X*turnRate, 0)
+	if dot < 0.98 {
+		// Proportional steering toward the target in local space.
+		yawErr := toTarget.X*right.X + toTarget.Y*right.Y + toTarget.Z*right.Z
+		pitchErr := -(toTarget.X*up.X + toTarget.Y*up.Y + toTarget.Z*up.Z)
+		yawErr = clamp(yawErr, -1, 1)
+		pitchErr = clamp(pitchErr, -1, 1)
+		sh.ApplyRotation(pitchErr*turnRate, yawErr*turnRate, 0)
 	}
 
 	switch {
@@ -142,7 +150,15 @@ func (c *Controller) updateEvade(sh *ship.Ship, allShips map[string]*ship.Ship) 
 	away = normalize(away)
 
 	sh.ApplyThrust(0, 0, 1.0)
-	sh.ApplyRotation(away.Y*0.5, away.X*0.5, rand.Float64()*0.2-0.1)
+	fwd := sh.Forward()
+	rgt := sh.Right()
+	upV := sh.Up()
+	dot := away.X*fwd.X + away.Y*fwd.Y + away.Z*fwd.Z
+	if dot < 0.98 {
+		yawErr := clamp(away.X*rgt.X+away.Y*rgt.Y+away.Z*rgt.Z, -1, 1)
+		pitchErr := clamp(-(away.X*upV.X + away.Y*upV.Y + away.Z*upV.Z), -1, 1)
+		sh.ApplyRotation(pitchErr*0.5, yawErr*0.5, 0)
+	}
 
 	if distance(sh.Position, target.Position) > optimalRange {
 		c.State = "combat"
@@ -212,6 +228,15 @@ func (c *Controller) attemptTorpedoFire(sh *ship.Ship, target *ship.Ship) {
 		if weapon.Range > 0 && distance(sh.Position, target.Position) > weapon.Range {
 			continue
 		}
+		// AI crews keep their tubes armed, loaded and locked on the target.
+		_ = sh.MutateWeapon(id, func(w *ship.Weapon) error {
+			w.Armed = true
+			if w.AmmoCount > 0 {
+				w.Loaded = true
+			}
+			w.Locked = true
+			return nil
+		})
 		if !sh.FireWeapon(id, target.ID) {
 			return
 		}
@@ -301,4 +326,14 @@ func normalize(v ship.Vector3) ship.Vector3 {
 		return ship.Vector3{X: 0, Y: 0, Z: -1}
 	}
 	return ship.Vector3{X: v.X / mag, Y: v.Y / mag, Z: v.Z / mag}
+}
+
+func clamp(v, lo, hi float64) float64 {
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
 }

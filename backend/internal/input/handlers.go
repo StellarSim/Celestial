@@ -324,7 +324,9 @@ func (ar *ActionRouter) handleSetTurn(action *Action) error {
 		sh.ApplyRotation(pitch, yaw, roll)
 		return nil
 	}
-	sh.ApplyRotation(rate, rate, 0)
+	// Helm turn buttons command yaw only. The old code drove pitch and yaw
+	// together, producing a diagonal spin.
+	sh.ApplyRotation(0, rate, 0)
 	return nil
 }
 
@@ -336,13 +338,13 @@ func (ar *ActionRouter) handleSetWaypoint(action *Action) error {
 		Y:    floatOrZero(d, "y"),
 		Z:    floatOrZero(d, "z"),
 	}
-	if wp.Name == "" {
-		return fmt.Errorf("set_waypoint requires name")
-	}
 	if id := dictString(d, "waypoint_id"); id != "" {
 		wp.ID = id
 	} else {
 		wp.ID = fmt.Sprintf("wp_%d", time.Now().UnixNano())
+	}
+	if wp.Name == "" {
+		wp.Name = wp.ID
 	}
 
 	ar.mu.Lock()
@@ -399,6 +401,17 @@ func (ar *ActionRouter) handleSetTarget(action *Action) error {
 		return fmt.Errorf("target not found: %s", targetID)
 	}
 	sh.SetTarget(targetID)
+	// Acquiring a target locks every armed+loaded tube onto it so the
+	// fire buttons (which gate on Locked) work without a separate lock step.
+	for _, bay := range sh.WeaponsSnapshot() {
+		if bay.Type != "torpedo" || !bay.Armed || !bay.Loaded {
+			continue
+		}
+		_ = sh.MutateWeapon(bay.ID, func(w *ship.Weapon) error {
+			w.Locked = true
+			return nil
+		})
+	}
 	return nil
 }
 
@@ -408,6 +421,15 @@ func (ar *ActionRouter) handleClearTarget(action *Action) error {
 		return err
 	}
 	sh.SetTarget("")
+	for _, bay := range sh.WeaponsSnapshot() {
+		if bay.Type != "torpedo" || !bay.Locked {
+			continue
+		}
+		_ = sh.MutateWeapon(bay.ID, func(w *ship.Weapon) error {
+			w.Locked = false
+			return nil
+		})
+	}
 	return nil
 }
 
@@ -427,7 +449,19 @@ func (ar *ActionRouter) handleTorpedoArm(action *Action) error {
 	} else if v, ok := dictBool(d, "enabled"); ok {
 		enabled = v
 	}
-	return ar.setTorpedoBayFlag(sh, bay.ID, func(w *ship.Weapon) { w.Armed = enabled })
+	if err := ar.setTorpedoBayFlag(sh, bay.ID, func(w *ship.Weapon) { w.Armed = enabled }); err != nil {
+		return err
+	}
+	// Arming a loaded tube with an active target locks it immediately.
+	if enabled && sh.GetTargetID() != "" {
+		_ = sh.MutateWeapon(bay.ID, func(w *ship.Weapon) error {
+			if w.Loaded {
+				w.Locked = true
+			}
+			return nil
+		})
+	}
+	return nil
 }
 
 func (ar *ActionRouter) handleTorpedoLoad(action *Action) error {
@@ -440,11 +474,23 @@ func (ar *ActionRouter) handleTorpedoLoad(action *Action) error {
 	if err != nil {
 		return err
 	}
-	return ar.setTorpedoBayFlag(sh, bay.ID, func(w *ship.Weapon) {
+	if err := ar.setTorpedoBayFlag(sh, bay.ID, func(w *ship.Weapon) {
 		if w.AmmoCount > 0 {
 			w.Loaded = true
 		}
-	})
+	}); err != nil {
+		return err
+	}
+	// Loading an armed tube with an active target locks it immediately.
+	if sh.GetTargetID() != "" {
+		_ = sh.MutateWeapon(bay.ID, func(w *ship.Weapon) error {
+			if w.Armed && w.Loaded {
+				w.Locked = true
+			}
+			return nil
+		})
+	}
+	return nil
 }
 
 func (ar *ActionRouter) handleTorpedoLock(action *Action) error {

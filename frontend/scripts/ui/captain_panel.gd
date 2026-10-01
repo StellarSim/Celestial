@@ -234,13 +234,17 @@ func _on_mission_event(event_name: String, data: Dictionary) -> void:
 	var event_type := event_name
 	if data.has("type"):
 		event_type = str(data.get("type", event_name))
-	var message := str(data.get("message", data.get("objective_id", "")))
-	
+	var message := str(data.get("message", data.get("reason", data.get("objective_id", ""))))
+
 	match event_type:
 		"objective_complete":
 			_add_comm_log("MISSION", "[color=green]Objective completed: %s[/color]" % message)
 		"objective_failed":
 			_add_comm_log("MISSION", "[color=red]Objective failed: %s[/color]" % message)
+		"mission_win":
+			_add_comm_log("MISSION", "[color=green]MISSION COMPLETE: %s[/color]" % ("Victory" if message.is_empty() else message))
+		"mission_lose":
+			_add_comm_log("MISSION", "[color=red]MISSION FAILED: %s[/color]" % ("Defeat" if message.is_empty() else message))
 		"message":
 			_add_comm_log("MISSION", message)
 		"incoming_comm":

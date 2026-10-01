@@ -49,6 +49,7 @@ func _ready() -> void:
 	_connect_signals()
 	_create_starfield()
 	_preload_effects()
+	_sync_ship_visuals()
 
 
 func _process(delta: float) -> void:
@@ -77,46 +78,70 @@ func _connect_signals() -> void:
 	GameState.projectile_added.connect(_on_projectile_added)
 	GameState.projectile_removed.connect(_on_projectile_removed)
 	GameState.alert_level_changed.connect(_on_alert_changed)
+	GameState.state_updated.connect(_on_state_updated)
+
+
+func _on_state_updated() -> void:
+	_sync_ship_visuals()
+
+
+func _sync_ship_visuals() -> void:
+	for ship_id in GameState.ships:
+		if not _ship_instances.has(str(ship_id)):
+			_on_ship_added(str(ship_id))
+	for ship_id in _ship_instances.keys():
+		if not GameState.ships.has(str(ship_id)):
+			_on_ship_removed(str(ship_id))
 
 
 func _create_starfield() -> void:
-	# Create a simple procedural starfield using MultiMeshInstance3D
+	# Layered starfield: dim fill plus sparse brighter stars, with warm/cool
+	# tint variety. Unshaded so stars pop in front of the dim sky nebula.
+	_add_star_layer(1200, 2.5, 6.0, Color(1.0, 0.95, 0.88), 1.0)
+	_add_star_layer(500, 2.5, 6.5, Color(0.75, 0.85, 1.0), 1.2)
+	_add_star_layer(250, 5.0, 10.0, Color.WHITE, 1.8)
+	_add_star_layer(60, 8.0, 16.0, Color(0.92, 0.96, 1.0), 3.0)
+
+
+func _add_star_layer(count: int, scale_min: float, scale_max: float, tint: Color, emission_energy: float) -> void:
 	var star_mesh := SphereMesh.new()
 	star_mesh.radius = 1.0
 	star_mesh.height = 2.0
 	star_mesh.radial_segments = 4
 	star_mesh.rings = 2
-	
+
 	var star_material := StandardMaterial3D.new()
-	star_material.albedo_color = Color.WHITE
+	star_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	star_material.albedo_color = tint
 	star_material.emission_enabled = true
-	star_material.emission = Color(1.0, 0.98, 0.95)
-	star_material.emission_energy_multiplier = 2.0
+	star_material.emission = tint
+	star_material.emission_energy_multiplier = emission_energy
 	star_mesh.material = star_material
-	
+
 	var multi_mesh := MultiMesh.new()
 	multi_mesh.transform_format = MultiMesh.TRANSFORM_3D
 	multi_mesh.mesh = star_mesh
-	multi_mesh.instance_count = 2000
-	
+	multi_mesh.instance_count = count
+
 	for i in multi_mesh.instance_count:
 		var distance := randf_range(5000.0, 30000.0)
 		var theta := randf() * TAU
 		var phi := acos(2.0 * randf() - 1.0)
-		
+
 		var pos := Vector3(
 			distance * sin(phi) * cos(theta),
 			distance * sin(phi) * sin(theta),
 			distance * cos(phi)
 		)
-		
-		var scale := randf_range(3.0, 12.0)
+
+		var scale := randf_range(scale_min, scale_max)
 		var transform := Transform3D().scaled(Vector3(scale, scale, scale))
 		transform.origin = pos
 		multi_mesh.set_instance_transform(i, transform)
-	
+
 	var multi_mesh_instance := MultiMeshInstance3D.new()
 	multi_mesh_instance.multimesh = multi_mesh
+	multi_mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	starfield.add_child(multi_mesh_instance)
 
 

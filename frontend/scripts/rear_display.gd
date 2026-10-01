@@ -44,6 +44,7 @@ func _ready() -> void:
 	_connect_signals()
 	_setup_map()
 	_setup_scanlines()
+	_sync_markers()
 
 
 func _input(event: InputEvent) -> void:
@@ -225,6 +226,16 @@ func _on_disconnected() -> void:
 
 func _on_state_updated() -> void:
 	_update_contacts_list()
+	_sync_markers()
+
+
+func _sync_markers() -> void:
+	for ship_id in GameState.ships:
+		if not _ship_markers.has(str(ship_id)):
+			_on_ship_added(str(ship_id))
+	for ship_id in _ship_markers.keys():
+		if not GameState.ships.has(str(ship_id)):
+			_on_ship_removed(str(ship_id))
 
 
 func _on_ship_added(ship_id: String) -> void:

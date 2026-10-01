@@ -78,6 +78,7 @@ func _connect_signals() -> void:
 	
 	# Waypoint controls
 	navigate_btn.pressed.connect(_on_navigate_pressed)
+	clear_nav_btn.pressed.connect(_on_clear_nav_pressed)
 	
 	# Autopilot
 	autopilot_engage_btn.toggled.connect(_on_autopilot_toggled)
@@ -217,11 +218,12 @@ func _on_navigate_pressed() -> void:
 	var selected := waypoint_list.get_selected_items()
 	if selected.is_empty():
 		return
-	
+
 	var waypoints: Array = GameState.get_mission_waypoints()
 	if selected[0] < waypoints.size():
 		var wp = waypoints[selected[0]]
 		NetworkClient.send_action("navigation", "set_waypoint", {
+			"name": wp.get("name", wp.get("id", "Waypoint")),
 			"waypoint_id": wp.get("id", ""),
 			"x": wp.get("x", 0),
 			"y": wp.get("y", 0),

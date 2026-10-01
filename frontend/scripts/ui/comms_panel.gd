@@ -284,8 +284,13 @@ func _on_mission_event(event_name: String, data: Dictionary) -> void:
 	var event_type: String = event_name
 	if data.has("type"):
 		event_type = str(data.get("type", event_name))
-	
+
 	if event_type == "incoming_comm":
 		var source: String = str(data.get("source", "UNKNOWN"))
 		var message: String = str(data.get("message", ""))
 		_add_log("INCOMING", "[b]%s:[/b] %s" % [source, message])
+	elif event_type == "mission_win":
+		_add_log("MISSION", "[b]MISSION COMPLETE[/b]")
+	elif event_type == "mission_lose":
+		var reason: String = str(data.get("reason", data.get("message", "Defeat")))
+		_add_log("MISSION", "[b]MISSION FAILED:[/b] %s" % reason)

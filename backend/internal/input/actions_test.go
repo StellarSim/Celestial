@@ -198,6 +198,9 @@ func TestTorpedoFireHonoursRange(t *testing.T) {
 	route(t, r, "weapons", "weapons", "set_target", map[string]interface{}{"target_id": "raider"})
 	route(t, r, "weapons", "torpedo", "arm", map[string]interface{}{"bay_id": 1})
 	route(t, r, "weapons", "torpedo", "load", map[string]interface{}{"bay_id": 1})
+	// Targeting auto-locks ready tubes; force an unlocked state to verify
+	// the fire gate still rejects unlocked bays.
+	route(t, r, "weapons", "torpedo", "lock", map[string]interface{}{"bay_id": 1, "locked": false})
 
 	// Unlocked: firing should fail.
 	if err := route(t, r, "weapons", "torpedo", "fire", map[string]interface{}{"bay_id": 1}); err == nil {
@@ -248,12 +251,19 @@ func TestPhaserFireDamagesTarget(t *testing.T) {
 	for i := 0; i < 200; i++ {
 		sim.Tick()
 	}
-	hullBefore := raider.HullSnapshot()[ship.SectionPort].Health
+	hullBefore := 0.0
+	for _, sec := range raider.HullSnapshot() {
+		hullBefore += sec.Health
+	}
 
 	if err := route(t, r, "weapons", "phaser", "fire", map[string]interface{}{"array_id": "phaser_1"}); err != nil {
 		t.Fatalf("Second phaser fire should succeed after recharge: %v", err)
 	}
-	if raider.HullSnapshot()[ship.SectionPort].Health >= hullBefore {
+	hullAfter := 0.0
+	for _, sec := range raider.HullSnapshot() {
+		hullAfter += sec.Health
+	}
+	if hullAfter >= hullBefore {
 		t.Error("Phaser fire should damage the target hull once shields are down")
 	}
 }

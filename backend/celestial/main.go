@@ -57,6 +57,7 @@ func main() {
 	gmController := gm.NewController(sim, missionEngine)
 
 	wsServer := network.NewWebSocketServer(cfg.WebSocketPort, sim, gmController)
+	wsServer.SetPanelMappings(panelMappings)
 	missionEngine.OnEvent = wsServer.BroadcastMissionEvent
 	sim.OnTick = wsServer.ActionRouter().Update
 	go wsServer.Start()
