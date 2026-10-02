@@ -16,6 +16,16 @@ const (
 	SectionStarboard = "starboard"
 )
 
+const (
+	// Turn demand is clamped to this multiple of the class TurnRate, so the
+	// helm hard-turn buttons can ask for twice the normal rate without runaway.
+	maxTurnDemand = 2.0
+	// turnAccel is the angular acceleration in rad/s^2 the ship uses to wind
+	// up to and unwind from a commanded turn rate. Higher is more responsive,
+	// lower is more inertia.
+	turnAccel = 0.7
+)
+
 // Canonical power breaker names.
 var BreakerNames = []string{
 	"reactor", "engines", "shields", "weapons",
@@ -38,8 +48,9 @@ type Ship struct {
 	AngularVelocity Vector3
 
 	// Flight control inputs (server authoritative).
-	Throttle   float64 // -1 (astern) .. 1 (ahead)
-	ThrustAxis Vector3 // desired thrust direction in ship-local space
+	Throttle    float64 // -1 (astern) .. 1 (ahead)
+	ThrustAxis  Vector3 // desired thrust direction in ship-local space
+	TurnCommand Vector3 // commanded turn demand in ship-local pitch, yaw, roll
 
 	Mass         float64
 	MaxSpeed     float64
@@ -204,6 +215,7 @@ func NewShip(id, classID, name string, class *config.ShipClass, isPlayer bool) *
 		AngularVelocity: Vector3{X: 0, Y: 0, Z: 0},
 		Throttle:        0,
 		ThrustAxis:      Vector3{X: 0, Y: 0, Z: 1},
+		TurnCommand:     Vector3{X: 0, Y: 0, Z: 0},
 		Mass:            class.Mass,
 		MaxSpeed:        class.MaxSpeed,
 		Acceleration:    class.Acceleration,
@@ -423,11 +435,25 @@ func (s *Ship) updatePhysics(dt float64) {
 	s.Position.Y += s.Velocity.Y * dt
 	s.Position.Z += s.Velocity.Z * dt
 
-	const rotDragRate = 1.2
-	rotDamp := math.Exp(-rotDragRate * dt)
-	s.AngularVelocity.X *= rotDamp
-	s.AngularVelocity.Y *= rotDamp
-	s.AngularVelocity.Z *= rotDamp
+	// Chase the commanded turn rate at a bounded angular acceleration. The
+	// ship keeps spinning a little after the stick centres and winds up
+	// gradually when the stick deflects, which is what gives the hull its
+	// rotational inertia. Spinning up and spinning down share a limit so the
+	// helm feels symmetric.
+	cmd := s.commandedAngularVelocityLocked()
+	deltaV := Vector3{
+		X: cmd.X - s.AngularVelocity.X,
+		Y: cmd.Y - s.AngularVelocity.Y,
+		Z: cmd.Z - s.AngularVelocity.Z,
+	}
+	if mag := math.Sqrt(deltaV.X*deltaV.X + deltaV.Y*deltaV.Y + deltaV.Z*deltaV.Z); mag > 0 {
+		// Scale the step by the whole gap so a diagonal demand does not
+		// accelerate faster than a single axis.
+		step := minf(1.0, turnAccel*dt/mag)
+		s.AngularVelocity.X += deltaV.X * step
+		s.AngularVelocity.Y += deltaV.Y * step
+		s.AngularVelocity.Z += deltaV.Z * step
+	}
 
 	angSpeed := math.Sqrt(
 		s.AngularVelocity.X*s.AngularVelocity.X +
@@ -760,13 +786,42 @@ func (s *Ship) SetThrottle(t float64) {
 	s.Throttle = clampf(t, -1.0, 1.0)
 }
 
-func (s *Ship) ApplyRotation(pitch, yaw, roll float64) {
+// SetLocalRotationRate commands a turn rate about the ship's own pitch, yaw
+// and roll axes. Each argument is a demand in the range
+// -maxTurnDemand..maxTurnDemand, scaled by the class TurnRate, and the call
+// overwrites the previous command rather than adding to it, so the turn rate
+// depends on the stick position and not on how often commands arrive. The
+// ship accelerates toward the commanded rate over time rather than snapping
+// to it, so it still carries rotational inertia when the stick centres.
+func (s *Ship) SetLocalRotationRate(pitch, yaw, roll float64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.AngularVelocity.X += pitch * s.TurnRate
-	s.AngularVelocity.Y += yaw * s.TurnRate
-	s.AngularVelocity.Z += roll * s.TurnRate
+	s.TurnCommand = Vector3{
+		X: clampf(pitch, -maxTurnDemand, maxTurnDemand),
+		Y: clampf(yaw, -maxTurnDemand, maxTurnDemand),
+		Z: clampf(roll, -maxTurnDemand, maxTurnDemand),
+	}
+}
+
+// commandedAngularVelocityLocked resolves TurnCommand into a world space
+// angular velocity from the ship's current basis.
+func (s *Ship) commandedAngularVelocityLocked() Vector3 {
+	p := s.TurnCommand.X * s.TurnRate
+	y := s.TurnCommand.Y * s.TurnRate
+	r := s.TurnCommand.Z * s.TurnRate
+	if p == 0 && y == 0 && r == 0 {
+		return Vector3{}
+	}
+
+	right := s.rightLocked()
+	up := s.upLocked()
+	forward := s.forwardLocked()
+	return Vector3{
+		X: right.X*p + up.X*y + forward.X*r,
+		Y: right.Y*p + up.Y*y + forward.Y*r,
+		Z: right.Z*p + up.Z*y + forward.Z*r,
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -1200,6 +1255,7 @@ func (s *Ship) Clone() *Ship {
 		AngularVelocity: s.AngularVelocity,
 		Throttle:        s.Throttle,
 		ThrustAxis:      s.ThrustAxis,
+		TurnCommand:     s.TurnCommand,
 		Mass:            s.Mass,
 		MaxSpeed:        s.MaxSpeed,
 		Acceleration:    s.Acceleration,
@@ -1310,4 +1366,11 @@ func clampf(v, lo, hi float64) float64 {
 		return hi
 	}
 	return v
+}
+
+func minf(a, b float64) float64 {
+	if a < b {
+		return a
+	}
+	return b
 }

@@ -4,6 +4,7 @@ import (
 	"celestial/internal/config"
 	"celestial/internal/ship"
 	"celestial/internal/simulation"
+	"math"
 	"testing"
 )
 
@@ -125,6 +126,98 @@ func TestSetThrottle(t *testing.T) {
 	}
 	if player.Throttle != 1 {
 		t.Errorf("Throttle should clamp to 1, got %.2f", player.Throttle)
+	}
+}
+
+func TestSetTurnIsRateNotAccumulatedSpin(t *testing.T) {
+	r, sim, player := newTestRouter(t)
+
+	// The helm polls at 10Hz, so a held stick repeats the same demand. It must
+	// settle on a steady yaw, not integrate into an ever faster barrel roll.
+	for i := 0; i < 300; i++ {
+		if err := route(t, r, "flight", "flight", "set_turn", map[string]interface{}{"yaw": 1.0}); err != nil {
+			t.Fatalf("set_turn failed: %v", err)
+		}
+		sim.Tick()
+	}
+
+	av := player.AngularVelocity
+	if math.Abs(av.Y-player.TurnRate) > 0.01 {
+		t.Errorf("Expected a steady yaw at TurnRate %.2f, got %.2f", player.TurnRate, av.Y)
+	}
+	if math.Abs(av.X) > 0.001 || math.Abs(av.Z) > 0.001 {
+		t.Errorf("Expected yaw alone to leave pitch and roll alone, got %+v", av)
+	}
+}
+
+func TestSetTurnCarriesInertiaAfterStickCentres(t *testing.T) {
+	r, sim, player := newTestRouter(t)
+
+	for i := 0; i < 300; i++ {
+		if err := route(t, r, "flight", "flight", "set_turn", map[string]interface{}{"yaw": 1.0}); err != nil {
+			t.Fatalf("set_turn failed: %v", err)
+		}
+		sim.Tick()
+	}
+
+	// Releasing the stick coasts rather than snapping to a stop, and the
+	// heading keeps changing after the command is zero.
+	if err := route(t, r, "flight", "flight", "set_turn", map[string]interface{}{"yaw": 0.0}); err != nil {
+		t.Fatalf("set_turn failed: %v", err)
+	}
+	before := player.Rotation
+	sim.Tick()
+	if player.AngularVelocity.Y <= 0 {
+		t.Errorf("Expected residual yaw after the stick centres, got %+v", player.AngularVelocity)
+	}
+	if math.Abs(player.Rotation.W-before.W) < 1e-9 {
+		t.Error("Expected the ship to keep turning while coasting")
+	}
+}
+
+func TestSetTurnRollIsAvailableForRecovery(t *testing.T) {
+	r, sim, player := newTestRouter(t)
+
+	for i := 0; i < 300; i++ {
+		if err := route(t, r, "flight", "flight", "set_turn", map[string]interface{}{"roll": 1.0}); err != nil {
+			t.Fatalf("set_turn failed: %v", err)
+		}
+		sim.Tick()
+	}
+	if player.AngularVelocity.Z >= 0 {
+		t.Errorf("Expected roll to turn about local -Z (forward), got %+v", player.AngularVelocity)
+	}
+	if player.Up().Y > 0 {
+		t.Errorf("Expected sustained roll to carry the up vector past vertical, got %+v", player.Up())
+	}
+}
+
+func TestSetTurnFromRateButtonCommandsYawOnly(t *testing.T) {
+	r, _, player := newTestRouter(t)
+
+	if err := route(t, r, "flight", "flight", "set_turn", map[string]interface{}{"rate": 1.0}); err != nil {
+		t.Fatalf("set_turn failed: %v", err)
+	}
+	if player.TurnCommand.Y <= 0 {
+		t.Errorf("Expected a positive yaw command, got %+v", player.TurnCommand)
+	}
+	if player.TurnCommand.X != 0 || player.TurnCommand.Z != 0 {
+		t.Errorf("Turn buttons should command yaw only, got %+v", player.TurnCommand)
+	}
+
+	if err := route(t, r, "flight", "flight", "set_turn", map[string]interface{}{"rate": 0.0}); err != nil {
+		t.Fatalf("steady failed: %v", err)
+	}
+	if player.TurnCommand.Y != 0 {
+		t.Errorf("Steady should command wings level, got %+v", player.TurnCommand)
+	}
+}
+
+func TestSetTurnRequiresAValue(t *testing.T) {
+	r, _, _ := newTestRouter(t)
+
+	if err := route(t, r, "flight", "flight", "set_turn", map[string]interface{}{}); err == nil {
+		t.Error("set_turn with no rate or axes should error")
 	}
 }
 

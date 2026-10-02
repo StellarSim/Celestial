@@ -68,9 +68,9 @@ func (c *Controller) Update(dt float64, sh *ship.Ship, allShips map[string]*ship
 }
 
 func (c *Controller) updatePatrol(sh *ship.Ship, allShips map[string]*ship.Ship) {
-	// Drift on a steady heading. The old code applied a constant yaw rate
-	// every tick, which integrated into an infinite circling behavior.
+	// Drift on a steady heading, wings level.
 	sh.ApplyThrust(0, 0, 0.3)
+	sh.SetLocalRotationRate(0, 0, 0)
 
 	threat := c.findNearestThreat(sh, allShips)
 	if threat != nil {
@@ -106,15 +106,15 @@ func (c *Controller) updateCombat(sh *ship.Ship, allShips map[string]*ship.Ship)
 	up := sh.Up()
 	dot := toTarget.X*forward.X + toTarget.Y*forward.Y + toTarget.Z*forward.Z
 
-	turnRate := c.Difficulty * 0.5
+	// Proportional steering toward the target in local space, commanded as a
+	// rate so it settles on the target instead of overshooting forever.
+	yawErr := 0.0
+	pitchErr := 0.0
 	if dot < 0.98 {
-		// Proportional steering toward the target in local space.
-		yawErr := toTarget.X*right.X + toTarget.Y*right.Y + toTarget.Z*right.Z
-		pitchErr := -(toTarget.X*up.X + toTarget.Y*up.Y + toTarget.Z*up.Z)
-		yawErr = clamp(yawErr, -1, 1)
-		pitchErr = clamp(pitchErr, -1, 1)
-		sh.ApplyRotation(pitchErr*turnRate, yawErr*turnRate, 0)
+		yawErr = clamp(toTarget.X*right.X+toTarget.Y*right.Y+toTarget.Z*right.Z, -1, 1)
+		pitchErr = clamp(-(toTarget.X*up.X+toTarget.Y*up.Y+toTarget.Z*up.Z), -1, 1)
 	}
+	sh.SetLocalRotationRate(pitchErr*c.Difficulty*0.5, yawErr*c.Difficulty*0.5, 0)
 
 	switch {
 	case dist > optimalRange*1.5:
@@ -154,11 +154,13 @@ func (c *Controller) updateEvade(sh *ship.Ship, allShips map[string]*ship.Ship) 
 	rgt := sh.Right()
 	upV := sh.Up()
 	dot := away.X*fwd.X + away.Y*fwd.Y + away.Z*fwd.Z
+	yawErr := 0.0
+	pitchErr := 0.0
 	if dot < 0.98 {
-		yawErr := clamp(away.X*rgt.X+away.Y*rgt.Y+away.Z*rgt.Z, -1, 1)
-		pitchErr := clamp(-(away.X*upV.X + away.Y*upV.Y + away.Z*upV.Z), -1, 1)
-		sh.ApplyRotation(pitchErr*0.5, yawErr*0.5, 0)
+		yawErr = clamp(away.X*rgt.X+away.Y*rgt.Y+away.Z*rgt.Z, -1, 1)
+		pitchErr = clamp(-(away.X*upV.X+away.Y*upV.Y+away.Z*upV.Z), -1, 1)
 	}
+	sh.SetLocalRotationRate(pitchErr*0.5, yawErr*0.5, 0)
 
 	if distance(sh.Position, target.Position) > optimalRange {
 		c.State = "combat"
@@ -167,6 +169,7 @@ func (c *Controller) updateEvade(sh *ship.Ship, allShips map[string]*ship.Ship) 
 
 func (c *Controller) updateRetreat(sh *ship.Ship, allShips map[string]*ship.Ship) {
 	sh.ApplyThrust(0, 0, 1.0)
+	sh.SetLocalRotationRate(0, 0, 0)
 
 	dist := math.MaxFloat64
 	if c.TargetID != "" {

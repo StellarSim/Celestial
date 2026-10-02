@@ -103,6 +103,119 @@ func TestThrottleChangesVelocity(t *testing.T) {
 	}
 }
 
+func TestSetLocalRotationRateReplacesRatherThanAccumulates(t *testing.T) {
+	sh := NewShip("ship_1", "test_ship", "Test Ship", testClass(), true)
+
+	// Repeated identical commands, as a 10Hz helm poll would send, must not
+	// build up spin: the old impulse version compounded into a full barrel roll.
+	for i := 0; i < 20; i++ {
+		sh.SetLocalRotationRate(0, 1.0, 0)
+		sh.Update(1.0 / 60.0)
+	}
+
+	speed := math.Sqrt(
+		sh.AngularVelocity.X*sh.AngularVelocity.X +
+			sh.AngularVelocity.Y*sh.AngularVelocity.Y +
+			sh.AngularVelocity.Z*sh.AngularVelocity.Z)
+	if speed > sh.TurnRate {
+		t.Errorf("Expected yaw rate near TurnRate %.2f, got %.2f", sh.TurnRate, speed)
+	}
+}
+
+func TestSetLocalRotationRateZeroCoastsDownRatherThanStopping(t *testing.T) {
+	sh := NewShip("ship_1", "test_ship", "Test Ship", testClass(), true)
+
+	// Wind up to a steady yaw.
+	for i := 0; i < 240; i++ {
+		sh.SetLocalRotationRate(0, 1.0, 0)
+		sh.Update(1.0 / 60.0)
+	}
+	if math.Abs(sh.AngularVelocity.Y-sh.TurnRate) > 0.01 {
+		t.Fatalf("Expected to settle at TurnRate %.2f, got %.2f", sh.TurnRate, sh.AngularVelocity.Y)
+	}
+
+	// Centring the stick must not zero the rate outright: the hull carries
+	// inertia and coasts.
+	sh.SetLocalRotationRate(0, 0, 0)
+	sh.Update(1.0 / 60.0)
+	if sh.AngularVelocity.Y <= 0 {
+		t.Errorf("Expected the ship to keep coasting after the stick centres, got %+v", sh.AngularVelocity)
+	}
+	if sh.AngularVelocity.Y >= sh.TurnRate {
+		t.Errorf("Expected the coasting rate to decay, got %.3f", sh.AngularVelocity.Y)
+	}
+
+	// And it should bleed off completely given time.
+	for i := 0; i < 600; i++ {
+		sh.Update(1.0 / 60.0)
+	}
+	if math.Abs(sh.AngularVelocity.Y) > 0.001 {
+		t.Errorf("Expected the ship to stop rotating eventually, got %.4f", sh.AngularVelocity.Y)
+	}
+}
+
+func TestSetLocalRotationRateSpinsUpGradually(t *testing.T) {
+	sh := NewShip("ship_1", "test_ship", "Test Ship", testClass(), true)
+
+	sh.SetLocalRotationRate(0, 1.0, 0)
+	sh.Update(1.0 / 60.0)
+
+	// One tick of acceleration must be a fraction of the way to the commanded
+	// rate, not the whole way. This is what stops the ship snapping to full
+	// deflection the instant the stick moves.
+	if sh.AngularVelocity.Y >= sh.TurnRate {
+		t.Errorf("Expected a gradual spin up, got %.3f of %.2f in one tick", sh.AngularVelocity.Y, sh.TurnRate)
+	}
+	if sh.AngularVelocity.Y <= 0 {
+		t.Errorf("Expected yaw to build angular velocity about the ship up axis, got %+v", sh.AngularVelocity)
+	}
+}
+
+func TestSetLocalRotationRateRollsAboutOwnAxis(t *testing.T) {
+	sh := NewShip("ship_1", "test_ship", "Test Ship", testClass(), true)
+
+	// Identity rotation: local roll is about -Z, which is the ship's forward.
+	sh.SetLocalRotationRate(0, 0, 1.0)
+	for i := 0; i < 240; i++ {
+		sh.Update(1.0 / 60.0)
+	}
+	if sh.AngularVelocity.Z >= 0 {
+		t.Errorf("Expected roll to turn about local -Z (forward), got %+v", sh.AngularVelocity)
+	}
+	if math.Abs(sh.AngularVelocity.X) > 0.001 || math.Abs(sh.AngularVelocity.Y) > 0.001 {
+		t.Errorf("Expected roll to leave pitch and yaw untouched, got %+v", sh.AngularVelocity)
+	}
+
+	// Rolling must carry the up vector over, so the helm can recover from an
+	// inverted attitude rather than being stuck on its back.
+	if sh.Up().Y > 0 {
+		t.Errorf("Expected sustained roll to carry the up vector past vertical, got %+v", sh.Up())
+	}
+}
+
+func TestSetLocalRotationRateClampsRunawayDemand(t *testing.T) {
+	sh := NewShip("ship_1", "test_ship", "Test Ship", testClass(), true)
+
+	sh.SetLocalRotationRate(50, 50, 50)
+	if sh.TurnCommand.X != maxTurnDemand || sh.TurnCommand.Y != maxTurnDemand || sh.TurnCommand.Z != maxTurnDemand {
+		t.Errorf("Expected demand clamped to %.1f per axis, got %+v", maxTurnDemand, sh.TurnCommand)
+	}
+
+	// A diagonal demand must not settle faster or slower per axis than a
+	// single axis, since the step is scaled by the whole gap.
+	for i := 0; i < 600; i++ {
+		sh.Update(1.0 / 60.0)
+	}
+	speed := math.Sqrt(
+		sh.AngularVelocity.X*sh.AngularVelocity.X +
+			sh.AngularVelocity.Y*sh.AngularVelocity.Y +
+			sh.AngularVelocity.Z*sh.AngularVelocity.Z)
+	limit := maxTurnDemand * sh.TurnRate * math.Sqrt(3)
+	if math.Abs(speed-limit) > 0.01 {
+		t.Errorf("Expected to settle at the diagonal limit %.2f, got %.2f", limit, speed)
+	}
+}
+
 func TestAsternReversesThrust(t *testing.T) {
 	sh := NewShip("ship_1", "test_ship", "Test Ship", testClass(), true)
 

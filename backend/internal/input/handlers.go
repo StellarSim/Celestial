@@ -313,20 +313,21 @@ func (ar *ActionRouter) handleSetTurn(action *Action) error {
 		return err
 	}
 	d := valueDict(action)
-	rate, ok := dictFloat(d, "rate")
-	if !ok {
-		pitch, hasPitch := dictFloat(d, "pitch")
-		yaw, hasYaw := dictFloat(d, "yaw")
-		roll, hasRoll := dictFloat(d, "roll")
-		if !hasPitch && !hasYaw && !hasRoll {
-			return fmt.Errorf("set_turn requires rate or pitch/yaw/roll")
-		}
-		sh.ApplyRotation(pitch, yaw, roll)
+	// The turn buttons and web panels command yaw with a single rate.
+	if rate, ok := dictFloat(d, "rate"); ok {
+		sh.SetLocalRotationRate(0, rate, 0)
 		return nil
 	}
-	// Helm turn buttons command yaw only. The old code drove pitch and yaw
-	// together, producing a diagonal spin.
-	sh.ApplyRotation(0, rate, 0)
+	pitch, hasPitch := dictFloat(d, "pitch")
+	yaw, hasYaw := dictFloat(d, "yaw")
+	roll, hasRoll := dictFloat(d, "roll")
+	if !hasPitch && !hasYaw && !hasRoll {
+		return fmt.Errorf("set_turn requires rate or pitch/yaw/roll")
+	}
+	// The yoke polls both axes, and a zero on an axis it omits is a real
+	// demand to stop turning about that axis. Turning about the ship's own
+	// axes keeps the yoke consistent whatever the current attitude.
+	sh.SetLocalRotationRate(pitch, yaw, roll)
 	return nil
 }
 

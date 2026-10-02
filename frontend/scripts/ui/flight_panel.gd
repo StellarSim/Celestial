@@ -37,6 +37,9 @@ extends StationPanel
 var _current_throttle: float = 0.0
 var _target_heading: float = -1.0
 var _turn_rate: float = 0.0
+var _joy_send_timer: float = 0.0
+var _joy_was_active: bool = false
+const JOY_SEND_INTERVAL := 0.1
 
 
 func _ready() -> void:
@@ -48,6 +51,7 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	_update_display()
 	compass.queue_redraw()
+	_poll_joypad(_delta)
 
 
 func _setup_controls() -> void:
@@ -212,6 +216,44 @@ func _on_throttle_changed(value: float) -> void:
 func _set_turn_rate(rate: float) -> void:
 	_turn_rate = rate
 	NetworkClient.send_action("flight", "set_turn", {"rate": rate})
+
+
+func _poll_joypad(delta: float) -> void:
+	if GameState.client_role != "flight":
+		return
+	if JoyInput.button_pressed(JoyInput.BTN_ALL_STOP):
+		_set_throttle(0)
+		return
+	var axes := JoyInput.flight_axes()
+	if not axes["active"]:
+		if _joy_was_active:
+			_joy_was_active = false
+			_joy_send_timer = 0.0
+			_send_rotation(0.0, 0.0, 0.0)
+		return
+	_joy_was_active = true
+	_joy_send_timer += delta
+	if _joy_send_timer < JOY_SEND_INTERVAL:
+		return
+	_joy_send_timer = 0.0
+	var throttle: float = clampf(float(axes["throttle"]), -1.0, 1.0)
+	_set_throttle_no_send(throttle * 100.0)
+	NetworkClient.send_action("flight", "set_throttle", {"throttle": throttle})
+	_send_rotation(float(axes["pitch"]), float(axes["yaw"]), float(axes["roll"]))
+
+
+func _send_rotation(pitch: float, yaw: float, roll: float) -> void:
+	NetworkClient.send_action("flight", "set_turn", {
+		"pitch": clampf(pitch, -1.0, 1.0),
+		"yaw": clampf(yaw, -1.0, 1.0),
+		"roll": clampf(roll, -1.0, 1.0),
+	})
+
+
+func _set_throttle_no_send(value: float) -> void:
+	_current_throttle = value
+	if not throttle_slider.has_focus():
+		throttle_slider.set_value_no_signal(value)
 
 
 func _on_navigate_pressed() -> void:

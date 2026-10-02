@@ -160,11 +160,12 @@ func _update_camera(delta: float) -> void:
 	var target_pos := player_ship.get_interpolated_position(t)
 	var target_rot := player_ship.get_interpolated_rotation(t)
 	
-	# First person: the camera rides the ship and looks out the front window.
-	# The ship itself is never rendered.
+	# First person: the camera is rigidly bolted to the ship, which is never
+	# rendered. Taking the basis straight from the ship rotation keeps the view
+	# banked with the hull; look_at against world up instead snapped the camera
+	# upside down every time the nose passed vertical.
 	camera.global_position = camera.global_position.lerp(target_pos, clampf(delta * 8.0, 0.0, 1.0))
-	var look_target := target_pos + target_rot * Vector3(0, 0, -100)
-	camera.look_at(look_target, Vector3.UP)
+	camera.global_basis = Basis(target_rot)
 
 
 func _update_ship_visuals(delta: float) -> void:
