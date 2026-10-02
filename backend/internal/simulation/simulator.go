@@ -544,6 +544,33 @@ func (s *Simulator) TeleportShip(id string, pos ship.Vector3) error {
 	return nil
 }
 
+// SetShipFaction re-tags a ship under the sim lock.
+func (s *Simulator) SetShipFaction(id, faction string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sh, ok := s.Ships[id]
+	if !ok || faction == "" {
+		return false
+	}
+	sh.SetFaction(faction)
+	return true
+}
+
+// OrderShipAttack forces an AI ship onto a target under the sim lock.
+func (s *Simulator) OrderShipAttack(id, targetID string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	ctl, ok := s.AIControllers[id]
+	if !ok || ctl == nil || targetID == "" {
+		return false
+	}
+	if _, ok := s.Ships[targetID]; !ok {
+		return false
+	}
+	ctl.OrderAttack(targetID)
+	return true
+}
+
 // Returns a copy of the object map for broadcasts.
 func (s *Simulator) GetAllObjects() map[string]*Object {
 	s.mu.RLock()
@@ -668,6 +695,11 @@ func (s *Simulator) RestoreSnapshot(index int) error {
 	s.Projectiles = restoredProjs
 	s.Objects = restoredObjs
 	s.AIControllers = copyAIControllers(snapshot.AIControllers)
+	// Restored controllers are state copies; re-wire them to this simulator
+	// so AI fire keeps spawning projectiles after a restore.
+	for _, ctl := range s.AIControllers {
+		ctl.SetSpawner(tickSpawner{s})
+	}
 
 	log.Printf("Restored snapshot from time %.2f", snapshot.Time)
 	return nil

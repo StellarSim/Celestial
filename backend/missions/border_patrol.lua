@@ -66,6 +66,8 @@ function on_waypoint(waypoint_id)
 
         spawn_ship("raider_1", "enemy_frigate", "Unidentified Contact One", false, {x = 5500, y = 200, z = 2100})
         spawn_ship("raider_2", "enemy_frigate", "Unidentified Contact Two", false, {x = 5200, y = -100, z = 2300})
+        set_faction("raider_1", "hostile")
+        set_faction("raider_2", "hostile")
 
     elseif waypoint_id == WAYPOINT_BETA then
         if not patrol_done then

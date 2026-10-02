@@ -22,6 +22,12 @@ function on_start()
     spawn_ship(merchant_id, "enemy_frigate", "Merchant Vessel Aurora", false, {x = 10000, y = 500, z = -5000})
     spawn_ship(hauntress, "enemy_frigate", "Pirate Hauntress", false, {x = 10400, y = 400, z = -4900})
 
+    -- The merchant is neutral and the pirate is hostile, so the AI treats
+    -- the Aurora as a target instead of a fellow escort.
+    set_faction(merchant_id, "civilian")
+    set_faction(hauntress, "pirate")
+    order_attack(hauntress, merchant_id)
+
     damage_ship(merchant_id, 220, "aft")
 
     set_objective("respond", "Reach the Aurora")

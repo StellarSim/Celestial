@@ -169,6 +169,8 @@ func (e *Engine) registerAPI() {
 	e.L.SetGlobal("ship_exists", e.L.NewFunction(e.luaShipExists))
 	e.L.SetGlobal("ship_health", e.L.NewFunction(e.luaShipHealth))
 	e.L.SetGlobal("ship_distance", e.L.NewFunction(e.luaShipDistance))
+	e.L.SetGlobal("set_faction", e.L.NewFunction(e.luaSetFaction))
+	e.L.SetGlobal("order_attack", e.L.NewFunction(e.luaOrderAttack))
 	e.L.SetGlobal("player_ship", e.L.NewFunction(e.luaPlayerShip))
 	e.L.SetGlobal("get_object", e.L.NewFunction(e.luaGetObject))
 }
@@ -208,6 +210,24 @@ func (e *Engine) luaShipDistance(L *lua.LState) int {
 		return 1
 	}
 	L.Push(lua.LNumber(distance(a.GetPosition(), b.GetPosition())))
+	return 1
+}
+
+// luaSetFaction re-tags a ship so AI hostility follows the mission script
+// (for example a merchant sailing as "civilian" while pirates stay hostile).
+func (e *Engine) luaSetFaction(L *lua.LState) int {
+	shipID := L.ToString(1)
+	faction := L.ToString(2)
+	L.Push(lua.LBool(e.simulator.SetShipFaction(shipID, faction)))
+	return 1
+}
+
+// luaOrderAttack forces an AI ship onto a target immediately, regardless of
+// range. Used for scripted attacks such as a pirate ordered onto a merchant.
+func (e *Engine) luaOrderAttack(L *lua.LState) int {
+	shipID := L.ToString(1)
+	targetID := L.ToString(2)
+	L.Push(lua.LBool(e.simulator.OrderShipAttack(shipID, targetID)))
 	return 1
 }
 

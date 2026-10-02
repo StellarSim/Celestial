@@ -948,6 +948,13 @@ func (s *Ship) SetFaction(faction string) {
 	s.Faction = faction
 }
 
+// GetFaction reads the faction tag under the ship lock.
+func (s *Ship) GetFaction() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.Faction
+}
+
 // MutateWeapon applies fn to a weapon under the ship lock.
 func (s *Ship) MutateWeapon(weaponID string, fn func(*Weapon) error) error {
 	s.mu.Lock()
