@@ -25,6 +25,11 @@ type Controller struct {
 	TacticalMode    string
 
 	spawner ProjectileSpawner
+
+	// Hostile reports whether faction a treats faction b as hostile.
+	// The simulator wires this to the faction yaml; when nil the legacy
+	// rule applies.
+	Hostile func(a, b string) bool
 }
 
 // ProjectileSpawner lets the AI launch real projectiles through the simulator.
@@ -53,6 +58,7 @@ func (c *Controller) Clone() *Controller {
 		AggressionLevel: c.AggressionLevel,
 		TacticalMode:    c.TacticalMode,
 		spawner:         c.spawner,
+		Hostile:         c.Hostile,
 	}
 }
 
@@ -108,7 +114,7 @@ func (c *Controller) updatePatrol(sh *ship.Ship, allShips map[string]*ship.Ship)
 
 func (c *Controller) updateCombat(sh *ship.Ship, allShips map[string]*ship.Ship) {
 	target := allShips[c.TargetID]
-	if target == nil || !isHostile(sh, target) {
+	if target == nil || !c.isHostileTo(sh, target) {
 		c.State = "patrol"
 		c.TargetID = ""
 		return
@@ -261,13 +267,12 @@ func (c *Controller) attemptTorpedoFire(sh *ship.Ship, target *ship.Ship) {
 		if weapon.Range > 0 && distance(selfPos, target.GetPosition()) > weapon.Range {
 			continue
 		}
-		// AI crews keep their tubes armed, loaded and locked on the target.
+		// AI crews keep their tubes armed and loaded.
 		_ = sh.MutateWeapon(id, func(w *ship.Weapon) error {
 			w.Armed = true
 			if w.AmmoCount > 0 {
 				w.Loaded = true
 			}
-			w.Locked = true
 			return nil
 		})
 		if !sh.FireWeapon(id, target.ID) {
@@ -289,7 +294,7 @@ func (c *Controller) findNearestThreat(sh *ship.Ship, allShips map[string]*ship.
 		if other.ID == sh.ID {
 			continue
 		}
-		if !isHostile(sh, other) {
+		if !c.isHostileTo(sh, other) {
 			continue
 		}
 		dist := distance(selfPos, other.GetPosition())
@@ -302,12 +307,16 @@ func (c *Controller) findNearestThreat(sh *ship.Ship, allShips map[string]*ship.
 	return nearest
 }
 
-// isHostile reports whether other is a valid target for sh. Faction tags are
-// authoritative; the legacy IsPlayer flag is only a fallback when a faction
-// was never assigned.
-func isHostile(sh, other *ship.Ship) bool {
+// isHostileTo reports whether other is a valid target for sh. The faction
+// yaml is authoritative through the Hostile hook; the legacy tag comparison
+// only applies when no hook is wired (tests) and IsPlayer only when a
+// faction was never assigned.
+func (c *Controller) isHostileTo(sh, other *ship.Ship) bool {
 	fa := sh.GetFaction()
 	fb := other.GetFaction()
+	if c.Hostile != nil {
+		return c.Hostile(fa, fb)
+	}
 	if fa != "" && fb != "" {
 		return fa != fb
 	}

@@ -52,7 +52,7 @@ func testClasses() map[string]*config.ShipClass {
 
 func newTestEngine(t *testing.T) (*Engine, *simulation.Simulator) {
 	t.Helper()
-	sim := simulation.NewSimulator(60, testClasses())
+	sim := simulation.NewSimulator(60, testClasses(), nil, nil)
 
 	engine := NewEngine(sim)
 	sim.OnEvent = func(name string, data map[string]interface{}) {

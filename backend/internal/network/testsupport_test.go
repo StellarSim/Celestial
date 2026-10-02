@@ -40,7 +40,7 @@ func testClasses() map[string]*config.ShipClass {
 }
 
 func newTestSim() *simulation.Simulator {
-	sim := simulation.NewSimulator(60, testClasses())
+	sim := simulation.NewSimulator(60, testClasses(), nil, nil)
 	//nolint:errcheck // test fixture; class exists
 	sim.SpawnShip("player", "cruiser", "Endeavour", true, ship.Vector3{})
 	return sim

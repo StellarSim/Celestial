@@ -53,7 +53,7 @@ effect:
 
 Run `help` inside the tool for the full list; the common ones are:
 `breaker <name>`, `repair|extinguish|seal <section>`, `deploy|recall <team>`,
-`throttle <value>`, `torpedo <bay> <arm|load|lock|fire>`, `phaser <n>`,
+`throttle <value>`, `torpedo <bay> <arm|disarm|load|fire>`, `phaser <n>`,
 `shields <up|down>`, `sensors <mode>`, `scan <target_id>`, `alert <level>`,
 `self_destruct <arm|abort>`, and `send <panel_id> <action> [value]` for raw
 panel inputs.

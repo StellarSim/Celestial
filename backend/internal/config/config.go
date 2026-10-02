@@ -99,14 +99,15 @@ type LaunchBayConfig struct {
 	Health   float64 `yaml:"health"`
 }
 
-func LoadShipClasses(dir string) (map[string]*ShipClass, error) {
-	classes := make(map[string]*ShipClass)
-
+// Reads every .yaml file in dir. Keeps one copy of the directory walk so
+// each catalog loader only handles its own unmarshaling.
+func readYAMLFiles(dir, plural, singular string) (map[string][]byte, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return nil, fmt.Errorf("reading ship classes directory: %w", err)
+		return nil, fmt.Errorf("reading %s directory: %w", plural, err)
 	}
 
+	files := make(map[string][]byte)
 	for _, entry := range entries {
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".yaml" {
 			continue
@@ -115,18 +116,118 @@ func LoadShipClasses(dir string) (map[string]*ShipClass, error) {
 		path := filepath.Join(dir, entry.Name())
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return nil, fmt.Errorf("reading ship class %s: %w", entry.Name(), err)
+			return nil, fmt.Errorf("reading %s %s: %w", singular, entry.Name(), err)
 		}
 
+		files[entry.Name()] = data
+	}
+
+	return files, nil
+}
+
+func baseID(filename string) string {
+	return filename[:len(filename)-len(filepath.Ext(filename))]
+}
+
+func LoadShipClasses(dir string) (map[string]*ShipClass, error) {
+	classes := make(map[string]*ShipClass)
+
+	files, err := readYAMLFiles(dir, "ship classes", "ship class")
+	if err != nil {
+		return nil, err
+	}
+
+	for name, data := range files {
 		var class ShipClass
 		if err := yaml.Unmarshal(data, &class); err != nil {
-			return nil, fmt.Errorf("parsing ship class %s: %w", entry.Name(), err)
+			return nil, fmt.Errorf("parsing ship class %s: %w", name, err)
+		}
+		if class.ID == "" {
+			class.ID = baseID(name)
 		}
 
 		classes[class.ID] = &class
 	}
 
 	return classes, nil
+}
+
+// Describes a spawnable universe object: stations, asteroids, cargo,
+// anomalies, hazards, mission markers. Users add new types by dropping
+// a yaml file into configs/objects, mirroring configs/ships.
+type ObjectClass struct {
+	ID              string  `yaml:"id"`
+	Name            string  `yaml:"name"`
+	Category        string  `yaml:"category"`
+	Description     string  `yaml:"description"`
+	Radius          float64 `yaml:"radius"`
+	Solid           bool    `yaml:"solid"`
+	Scannable       bool    `yaml:"scannable"`
+	SensorSignature float64 `yaml:"sensor_signature"`
+	ArrivalRadius   float64 `yaml:"arrival_radius"`
+	Color           string  `yaml:"color"`
+}
+
+func LoadObjectClasses(dir string) (map[string]*ObjectClass, error) {
+	classes := make(map[string]*ObjectClass)
+
+	files, err := readYAMLFiles(dir, "object classes", "object class")
+	if err != nil {
+		return nil, err
+	}
+
+	for name, data := range files {
+		var class ObjectClass
+		if err := yaml.Unmarshal(data, &class); err != nil {
+			return nil, fmt.Errorf("parsing object class %s: %w", name, err)
+		}
+		if class.ID == "" {
+			class.ID = baseID(name)
+		}
+		if class.Category == "" {
+			class.Category = class.ID
+		}
+
+		classes[class.ID] = &class
+	}
+
+	return classes, nil
+}
+
+// Describes a named side. Users add new factions by dropping a yaml
+// file into configs/factions.
+// Stances are viewer centric and explicit: FriendlyTo and HostileTo list
+// how this side regards others. Any unlisted pairing is neutral.
+type Faction struct {
+	ID          string   `yaml:"id"`
+	Name        string   `yaml:"name"`
+	Description string   `yaml:"description"`
+	Color       string   `yaml:"color"`
+	FriendlyTo  []string `yaml:"friendly_to"`
+	HostileTo   []string `yaml:"hostile_to"`
+}
+
+func LoadFactions(dir string) (map[string]*Faction, error) {
+	factions := make(map[string]*Faction)
+
+	files, err := readYAMLFiles(dir, "factions", "faction")
+	if err != nil {
+		return nil, err
+	}
+
+	for name, data := range files {
+		var faction Faction
+		if err := yaml.Unmarshal(data, &faction); err != nil {
+			return nil, fmt.Errorf("parsing faction %s: %w", name, err)
+		}
+		if faction.ID == "" {
+			faction.ID = baseID(name)
+		}
+
+		factions[faction.ID] = &faction
+	}
+
+	return factions, nil
 }
 
 type PanelMapping struct {

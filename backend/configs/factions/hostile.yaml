@@ -1,0 +1,5 @@
+id: hostile
+name: Hostile
+description: Generic hostile contacts.
+color: "#f24033"
+hostile_to: [player, civilian, neutral, pirate]

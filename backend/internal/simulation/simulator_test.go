@@ -45,11 +45,28 @@ func testClasses() map[string]*config.ShipClass {
 }
 
 func newTestSim() *Simulator {
-	return NewSimulator(60, testClasses())
+	return NewSimulator(60, testClasses(), testObjects(), testFactions())
+}
+
+func testObjects() map[string]*config.ObjectClass {
+	return map[string]*config.ObjectClass{
+		"waypoint": {ID: "waypoint", Name: "Waypoint", Category: "waypoint", ArrivalRadius: 400},
+		"station":  {ID: "station", Name: "Station", Category: "station", Radius: 150, Solid: true},
+	}
+}
+
+func testFactions() map[string]*config.Faction {
+	return map[string]*config.Faction{
+		"player":   {ID: "player", Name: "Player", HostileTo: []string{"hostile"}},
+		"hostile":  {ID: "hostile", Name: "Hostile", HostileTo: []string{"player"}},
+		"neutral":  {ID: "neutral", Name: "Neutral"},
+		"civilian": {ID: "civilian", Name: "Civilian"},
+		"pirate":   {ID: "pirate", Name: "Pirate"},
+	}
 }
 
 func TestSimulatorCreation(t *testing.T) {
-	sim := NewSimulator(60, make(map[string]*config.ShipClass))
+	sim := NewSimulator(60, make(map[string]*config.ShipClass), nil, nil)
 
 	if sim.tickRate != 60 {
 		t.Errorf("Expected tick rate 60, got %d", sim.tickRate)
@@ -356,7 +373,6 @@ func TestAITorpedoSpawnsProjectile(t *testing.T) {
 	raider.MutateWeapon("torpedo_bay_1", func(w *ship.Weapon) error {
 		w.Armed = true
 		w.Loaded = true
-		w.Locked = true
 		return nil
 	})
 
@@ -393,5 +409,101 @@ func TestOnTickHookRuns(t *testing.T) {
 	sim.Tick()
 	if called != 1 {
 		t.Errorf("Expected OnTick to be called once, got %d", called)
+	}
+}
+
+func TestSpawnUnknownObjectClassIsAnError(t *testing.T) {
+	sim := newTestSim()
+	if err := sim.SpawnObject("x", "nope", ship.Vector3{}); err == nil {
+		t.Error("Spawning an unknown object class should return an error")
+	}
+}
+
+func TestSpawnObjectCopiesClassFields(t *testing.T) {
+	sim := newTestSim()
+	if err := sim.SpawnObject("stn", "station", ship.Vector3{X: 1}); err != nil {
+		t.Fatalf("SpawnObject: %v", err)
+	}
+	obj, ok := sim.GetObject("stn")
+	if !ok {
+		t.Fatal("object should exist after spawning")
+	}
+	if obj.Category != "station" || !obj.Solid || obj.Radius != 150 {
+		t.Errorf("object should carry class fields, got %+v", obj)
+	}
+}
+
+func TestSetUnknownFactionFails(t *testing.T) {
+	sim := newTestSim()
+	sim.SpawnShip("a", "cruiser", "A", true, ship.Vector3{})
+	if sim.SetShipFaction("a", "nope") {
+		t.Error("unknown faction should be rejected")
+	}
+}
+
+func TestStanceDefaultsNeutral(t *testing.T) {
+	sim := newTestSim()
+	if got := sim.StanceOf("pirate", "player"); got != "neutral" {
+		t.Errorf("unlisted pairing should be neutral, got %q", got)
+	}
+	if sim.IsHostileTo("player", "pirate") {
+		t.Error("unlisted pairing should not be hostile")
+	}
+}
+
+func TestStanceSameFactionIsFriendly(t *testing.T) {
+	sim := newTestSim()
+	if got := sim.StanceOf("pirate", "pirate"); got != "friendly" {
+		t.Errorf("same faction should be friendly, got %q", got)
+	}
+}
+
+func TestStanceReadsYamlLists(t *testing.T) {
+	sim := newTestSim()
+	sim.Factions["civilian"].FriendlyTo = []string{"player"}
+	sim.Factions["civilian"].HostileTo = []string{"pirate"}
+	if got := sim.StanceOf("civilian", "player"); got != "friendly" {
+		t.Errorf("listed friendly should be friendly, got %q", got)
+	}
+	if got := sim.StanceOf("civilian", "pirate"); got != "hostile" {
+		t.Errorf("listed hostile should be hostile, got %q", got)
+	}
+	if !sim.IsHostileTo("civilian", "pirate") {
+		t.Error("listed hostile pairing should be hostile")
+	}
+	if got := sim.StanceOf("civilian", "neutral"); got != "neutral" {
+		t.Errorf("unlisted pairing should be neutral, got %q", got)
+	}
+}
+
+func TestWaypointFiresOnlyForWaypointCategory(t *testing.T) {
+	sim := newTestSim()
+	sim.SpawnShip("player", "cruiser", "Endeavour", true, ship.Vector3{})
+	reached := []string{}
+	sim.OnEvent = func(name string, data map[string]interface{}) {
+		if name == "waypoint_reached" {
+			reached = append(reached, data["waypoint"].(string))
+		}
+	}
+	if err := sim.SpawnObject("stn", "station", ship.Vector3{}); err != nil {
+		t.Fatalf("SpawnObject: %v", err)
+	}
+	if err := sim.SpawnObject("wp", "waypoint", ship.Vector3{}); err != nil {
+		t.Fatalf("SpawnObject: %v", err)
+	}
+	sim.Tick()
+	for _, id := range reached {
+		if id == "stn" {
+			t.Error("station must not emit waypoint_reached")
+		}
+	}
+	found := false
+	for _, id := range reached {
+		if id == "wp" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("waypoint should emit waypoint_reached")
 	}
 }

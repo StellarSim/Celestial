@@ -1,7 +1,4 @@
 -- Mission: Rescue Operation
---
--- The merchant vessel survives or it does not, based on what the crew does.
--- The ending follows the state of the simulation, not a counter.
 
 mission = {
     name = "Rescue Operation",

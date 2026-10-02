@@ -198,7 +198,6 @@ func (ar *ActionRouter) Update(dt float64) {
 	ar.updateRepairTeams(dt)
 	ar.updateScan(dt)
 	ar.updateSelfDestruct(dt)
-	ar.updateAutoFire()
 }
 
 func (ar *ActionRouter) updateRepairTeams(dt float64) {
@@ -250,42 +249,6 @@ func (ar *ActionRouter) updateSelfDestruct(dt float64) {
 
 	if expired {
 		ar.applySelfDestruct()
-	}
-}
-
-// updateAutoFire launches any torpedo bay that is armed, loaded and locked.
-func (ar *ActionRouter) updateAutoFire() {
-	ar.mu.Lock()
-	enabled := ar.autoFire
-	ar.mu.Unlock()
-	if !enabled {
-		return
-	}
-
-	sh := ar.getPlayerShip()
-	if sh == nil || sh.GetTargetID() == "" {
-		return
-	}
-	target := ar.simulator.GetShip(sh.GetTargetID())
-	if target == nil {
-		return
-	}
-
-	for _, bay := range sh.WeaponsSnapshot() {
-		if bay.Type != "torpedo" || !bay.Armed || !bay.Loaded || !bay.Locked {
-			continue
-		}
-		if bay.Cooldown > 0 || bay.AmmoCount <= 0 {
-			continue
-		}
-		if !sh.InWeaponRange(bay.ID, target.GetPosition()) {
-			continue
-		}
-		if !sh.FireWeapon(bay.ID, target.ID) {
-			continue
-		}
-		ar.simulator.SpawnTorpedo(sh, target, bay.ID)
-		return
 	}
 }
 
@@ -402,17 +365,6 @@ func (ar *ActionRouter) handleSetTarget(action *Action) error {
 		return fmt.Errorf("target not found: %s", targetID)
 	}
 	sh.SetTarget(targetID)
-	// Acquiring a target locks every armed+loaded tube onto it so the
-	// fire buttons (which gate on Locked) work without a separate lock step.
-	for _, bay := range sh.WeaponsSnapshot() {
-		if bay.Type != "torpedo" || !bay.Armed || !bay.Loaded {
-			continue
-		}
-		_ = sh.MutateWeapon(bay.ID, func(w *ship.Weapon) error {
-			w.Locked = true
-			return nil
-		})
-	}
 	return nil
 }
 
@@ -422,15 +374,6 @@ func (ar *ActionRouter) handleClearTarget(action *Action) error {
 		return err
 	}
 	sh.SetTarget("")
-	for _, bay := range sh.WeaponsSnapshot() {
-		if bay.Type != "torpedo" || !bay.Locked {
-			continue
-		}
-		_ = sh.MutateWeapon(bay.ID, func(w *ship.Weapon) error {
-			w.Locked = false
-			return nil
-		})
-	}
 	return nil
 }
 
@@ -450,19 +393,7 @@ func (ar *ActionRouter) handleTorpedoArm(action *Action) error {
 	} else if v, ok := dictBool(d, "enabled"); ok {
 		enabled = v
 	}
-	if err := ar.setTorpedoBayFlag(sh, bay.ID, func(w *ship.Weapon) { w.Armed = enabled }); err != nil {
-		return err
-	}
-	// Arming a loaded tube with an active target locks it immediately.
-	if enabled && sh.GetTargetID() != "" {
-		_ = sh.MutateWeapon(bay.ID, func(w *ship.Weapon) error {
-			if w.Loaded {
-				w.Locked = true
-			}
-			return nil
-		})
-	}
-	return nil
+	return ar.setTorpedoBayFlag(sh, bay.ID, func(w *ship.Weapon) { w.Armed = enabled })
 }
 
 func (ar *ActionRouter) handleTorpedoLoad(action *Action) error {
@@ -475,42 +406,11 @@ func (ar *ActionRouter) handleTorpedoLoad(action *Action) error {
 	if err != nil {
 		return err
 	}
-	if err := ar.setTorpedoBayFlag(sh, bay.ID, func(w *ship.Weapon) {
+	return ar.setTorpedoBayFlag(sh, bay.ID, func(w *ship.Weapon) {
 		if w.AmmoCount > 0 {
 			w.Loaded = true
 		}
-	}); err != nil {
-		return err
-	}
-	// Loading an armed tube with an active target locks it immediately.
-	if sh.GetTargetID() != "" {
-		_ = sh.MutateWeapon(bay.ID, func(w *ship.Weapon) error {
-			if w.Armed && w.Loaded {
-				w.Locked = true
-			}
-			return nil
-		})
-	}
-	return nil
-}
-
-func (ar *ActionRouter) handleTorpedoLock(action *Action) error {
-	sh, err := ar.playerShip(action)
-	if err != nil {
-		return err
-	}
-	d := valueDict(action)
-	bay, err := findTorpedoBay(sh, d)
-	if err != nil {
-		return err
-	}
-	locked := true
-	if v, ok := dictBool(d, "locked"); ok {
-		locked = v
-	} else if v, ok := dictBool(d, "enabled"); ok {
-		locked = v
-	}
-	return ar.setTorpedoBayFlag(sh, bay.ID, func(w *ship.Weapon) { w.Locked = locked })
+	})
 }
 
 func (ar *ActionRouter) handleTorpedoFire(action *Action) error {
@@ -524,13 +424,10 @@ func (ar *ActionRouter) handleTorpedoFire(action *Action) error {
 		return err
 	}
 	if !bay.Loaded {
-		return fmt.Errorf("bay %s is empty", bay.ID)
-	}
-	if !bay.Locked {
-		return fmt.Errorf("bay %s has no lock", bay.ID)
+		return fmt.Errorf("bay %s is empty (press LOAD)", bay.ID)
 	}
 	if !bay.Armed {
-		return fmt.Errorf("bay %s is not armed", bay.ID)
+		return fmt.Errorf("bay %s is not armed (toggle ARM first)", bay.ID)
 	}
 
 	targetID := dictString(d, "target_id")
@@ -538,7 +435,7 @@ func (ar *ActionRouter) handleTorpedoFire(action *Action) error {
 		targetID = sh.GetTargetID()
 	}
 	if targetID == "" {
-		return fmt.Errorf("no target set")
+		return fmt.Errorf("no target locked")
 	}
 	target := ar.simulator.GetShip(targetID)
 	if target == nil {
@@ -548,18 +445,9 @@ func (ar *ActionRouter) handleTorpedoFire(action *Action) error {
 		return fmt.Errorf("target out of range")
 	}
 	if !sh.FireWeapon(bay.ID, targetID) {
-		return fmt.Errorf("bay %s cannot fire", bay.ID)
+		return fmt.Errorf("bay %s cannot fire (reloading or no ammo)", bay.ID)
 	}
 	ar.simulator.SpawnTorpedo(sh, target, bay.ID)
-	return nil
-}
-
-func (ar *ActionRouter) handleSetAutoFire(action *Action) error {
-	d := valueDict(action)
-	enabled, _ := dictBool(d, "enabled")
-	ar.mu.Lock()
-	ar.autoFire = enabled
-	ar.mu.Unlock()
 	return nil
 }
 
@@ -1034,12 +922,6 @@ func (ar *ActionRouter) Autopilot() bool {
 	ar.mu.Lock()
 	defer ar.mu.Unlock()
 	return ar.autopilot
-}
-
-func (ar *ActionRouter) AutoFire() bool {
-	ar.mu.Lock()
-	defer ar.mu.Unlock()
-	return ar.autoFire
 }
 
 func (ar *ActionRouter) Waypoints() []waypoint {

@@ -273,7 +273,6 @@ func TestBreakerOffDisablesWeapons(t *testing.T) {
 	sh.MutateWeapon("torpedo_bay_1", func(w *Weapon) error {
 		w.Armed = true
 		w.Loaded = true
-		w.Locked = true
 		return nil
 	})
 
@@ -461,22 +460,24 @@ func TestTorpedoFireGating(t *testing.T) {
 		t.Error("Torpedo should not fire unarmed")
 	}
 
-	sh.MutateWeapon("torpedo_bay_1", func(w *Weapon) error { w.Armed = true; return nil })
+	sh.MutateWeapon("torpedo_bay_1", func(w *Weapon) error {
+		w.Armed = true
+		w.Loaded = false
+		return nil
+	})
 	if sh.FireWeapon("torpedo_bay_1", "target_1") {
 		t.Error("Torpedo should not fire unloaded")
 	}
 
 	sh.MutateWeapon("torpedo_bay_1", func(w *Weapon) error { w.Loaded = true; return nil })
-	if sh.FireWeapon("torpedo_bay_1", "target_1") {
-		t.Error("Torpedo should not fire without a lock")
-	}
-
-	sh.MutateWeapon("torpedo_bay_1", func(w *Weapon) error { w.Locked = true; return nil })
 	if !sh.FireWeapon("torpedo_bay_1", "target_1") {
-		t.Fatal("Torpedo should fire once armed, loaded and locked")
+		t.Fatal("Torpedo should fire once armed and loaded")
 	}
 	if sh.FireWeapon("torpedo_bay_1", "target_1") {
 		t.Error("Torpedo should be on cooldown after firing")
+	}
+	if !sh.Weapons["torpedo_bay_1"].Loaded {
+		t.Error("Tube should hold a fresh round while the magazine has ammo")
 	}
 }
 

@@ -46,7 +46,7 @@ func testClasses() map[string]*config.ShipClass {
 
 func newTestRouter(t *testing.T) (*ActionRouter, *simulation.Simulator, *ship.Ship) {
 	t.Helper()
-	sim := simulation.NewSimulator(60, testClasses())
+	sim := simulation.NewSimulator(60, testClasses(), nil, nil)
 	if err := sim.SpawnShip("player", "cruiser", "Endeavour", true, ship.Vector3{}); err != nil {
 		t.Fatalf("spawn player: %v", err)
 	}
@@ -291,16 +291,18 @@ func TestTorpedoFireHonoursRange(t *testing.T) {
 	route(t, r, "weapons", "weapons", "set_target", map[string]interface{}{"target_id": "raider"})
 	route(t, r, "weapons", "torpedo", "arm", map[string]interface{}{"bay_id": 1})
 	route(t, r, "weapons", "torpedo", "load", map[string]interface{}{"bay_id": 1})
-	// Targeting auto-locks ready tubes; force an unlocked state to verify
-	// the fire gate still rejects unlocked bays.
-	route(t, r, "weapons", "torpedo", "lock", map[string]interface{}{"bay_id": 1, "locked": false})
 
-	// Unlocked: firing should fail.
-	if err := route(t, r, "weapons", "torpedo", "fire", map[string]interface{}{"bay_id": 1}); err == nil {
-		t.Error("Firing without a lock should fail")
+	if err := route(t, r, "weapons", "torpedo", "fire", map[string]interface{}{"bay_id": 1}); err != nil {
+		t.Fatalf("Firing an armed+loaded bay should succeed: %v", err)
 	}
-
-	route(t, r, "weapons", "torpedo", "lock", map[string]interface{}{"bay_id": 1})
+	// The tube reloads itself while the magazine has ammo, so waiting out the
+	// cooldown is all the range checks below need.
+	for i := 0; i < 400; i++ {
+		sim.Tick()
+	}
+	if !player.WeaponsSnapshot()["torpedo_bay_1"].Loaded {
+		t.Error("A fired tube should reload itself while ammo remains")
+	}
 
 	// Move the raider beyond the torpedo range of 5000.
 	raider := sim.GetShip("raider")
@@ -646,42 +648,6 @@ func TestSelfDestructIsServerTimed(t *testing.T) {
 	}
 	if sim.GetShip("player") != nil {
 		t.Error("Self destruct should remove the ship when the timer expires")
-	}
-}
-
-func TestAutoFireFiresReadyBays(t *testing.T) {
-	r, sim, _ := newTestRouter(t)
-
-	route(t, r, "weapons", "weapons", "set_target", map[string]interface{}{"target_id": "raider"})
-
-	// Auto fire on, but nothing is armed yet.
-	if err := route(t, r, "weapons", "torpedo", "set_auto_fire", map[string]interface{}{"enabled": true}); err != nil {
-		t.Fatalf("set_auto_fire failed: %v", err)
-	}
-	for i := 0; i < 30; i++ {
-		r.Update(1.0 / 60.0)
-	}
-	if len(sim.GetAllProjectiles()) != 0 {
-		t.Error("Auto fire should not launch before a bay is ready")
-	}
-
-	route(t, r, "weapons", "torpedo", "arm", map[string]interface{}{"bay_id": 1})
-	route(t, r, "weapons", "torpedo", "load", map[string]interface{}{"bay_id": 1})
-	route(t, r, "weapons", "torpedo", "lock", map[string]interface{}{"bay_id": 1})
-
-	r.Update(1.0 / 60.0)
-	if len(sim.GetAllProjectiles()) == 0 {
-		t.Error("Auto fire should launch a bay that is armed, loaded and locked")
-	}
-
-	// Turning it off stops further launches.
-	route(t, r, "weapons", "torpedo", "set_auto_fire", map[string]interface{}{"enabled": false})
-	before := len(sim.GetAllProjectiles())
-	for i := 0; i < 60; i++ {
-		r.Update(1.0 / 60.0)
-	}
-	if len(sim.GetAllProjectiles()) > before {
-		t.Error("Auto fire off should stop launching")
 	}
 }
 

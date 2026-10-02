@@ -101,7 +101,7 @@ func _update_contact_list() -> void:
 		if not _passes_filter(ship):
 			continue
 
-		var faction_color: Color = Colors.get_faction_color(ship.faction)
+		var faction_color: Color = GameState.get_faction_color(ship.faction)
 		var display_text := "%s [%.1f km]" % [ship.name, entry.distance / 1000.0]
 
 		var idx := contact_list.add_item(display_text)
@@ -116,15 +116,16 @@ func _update_contact_list() -> void:
 
 
 func _passes_filter(ship: GameState.ShipState) -> bool:
+	var disposition := GameState.faction_disposition(ship.faction)
 	match _current_filter:
 		"All":
 			return true
 		"Friendly":
-			return ship.faction == "federation" or ship.faction == "player"
+			return disposition == "friendly"
 		"Enemy":
-			return ship.faction == "hostile" or ship.faction == "klingon" or ship.faction == "romulan"
+			return disposition == "hostile"
 		"Neutral":
-			return ship.faction == "neutral" or ship.faction == "civilian"
+			return disposition == "neutral"
 		"Stations":
 			return ship.ship_class.to_lower().contains("station") or ship.ship_class.to_lower().contains("base")
 	return true

@@ -334,8 +334,13 @@ func (e *Engine) luaSpawnObject(L *lua.LState) int {
 		Z: z,
 	}
 
-	e.simulator.SpawnObject(objectID, objectType, position)
-	return 0
+	if err := e.simulator.SpawnObject(objectID, objectType, position); err != nil {
+		log.Printf("Lua spawn_object error: %v", err)
+		L.Push(lua.LBool(false))
+	} else {
+		L.Push(lua.LBool(true))
+	}
+	return 1
 }
 
 func (e *Engine) luaRemoveObject(L *lua.LState) int {

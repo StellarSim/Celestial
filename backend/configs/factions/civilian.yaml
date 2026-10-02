@@ -1,0 +1,5 @@
+id: civilian
+name: Civilian
+description: Non-combatant traffic such as merchants.
+color: "#b3b333"
+friendly_to: [player, neutral]

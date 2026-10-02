@@ -371,7 +371,10 @@ func (ws *WebSocketServer) handleGMCommand(client *Client, raw map[string]interf
 			ws.sendError(client, "ship not found: "+shipID)
 			return
 		}
-		sh.SetFaction(faction)
+		if !ws.simulator.SetShipFaction(shipID, faction) {
+			ws.sendError(client, "unknown faction: "+faction)
+			return
+		}
 		ws.sendFeedback(client, "success", command, "")
 	case "spawn_object":
 		if err := ws.handleSpawnObject(raw); err != nil {
@@ -642,7 +645,7 @@ func (ws *WebSocketServer) handleSpawnObject(raw map[string]interface{}) error {
 		objType, _ = raw["type"].(string)
 	}
 	if objType == "" {
-		objType = "waypoint"
+		return fmt.Errorf("spawn_object requires object_type")
 	}
 	if objID == "" {
 		return fmt.Errorf("spawn_object requires object_id")
@@ -663,8 +666,7 @@ func (ws *WebSocketServer) handleSpawnObject(raw map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("spawn_object position.z must be a number")
 	}
-	ws.simulator.SpawnObject(objID, objType, ship.Vector3{X: x, Y: y, Z: z})
-	return nil
+	return ws.simulator.SpawnObject(objID, objType, ship.Vector3{X: x, Y: y, Z: z})
 }
 
 func (ws *WebSocketServer) sendFeedback(client *Client, status, action, message string) {
@@ -814,11 +816,19 @@ func (ws *WebSocketServer) buildStateMessage() map[string]interface{} {
 	}
 
 	objs := ws.simulator.GetAllObjects()
-	objArr := make([]interface{}, 0, len(objs))
+	sortedObjs := make([]*simulation.Object, 0, len(objs))
 	for _, o := range objs {
+		sortedObjs = append(sortedObjs, o)
+	}
+	sort.Slice(sortedObjs, func(i, j int) bool { return sortedObjs[i].ID < sortedObjs[j].ID })
+	objArr := make([]interface{}, 0, len(sortedObjs))
+	for _, o := range sortedObjs {
 		objArr = append(objArr, map[string]interface{}{
 			"id":       o.ID,
 			"type":     o.Type,
+			"name":     o.Name,
+			"category": o.Category,
+			"radius":   o.Radius,
 			"position": map[string]float64{"x": o.Position.X, "y": o.Position.Y, "z": o.Position.Z},
 		})
 	}
@@ -831,6 +841,9 @@ func (ws *WebSocketServer) buildStateMessage() map[string]interface{} {
 		"ships":              shipArr,
 		"projectiles":        projArr,
 		"objects":            objArr,
+		"ship_classes":       ws.simulator.ShipClassCatalog(),
+		"object_classes":     ws.simulator.ObjectClassCatalog(),
+		"factions":           ws.simulator.FactionCatalog(),
 		"orders":             ws.actionRouter.Orders(),
 		"waypoints":          ws.actionRouter.Waypoints(),
 		"repair_teams":       ws.actionRouter.RepairTeams(),
@@ -838,7 +851,6 @@ func (ws *WebSocketServer) buildStateMessage() map[string]interface{} {
 		"communications_log": ws.actionRouter.CommsLog(),
 		"log_entries":        ws.actionRouter.LogEntries(),
 		"autopilot":          ws.actionRouter.Autopilot(),
-		"auto_fire":          ws.actionRouter.AutoFire(),
 	}
 	if ws.gmController != nil {
 		if m := ws.gmController.GetActiveMission(); m != nil {
@@ -975,9 +987,10 @@ func (ws *WebSocketServer) buildShipData(sh *ship.Ship, globalAlert string, st s
 			w := sh.Weapons[id]
 			torpedoBays = append(torpedoBays, map[string]interface{}{
 				"bay_id": wAmmoID(w.ID), "id": w.ID,
-				"armed": w.Armed, "loaded": w.Loaded, "locked": w.Locked,
+				"armed": w.Armed, "loaded": w.Loaded,
 				"ammo": w.AmmoCount, "max_ammo": w.AmmoCapacity,
 				"cooldown": w.Cooldown, "target_id": sh.TargetID,
+				"range": w.Range,
 			})
 		}
 		for _, id := range phaserIDs {
@@ -987,6 +1000,7 @@ func (ws *WebSocketServer) buildShipData(sh *ship.Ship, globalAlert string, st s
 				"facing": map[string]float64{"x": 0, "y": 0, "z": 1},
 				"health": w.Health, "cooldown": w.Cooldown, "power_level": 100.0,
 				"enabled": w.Enabled,
+				"range": w.Range, "cooldown_time": w.CooldownTime,
 			})
 		}
 	}

@@ -40,7 +40,6 @@ type ActionRouter struct {
 
 	waypoints []waypoint
 	autopilot bool
-	autoFire  bool
 	probes    int
 
 	frequency       float64
@@ -95,9 +94,7 @@ func (ar *ActionRouter) register() {
 	ar.handle("weapons", "weapons", "clear_target", ar.handleClearTarget)
 	ar.handle("weapons", "torpedo", "arm", ar.handleTorpedoArm)
 	ar.handle("weapons", "torpedo", "load", ar.handleTorpedoLoad)
-	ar.handle("weapons", "torpedo", "lock", ar.handleTorpedoLock)
 	ar.handle("weapons", "torpedo", "fire", ar.handleTorpedoFire)
-	ar.handle("weapons", "torpedo", "set_auto_fire", ar.handleSetAutoFire)
 	ar.handle("weapons", "phaser", "set_enabled", ar.handleSetPhaserEnabled)
 	ar.handle("weapons", "phaser", "fire", ar.handlePhaserFire)
 

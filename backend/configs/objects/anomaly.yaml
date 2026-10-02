@@ -1,0 +1,9 @@
+id: anomaly
+name: Anomaly
+category: anomaly
+description: Sensor anomaly worth scanning.
+radius: 100.0
+solid: false
+scannable: true
+sensor_signature: 80
+color: "#7e57c2"

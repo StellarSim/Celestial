@@ -1,8 +1,4 @@
 -- Mission: Border Patrol
---
--- The crew's choices drive the outcome. Hailing, scanning and fighting all
--- change real sim state, and the mission reacts to that state rather than
--- counting kills.
 
 mission = {
     name = "Border Patrol",

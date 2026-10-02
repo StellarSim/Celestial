@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"sort"
 	"sync"
 	"time"
 )
@@ -26,7 +27,9 @@ type Simulator struct {
 	Projectiles map[string]*Projectile
 	Objects     map[string]*Object
 
-	ShipClasses map[string]*config.ShipClass
+	ShipClasses   map[string]*config.ShipClass
+	ObjectClasses map[string]*config.ObjectClass
+	Factions      map[string]*config.Faction
 
 	AIControllers map[string]*ai.Controller
 
@@ -72,9 +75,13 @@ type Projectile struct {
 type Object struct {
 	ID       string
 	Type     string
+	Name     string
+	Category string
 	Position ship.Vector3
 	Velocity ship.Vector3
 	Rotation ship.Quaternion
+	Radius   float64
+	Solid    bool
 	Data     map[string]interface{}
 }
 
@@ -86,7 +93,7 @@ type Snapshot struct {
 	AIControllers map[string]*ai.Controller
 }
 
-func NewSimulator(tickRate int, shipClasses map[string]*config.ShipClass) *Simulator {
+func NewSimulator(tickRate int, shipClasses map[string]*config.ShipClass, objectClasses map[string]*config.ObjectClass, factions map[string]*config.Faction) *Simulator {
 	return &Simulator{
 		tickRate:         tickRate,
 		dt:               1.0 / float64(tickRate),
@@ -94,6 +101,8 @@ func NewSimulator(tickRate int, shipClasses map[string]*config.ShipClass) *Simul
 		Projectiles:      make(map[string]*Projectile),
 		Objects:          make(map[string]*Object),
 		ShipClasses:      shipClasses,
+		ObjectClasses:    objectClasses,
+		Factions:         factions,
 		AIControllers:    make(map[string]*ai.Controller),
 		stopChan:         make(chan struct{}),
 		Snapshots:        make([]*Snapshot, 0),
@@ -220,19 +229,41 @@ func shipTotals(sh *ship.Ship) (total float64, max float64) {
 	return total, max
 }
 
-// waypointArrivalDistance is how close a ship must be to register a waypoint.
+// Fallback arrival radius when an object class does not define one.
 const waypointArrivalDistance = 400.0
+
+func (s *Simulator) isWaypoint(obj *Object) bool {
+	if obj == nil {
+		return false
+	}
+	if s.ObjectClasses != nil {
+		if class, ok := s.ObjectClasses[obj.Type]; ok {
+			return class.Category == "waypoint"
+		}
+	}
+	return obj.Type == "waypoint" || obj.Category == "waypoint"
+}
+
+func (s *Simulator) arrivalRadius(obj *Object) float64 {
+	if s.ObjectClasses != nil {
+		if class, ok := s.ObjectClasses[obj.Type]; ok && class.ArrivalRadius > 0 {
+			return class.ArrivalRadius
+		}
+	}
+	return waypointArrivalDistance
+}
 
 func (s *Simulator) checkWaypoints() {
 	if len(s.Objects) == 0 {
 		return
 	}
 	for id, obj := range s.Objects {
-		if obj.Type != "waypoint" {
+		if !s.isWaypoint(obj) {
 			continue
 		}
+		arrival := s.arrivalRadius(obj)
 		for shipID, sh := range s.Ships {
-			if distance(sh.Position, obj.Position) > waypointArrivalDistance {
+			if distance(sh.Position, obj.Position) > arrival {
 				continue
 			}
 			key := id + ":" + shipID
@@ -352,6 +383,9 @@ func (s *Simulator) SpawnShip(id, classID, name string, isPlayer bool, position 
 		controller := ai.NewController()
 		// AI runs inside the tick, so its spawner must not re-take the sim lock.
 		controller.SetSpawner(tickSpawner{s})
+		// Stances come from the faction yaml; the map is fixed at
+		// startup so the hook takes no lock.
+		controller.Hostile = s.IsHostileTo
 		s.AIControllers[id] = controller
 	}
 
@@ -503,9 +537,21 @@ func (s *Simulator) spawnTorpedoLocked(shooter *ship.Ship, target *ship.Ship, we
 	}
 }
 
-func (s *Simulator) SpawnObject(id, objType string, position ship.Vector3) {
+func (s *Simulator) SpawnObject(id, objType string, position ship.Vector3) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if objType == "" {
+		return fmt.Errorf("unknown object class: %q", objType)
+	}
+	var class *config.ObjectClass
+	if s.ObjectClasses != nil {
+		var ok bool
+		class, ok = s.ObjectClasses[objType]
+		if !ok {
+			return fmt.Errorf("unknown object class: %s", objType)
+		}
+	}
 
 	delete(s.waypointHits, id+":player")
 	obj := &Object{
@@ -516,9 +562,16 @@ func (s *Simulator) SpawnObject(id, objType string, position ship.Vector3) {
 		Rotation: ship.Quaternion{W: 1, X: 0, Y: 0, Z: 0},
 		Data:     make(map[string]interface{}),
 	}
+	if class != nil {
+		obj.Name = class.Name
+		obj.Category = class.Category
+		obj.Radius = class.Radius
+		obj.Solid = class.Solid
+	}
 
 	s.Objects[id] = obj
 	log.Printf("Spawned object: %s (%s) at position (%.1f, %.1f, %.1f)", id, objType, position.X, position.Y, position.Z)
+	return nil
 }
 
 func (s *Simulator) RemoveObject(id string) {
@@ -544,7 +597,8 @@ func (s *Simulator) TeleportShip(id string, pos ship.Vector3) error {
 	return nil
 }
 
-// SetShipFaction re-tags a ship under the sim lock.
+// Re-tags a ship under the sim lock. When factions are configured,
+// unknown ids are rejected so typos fail loudly.
 func (s *Simulator) SetShipFaction(id, faction string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -552,8 +606,43 @@ func (s *Simulator) SetShipFaction(id, faction string) bool {
 	if !ok || faction == "" {
 		return false
 	}
+	if len(s.Factions) > 0 {
+		if _, ok := s.Factions[faction]; !ok {
+			log.Printf("Unknown faction: %s", faction)
+			return false
+		}
+	}
 	sh.SetFaction(faction)
 	return true
+}
+
+// StanceOf reports how viewer regards target: friendly, hostile, or
+// neutral. Same faction is always friendly; listed stances come from the
+// faction yaml; anything unlisted is neutral. The factions map is fixed
+// at startup, so this takes no lock and is safe to call from inside
+// the tick.
+func (s *Simulator) StanceOf(viewer, target string) string {
+	if viewer == target {
+		return "friendly"
+	}
+	if f, ok := s.Factions[viewer]; ok && f != nil {
+		for _, id := range f.FriendlyTo {
+			if id == target {
+				return "friendly"
+			}
+		}
+		for _, id := range f.HostileTo {
+			if id == target {
+				return "hostile"
+			}
+		}
+	}
+	return "neutral"
+}
+
+// IsHostileTo reports whether faction a treats faction b as hostile.
+func (s *Simulator) IsHostileTo(a, b string) bool {
+	return s.StanceOf(a, b) == "hostile"
 }
 
 // OrderShipAttack forces an AI ship onto a target under the sim lock.
@@ -591,6 +680,72 @@ func (s *Simulator) GetObject(id string) (Object, bool) {
 		return Object{}, false
 	}
 	return *obj, true
+}
+
+// Lists known ship classes for GM clients.
+func (s *Simulator) ShipClassCatalog() []map[string]interface{} {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]map[string]interface{}, 0, len(s.ShipClasses))
+	for _, c := range s.ShipClasses {
+		if c == nil {
+			continue
+		}
+		out = append(out, map[string]interface{}{"id": c.ID, "name": c.Name})
+	}
+	sortMaps(out)
+	return out
+}
+
+// Lists known object classes for GM clients.
+func (s *Simulator) ObjectClassCatalog() []map[string]interface{} {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]map[string]interface{}, 0, len(s.ObjectClasses))
+	for _, c := range s.ObjectClasses {
+		if c == nil {
+			continue
+		}
+		out = append(out, map[string]interface{}{
+			"id": c.ID, "name": c.Name, "category": c.Category,
+		})
+	}
+	sortMaps(out)
+	return out
+}
+
+// Lists known factions for GM clients.
+func (s *Simulator) FactionCatalog() []map[string]interface{} {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]map[string]interface{}, 0, len(s.Factions))
+	for _, f := range s.Factions {
+		if f == nil {
+			continue
+		}
+		friendly := f.FriendlyTo
+		if friendly == nil {
+			friendly = []string{}
+		}
+		hostile := f.HostileTo
+		if hostile == nil {
+			hostile = []string{}
+		}
+		out = append(out, map[string]interface{}{
+			"id": f.ID, "name": f.Name, "color": f.Color,
+			"friendly_to": friendly, "hostile_to": hostile,
+		})
+	}
+	sortMaps(out)
+	return out
+}
+
+func sortMaps(out []map[string]interface{}) {
+	sort.Slice(out, func(i, j int) bool {
+		ai, _ := out[i]["id"].(string)
+		bi, _ := out[j]["id"].(string)
+		return ai < bi
+	})
 }
 
 func (s *Simulator) GetShip(id string) *ship.Ship {

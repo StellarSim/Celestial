@@ -1,0 +1,6 @@
+id: player
+name: Player
+description: Player-controlled ships.
+color: "#4da3e6"
+friendly_to: [civilian, neutral]
+hostile_to: [pirate, hostile]

@@ -19,16 +19,8 @@ var _is_selected: bool = false
 var _shield_hit_time: float = 0.0
 var _damage_level: float = 0.0
 
-# Faction colors
-const FACTION_MATERIALS := {
-	"player": Color(0.2, 0.5, 0.8),
-	"federation": Color(0.2, 0.4, 0.7),
-	"klingon": Color(0.6, 0.2, 0.2),
-	"romulan": Color(0.2, 0.6, 0.2),
-	"neutral": Color(0.5, 0.5, 0.5),
-	"hostile": Color(0.8, 0.2, 0.2),
-	"civilian": Color(0.6, 0.6, 0.4)
-}
+func _faction_material_color() -> Color:
+	return GameState.get_faction_color(faction)
 
 
 func _ready() -> void:
@@ -50,13 +42,13 @@ func _setup_materials() -> void:
 		hull_mesh.set_surface_override_material(0, mat)
 
 	if mat is ShaderMaterial:
-		var color: Color = FACTION_MATERIALS.get(faction, FACTION_MATERIALS.neutral)
+		var color: Color = _faction_material_color()
 		mat.set_shader_parameter("base_color", Color(color.r * 0.8, color.g * 0.8, color.b * 0.8, 1.0))
 		mat.set_shader_parameter("damage_level", _damage_level)
 		return
 
 	var flat := mat as StandardMaterial3D
-	var color: Color = FACTION_MATERIALS.get(faction, FACTION_MATERIALS.neutral)
+	var color: Color = _faction_material_color()
 	flat.albedo_color = Color(color.r * 0.8, color.g * 0.8, color.b * 0.8)
 	flat.emission = color
 	flat.emission_energy_multiplier = 0.3
@@ -165,7 +157,7 @@ func set_damage_level(level: float) -> void:
 
 	var flat := mat as StandardMaterial3D
 	if flat:
-		var base_color: Color = FACTION_MATERIALS.get(faction, FACTION_MATERIALS.neutral)
+		var base_color: Color = _faction_material_color()
 		var damage_tint := Color(0.3, 0.1, 0.1)
 		flat.albedo_color = base_color.lerp(damage_tint, _damage_level * 0.5)
 

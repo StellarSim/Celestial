@@ -40,12 +40,22 @@ func main() {
 		log.Fatalf("Failed to load ship classes: %v", err)
 	}
 
+	objectClasses, err := config.LoadObjectClasses(resolvePath("configs/objects"))
+	if err != nil {
+		log.Fatalf("Failed to load object classes: %v", err)
+	}
+
+	factions, err := config.LoadFactions(resolvePath("configs/factions"))
+	if err != nil {
+		log.Fatalf("Failed to load factions: %v", err)
+	}
+
 	panelMappings, err := config.LoadPanelMappings(resolvePath("configs/panels.yaml"))
 	if err != nil {
 		log.Fatalf("Failed to load panel mappings: %v", err)
 	}
 
-	sim := simulation.NewSimulator(cfg.TickRate, shipClasses)
+	sim := simulation.NewSimulator(cfg.TickRate, shipClasses, objectClasses, factions)
 	go sim.Start()
 
 	missionEngine := mission.NewEngine(sim)

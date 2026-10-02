@@ -1,0 +1,9 @@
+id: cargo_pod
+name: Cargo Pod
+category: cargo
+description: Recoverable package or mission cargo.
+radius: 15.0
+solid: false
+scannable: true
+sensor_signature: 30
+color: "#ffb74d"

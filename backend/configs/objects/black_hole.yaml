@@ -1,0 +1,9 @@
+id: black_hole
+name: Black Hole
+category: hazard
+description: Gravitational hazard. Keep clear.
+radius: 500.0
+solid: false
+scannable: true
+sensor_signature: 200
+color: "#000000"

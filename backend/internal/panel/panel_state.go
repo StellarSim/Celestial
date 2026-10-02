@@ -341,13 +341,6 @@ func updateTorpedoBay(state *PanelState, sh *ship.Ship, bayID string) {
 		Blink: false,
 	}
 
-	state.Indicators[bayID+"_locked"] = Indicator{
-		Type:  "led",
-		Value: weapon.Locked,
-		Color: "red",
-		Blink: false,
-	}
-
 	state.Displays[bayID+"_ammo"] = Display{
 		Type:   "numeric",
 		Value:  weapon.AmmoCount,

@@ -115,7 +115,7 @@ func _update_contact_list() -> void:
 	for entry in NavUtils.contacts_by_distance():
 		var ship: GameState.ShipState = entry.ship
 
-		var faction_color: Color = Colors.get_faction_color(ship.faction)
+		var faction_color: Color = GameState.get_faction_color(ship.faction)
 		var bearing := NavUtils.bearing_to(player_pos, ship.position.to_vector3())
 
 		var display := "%s | %.1f km | %03.0f°" % [ship.name, entry.distance / 1000.0, bearing]

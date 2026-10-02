@@ -1,0 +1,10 @@
+id: waypoint
+name: Navigation Waypoint
+category: waypoint
+description: Mission navigation marker. Triggers waypoint_reached when a ship closes in.
+radius: 20.0
+solid: false
+scannable: false
+sensor_signature: 0
+arrival_radius: 400.0
+color: "#4caf50"

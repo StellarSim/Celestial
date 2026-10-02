@@ -1,8 +1,5 @@
 extends Control
 
-const SHIP_CLASSES := ["player_cruiser", "enemy_frigate", "enemy_dreadnought"]
-const OBJECT_TYPES := ["waypoint", "station", "anomaly", "debris"]
-const FACTIONS := ["player", "hostile", "neutral"]
 const SPAWN_AT := ["Camera", "Origin", "Selected"]
 
 @onready var viewport: SubViewport = %SubViewport
@@ -118,11 +115,11 @@ func _setup_ui() -> void:
 		spawn_kind.add_item(kind)
 	spawn_kind.select(0)
 	_refresh_spawn_classes()
-	for f in FACTIONS:
-		spawn_faction.add_item(f)
-		faction_select.add_item(f)
-	spawn_faction.select(1)
-	faction_select.select(0)
+	_refresh_factions()
+	if spawn_faction.item_count > 1:
+		spawn_faction.select(1)
+	if faction_select.item_count > 0:
+		faction_select.select(0)
 	for loc in SPAWN_AT:
 		spawn_at.add_item(loc)
 	spawn_at.select(0)
@@ -130,15 +127,50 @@ func _setup_ui() -> void:
 	ships_tree.set_column_title(0, "Ships")
 
 
+func _available_ship_classes() -> Array:
+	var out: Array = []
+	for entry in GameState.ship_classes:
+		if entry is Dictionary and entry.has("id"):
+			out.append(str(entry["id"]))
+	return out
+
+
+func _available_object_types() -> Array:
+	var out: Array = []
+	for entry in GameState.object_classes:
+		if entry is Dictionary and entry.has("id"):
+			out.append(str(entry["id"]))
+	return out
+
+
+func _available_factions() -> Array:
+	var out: Array = []
+	for entry in GameState.factions:
+		if entry is Dictionary and entry.has("id"):
+			out.append(str(entry["id"]))
+		elif entry is String:
+			out.append(entry)
+	return out
+
+
+func _refresh_factions() -> void:
+	spawn_faction.clear()
+	faction_select.clear()
+	for f in _available_factions():
+		spawn_faction.add_item(f)
+		faction_select.add_item(f)
+
+
 func _refresh_spawn_classes() -> void:
 	spawn_class.clear()
 	if spawn_kind.selected == 1:
-		for t in OBJECT_TYPES:
+		for t in _available_object_types():
 			spawn_class.add_item(t)
 	else:
-		for c in SHIP_CLASSES:
+		for c in _available_ship_classes():
 			spawn_class.add_item(c.capitalize())
-	spawn_class.select(0)
+	if spawn_class.item_count > 0:
+		spawn_class.select(0)
 
 
 func _connect_signals() -> void:
@@ -304,12 +336,26 @@ func _update_ships_tree() -> void:
 		item.set_metadata(0, ship_id)
 		
 		# Color based on faction
-		item.set_custom_color(0, Colors.get_faction_color(ship.faction))
+		item.set_custom_color(0, GameState.get_faction_color(ship.faction))
 		if str(ship_id) == _selected_ship_id:
 			item.select(0)
 
 
+var _objects_sig := ""
+
+
 func _update_objects_list() -> void:
+	var parts: Array = []
+	for obj in GameState.space_objects:
+		if obj is Dictionary:
+			parts.append("%s:%s" % [str(obj.get("id", "")), str(obj.get("type", ""))])
+	parts.sort()
+	var sig := "|".join(parts)
+	if sig == _objects_sig:
+		remove_obj_btn.disabled = objects_list.get_selected_items().is_empty()
+		_sync_object_visuals()
+		return
+	_objects_sig = sig
 	var sel := objects_list.get_selected_items()
 	var sel_id := ""
 	if not sel.is_empty():
@@ -342,7 +388,29 @@ func _on_state_updated() -> void:
 	_update_mission_picker()
 	_update_mission_info()
 	_update_selected_panel()
+	_maybe_refresh_catalogs()
 	_sync_ship_visuals()
+
+
+var _catalog_sig := ""
+
+
+func _maybe_refresh_catalogs() -> void:
+	var sig := "%s|%s|%s" % [str(GameState.ship_classes), str(GameState.object_classes), str(GameState.factions)]
+	if sig == _catalog_sig:
+		return
+	_catalog_sig = sig
+	var cls_sel := spawn_class.selected
+	_refresh_spawn_classes()
+	if spawn_class.item_count > 0:
+		spawn_class.select(clampi(cls_sel, 0, spawn_class.item_count - 1))
+	var fac_sel := spawn_faction.selected
+	var insp_sel := faction_select.selected
+	_refresh_factions()
+	if fac_sel >= 0 and spawn_faction.item_count > 0:
+		spawn_faction.select(clampi(fac_sel, 0, spawn_faction.item_count - 1))
+	if insp_sel >= 0 and faction_select.item_count > 0:
+		faction_select.select(clampi(insp_sel, 0, faction_select.item_count - 1))
 
 
 func _sync_ship_visuals() -> void:
@@ -368,7 +436,7 @@ func _sync_object_visuals() -> void:
 			var p: Dictionary = obj.get("position", {})
 			node.global_position = Vector3(float(p.get("x", 0)), float(p.get("y", 0)), float(p.get("z", 0)))
 			continue
-		var marker := _create_object_visual(str(obj.get("type", "")))
+		var marker := _create_object_visual(str(obj.get("type", "")), float(obj.get("radius", 20.0)))
 		objects_container.add_child(marker)
 		# Positioned only after being added, since a global transform on a node
 		# that is not in the tree yet has nothing to resolve against.
@@ -381,12 +449,12 @@ func _sync_object_visuals() -> void:
 			_object_instances.erase(oid)
 
 
-func _create_object_visual(obj_type: String) -> Node3D:
+func _create_object_visual(obj_type: String, radius: float = 20.0) -> Node3D:
 	var node := Node3D.new()
 	var mesh_instance := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
-	sphere.radius = 20.0
-	sphere.height = 40.0
+	sphere.radius = clampf(radius, 5.0, 500.0)
+	sphere.height = sphere.radius * 2.0
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(0.5, 0.7, 0.4) if obj_type == "waypoint" else Color(0.7, 0.6, 0.3)
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -552,7 +620,7 @@ func _create_ship_visual(ship) -> Node3D:
 			dims = Vector3(12, 5, 30)
 	box.size = dims
 	var material := StandardMaterial3D.new()
-	material.albedo_color = Colors.get_faction_color(ship.faction)
+	material.albedo_color = GameState.get_faction_color(ship.faction)
 	material.metallic = 0.5
 	material.roughness = 0.5
 	box.material = material
@@ -644,7 +712,10 @@ func _spawn_position() -> Vector3:
 func _on_spawn_pressed() -> void:
 	var pos := _spawn_position()
 	if spawn_kind.selected == 1:
-		var obj_type: String = OBJECT_TYPES[spawn_class.selected]
+		var types := _available_object_types()
+		if spawn_class.selected < 0 or spawn_class.selected >= types.size():
+			return
+		var obj_type: String = types[spawn_class.selected]
 		var obj_id := spawn_name.text.strip_edges()
 		if obj_id.is_empty():
 			obj_id = "%s_%d" % [obj_type, Time.get_ticks_msec() % 100000]
@@ -654,7 +725,10 @@ func _on_spawn_pressed() -> void:
 			"position": {"x": pos.x, "y": pos.y, "z": pos.z},
 		})
 	else:
-		var ship_class: String = SHIP_CLASSES[spawn_class.selected]
+		var classes := _available_ship_classes()
+		if spawn_class.selected < 0 or spawn_class.selected >= classes.size():
+			return
+		var ship_class: String = classes[spawn_class.selected]
 		var base := spawn_name.text.strip_edges()
 		if base.is_empty():
 			base = ship_class
@@ -666,7 +740,9 @@ func _on_spawn_pressed() -> void:
 			"is_player": false,
 			"position": {"x": pos.x, "y": pos.y, "z": pos.z},
 		})
-		NetworkClient.send_gm_command("set_faction", {"ship_id": ship_id, "faction": FACTIONS[spawn_faction.selected]})
+		var factions := _available_factions()
+		if spawn_faction.selected >= 0 and spawn_faction.selected < factions.size():
+			NetworkClient.send_gm_command("set_faction", {"ship_id": ship_id, "faction": factions[spawn_faction.selected]})
 	spawn_name.clear()
 
 
@@ -710,9 +786,12 @@ func _on_rename_pressed() -> void:
 func _on_faction_pressed() -> void:
 	if not _require_selection():
 		return
+	var factions := _available_factions()
+	if faction_select.selected < 0 or faction_select.selected >= factions.size():
+		return
 	NetworkClient.send_gm_command("set_faction", {
 		"ship_id": _selected_ship_id,
-		"faction": FACTIONS[faction_select.selected],
+		"faction": factions[faction_select.selected],
 	})
 
 

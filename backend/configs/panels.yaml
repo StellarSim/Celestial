@@ -200,14 +200,6 @@ panels:
         system: torpedo
         action: load
         value: {bay_id: 1}
-      lock_bay_1:
-        system: torpedo
-        action: lock
-        value: {bay_id: 1, locked: true}
-      unlock_bay_1:
-        system: torpedo
-        action: lock
-        value: {bay_id: 1, locked: false}
       fire_bay_1:
         system: torpedo
         action: fire
@@ -224,14 +216,6 @@ panels:
         system: torpedo
         action: load
         value: {bay_id: 2}
-      lock_bay_2:
-        system: torpedo
-        action: lock
-        value: {bay_id: 2, locked: true}
-      unlock_bay_2:
-        system: torpedo
-        action: lock
-        value: {bay_id: 2, locked: false}
       fire_bay_2:
         system: torpedo
         action: fire
@@ -253,14 +237,6 @@ panels:
         system: torpedo
         action: load
         value: {bay_id: 3}
-      lock_bay_3:
-        system: torpedo
-        action: lock
-        value: {bay_id: 3, locked: true}
-      unlock_bay_3:
-        system: torpedo
-        action: lock
-        value: {bay_id: 3, locked: false}
       fire_bay_3:
         system: torpedo
         action: fire
@@ -277,14 +253,6 @@ panels:
         system: torpedo
         action: load
         value: {bay_id: 4}
-      lock_bay_4:
-        system: torpedo
-        action: lock
-        value: {bay_id: 4, locked: true}
-      unlock_bay_4:
-        system: torpedo
-        action: lock
-        value: {bay_id: 4, locked: false}
       fire_bay_4:
         system: torpedo
         action: fire
@@ -302,14 +270,6 @@ panels:
         system: phaser
         action: fire
         value: {array_id: phaser_array_2}
-      auto_fire_on:
-        system: torpedo
-        action: set_auto_fire
-        value: {enabled: true}
-      auto_fire_off:
-        system: torpedo
-        action: set_auto_fire
-        value: {enabled: false}
 
   captain_command:
     id: captain_command

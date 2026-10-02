@@ -42,9 +42,8 @@ func main() {
 	log.Println("  recall <team 0-2>              - recall a repair team")
 	log.Println("  throttle <value>               - set throttle, -1.0..1.0 (flight_main)")
 	log.Println("  turn <rate>                    - set turn rate (flight_main)")
-	log.Println("  torpedo <bay 1-4> <arm|load|lock|unlock|fire> [target_id]")
+	log.Println("  torpedo <bay 1-4> <arm|disarm|load|fire> [target_id]")
 	log.Println("  phaser <1|2> [target_id]       - fire a phaser array (weapons_phasers)")
-	log.Println("  auto_fire <on|off>             - toggle auto fire")
 	log.Println("  shields <up|down>              - raise/lower shields (operations_power)")
 	log.Println("  transporter <up|down|emergency>")
 	log.Println("  sensors <passive|active|deep>  - set sensor mode (relay_sensors)")
@@ -235,10 +234,6 @@ func parseCommand(line string) (*PanelMessage, error) {
 			action = "disarm_bay_" + bay
 		case "load":
 			action = "load_bay_" + bay
-		case "lock":
-			action = "lock_bay_" + bay
-		case "unlock":
-			action = "unlock_bay_" + bay
 		case "fire":
 			action = "fire_bay_" + bay
 		default:
@@ -260,17 +255,6 @@ func parseCommand(line string) (*PanelMessage, error) {
 			msg.Value = map[string]interface{}{"target_id": target}
 		}
 		return msg, nil
-
-	case "auto_fire":
-		state, err := requireArg("on or off", 1)
-		if err != nil {
-			return nil, err
-		}
-		action := "auto_fire_on"
-		if state == "off" || state == "false" {
-			action = "auto_fire_off"
-		}
-		return &PanelMessage{PanelID: "weapons_phasers", Action: action}, nil
 
 	case "shields":
 		dir, err := requireArg("up or down", 1)

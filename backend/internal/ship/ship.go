@@ -116,7 +116,6 @@ type Weapon struct {
 	OnFire       bool
 	Armed        bool
 	Loaded       bool
-	Locked       bool
 	AmmoCapacity int
 	AmmoCount    int
 	Facing       Vector3
@@ -266,7 +265,6 @@ func NewShip(id, classID, name string, class *config.ShipClass, isPlayer bool) *
 			PowerDraw:    wpnCfg.PowerDraw,
 			Armed:        false,
 			Loaded:       loaded,
-			Locked:       false,
 			AmmoCapacity: wpnCfg.AmmoCapacity,
 			AmmoCount:    wpnCfg.AmmoCapacity,
 			Facing:       facing,
@@ -988,14 +986,17 @@ func (s *Ship) fireWeaponLocked(weaponID string, targetID string) bool {
 	}
 
 	if weapon.Type == "torpedo" {
-		if !weapon.Armed || !weapon.Loaded || !weapon.Locked {
+		if !weapon.Armed || !weapon.Loaded {
 			return false
 		}
 		if weapon.AmmoCount <= 0 {
 			return false
 		}
 		weapon.AmmoCount--
-		weapon.Loaded = false
+		// A real magazine feeds the next round while the tube cycles, so a
+		// single LOAD keeps the tube firing instead of requiring one LOAD
+		// press per torpedo.
+		weapon.Loaded = weapon.AmmoCount > 0
 	}
 
 	weapon.Cooldown = weapon.CooldownTime

@@ -125,12 +125,12 @@ func _update_selected_info() -> void:
 	var bearing := NavUtils.bearing_to(player_pos, contact_pos)
 
 	selected_name.text = contact.name
-	selected_name.add_theme_color_override("font_color", Colors.get_faction_color(contact.faction))
+	selected_name.add_theme_color_override("font_color", GameState.get_faction_color(contact.faction))
 	dist_value.text = "%.1f km" % (dist / 1000.0)
 	bearing_value.text = "%03.0f°" % bearing
 	type_value.text = contact.ship_class
 	faction_value.text = contact.faction.capitalize()
-	var faction_color: Color = Colors.get_faction_color(contact.faction)
+	var faction_color: Color = GameState.get_faction_color(contact.faction)
 	faction_value.add_theme_color_override("font_color", faction_color)
 
 	mark_target_btn.disabled = false
@@ -223,7 +223,7 @@ func _draw_contacts(center: Vector2) -> void:
 		var ship_pos := ship.position.to_vector3()
 		var screen_pos := _world_to_screen(ship_pos, player_pos, center)
 
-		var color: Color = Colors.get_faction_color(ship.faction)
+		var color: Color = GameState.get_faction_color(ship.faction)
 		var size := 6.0
 
 		if ship_id == _selected_contact_id:

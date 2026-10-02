@@ -1,0 +1,9 @@
+id: asteroid
+name: Asteroid
+category: asteroid
+description: Solid navigational hazard and potential cover.
+radius: 80.0
+solid: true
+scannable: true
+sensor_signature: 20
+color: "#9e9e9e"

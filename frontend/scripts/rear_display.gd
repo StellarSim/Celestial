@@ -213,7 +213,7 @@ func _update_contacts_list() -> void:
 		contacts_list.add_item(text)
 		var idx := contacts_list.item_count - 1
 
-		contacts_list.set_item_custom_fg_color(idx, Colors.get_faction_color(ship.faction))
+		contacts_list.set_item_custom_fg_color(idx, GameState.get_faction_color(ship.faction))
 
 
 func _on_connected() -> void:
@@ -266,7 +266,7 @@ func _create_ship_marker(ship) -> Control:
 	triangle.custom_minimum_size = Vector2(20, 20)
 	triangle.size = Vector2(20, 20)
 
-	triangle.color = Colors.get_faction_color(ship.faction)
+	triangle.color = GameState.get_faction_color(ship.faction)
 
 	marker.add_child(triangle)
 
@@ -276,7 +276,7 @@ func _create_ship_marker(ship) -> Control:
 	label.position = Vector2(25, 0)
 	label.add_theme_font_size_override("font_size", 10)
 
-	label.add_theme_color_override("font_color", Colors.get_faction_color(ship.faction))
+	label.add_theme_color_override("font_color", GameState.get_faction_color(ship.faction))
 	
 	marker.add_child(label)
 	

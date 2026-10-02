@@ -29,6 +29,12 @@ var snapshot_count: int = 0
 var missions: Array = []
 var active_mission: String = ""
 
+# Backend-owned catalogs (ships, objects, factions). The server is
+# authoritative; without it these stay empty and spawning is disabled.
+var ship_classes: Array = []
+var object_classes: Array = []
+var factions: Array = []
+
 # Session-level state shared by every station.
 var orders: Array = []
 var waypoints: Array = []
@@ -37,7 +43,6 @@ var probes: int = 0
 var communications_log: Array = []
 var log_entries: Array = []
 var autopilot: bool = false
-var auto_fire: bool = false
 
 # Game objects
 var ships: Dictionary = {}  # ship_id -> ShipState
@@ -103,21 +108,21 @@ class TorpedoBayState:
 	var bay_id: int = 0
 	var armed: bool = false
 	var loaded: bool = false
-	var locked: bool = false
 	var ammo: int = 0
 	var max_ammo: int = 20
 	var cooldown: float = 0.0
 	var target_id: String = ""
-	
+	var weapon_range: float = 5000.0
+
 	func _init(data: Dictionary = {}) -> void:
 		if data.has("bay_id"): bay_id = data.bay_id
 		if data.has("armed"): armed = data.armed
 		if data.has("loaded"): loaded = data.loaded
-		if data.has("locked"): locked = data.locked
 		if data.has("ammo"): ammo = data.ammo
 		if data.has("max_ammo"): max_ammo = data.max_ammo
 		if data.has("cooldown"): cooldown = data.cooldown
 		if data.has("target_id"): target_id = data.target_id
+		if data.has("range"): weapon_range = data.range
 
 
 class PhaserArrayState:
@@ -127,6 +132,8 @@ class PhaserArrayState:
 	var cooldown: float = 0.0
 	var power_level: float = 100.0
 	var enabled: bool = true
+	var weapon_range: float = 2000.0
+	var cooldown_time: float = 2.0
 
 	func _init(data: Dictionary = {}) -> void:
 		if data.has("array_id"): array_id = data.array_id
@@ -135,6 +142,8 @@ class PhaserArrayState:
 		if data.has("cooldown"): cooldown = data.cooldown
 		if data.has("power_level"): power_level = data.power_level
 		if data.has("enabled"): enabled = data.enabled
+		if data.has("range"): weapon_range = data.range
+		if data.has("cooldown_time"): cooldown_time = data.cooldown_time
 
 
 class WeaponsState:
@@ -487,8 +496,6 @@ func apply_state_update(data: Dictionary) -> void:
 		log_entries = data.log_entries
 	if data.has("autopilot"):
 		autopilot = data.autopilot
-	if data.has("auto_fire"):
-		auto_fire = data.auto_fire
 	if data.has("objects"):
 		space_objects = data.objects
 	if data.has("snapshots"):
@@ -499,6 +506,12 @@ func apply_state_update(data: Dictionary) -> void:
 		missions = data.missions
 	if data.has("active_mission"):
 		active_mission = str(data.active_mission)
+	if data.has("ship_classes"):
+		ship_classes = data.ship_classes
+	if data.has("object_classes"):
+		object_classes = data.object_classes
+	if data.has("factions"):
+		factions = data.factions
 	
 	# Update ships (spec: array; tolerate keyed map from older builds)
 	if data.has("ships"):
@@ -622,6 +635,49 @@ func get_mission_objectives() -> Array:
 	return []
 
 
+# Returns the backend faction entry for an id, or {} when unknown.
+func get_faction_entry(faction_id: String) -> Dictionary:
+	for entry in factions:
+		if entry is Dictionary and str(entry.get("id", "")) == faction_id:
+			return entry
+	return {}
+
+
+# Faction tint from the backend catalog. A missing or broken entry renders
+# magenta so bad data is visible, never silently substituted.
+func get_faction_color(faction_id: String) -> Color:
+	var entry := get_faction_entry(faction_id)
+	var hex := str(entry.get("color", ""))
+	if hex.begins_with("#"):
+		hex = hex.substr(1)
+	if hex.length() != 6 and hex.length() != 8:
+		return Color(1.0, 0.0, 1.0, 1.0)
+	for ch in hex:
+		if not ch in "0123456789abcdefABCDEF":
+			return Color(1.0, 0.0, 1.0, 1.0)
+	return Color.html(hex)
+
+
+# Viewer-centric stance from the backend catalog: friendly, hostile, or
+# neutral. Same rule as the server. Unlisted pairings are neutral.
+func faction_disposition(ship_faction: String, viewer_faction: String = "") -> String:
+	var viewer := viewer_faction
+	if viewer.is_empty():
+		var player := get_player_ship()
+		if player != null:
+			viewer = player.faction
+		else:
+			viewer = "player"
+	if ship_faction == viewer:
+		return "friendly"
+	var entry := get_faction_entry(viewer)
+	if entry.has("friendly_to") and ship_faction in entry["friendly_to"]:
+		return "friendly"
+	if entry.has("hostile_to") and ship_faction in entry["hostile_to"]:
+		return "hostile"
+	return "neutral"
+
+
 func clear_state() -> void:
 	ships.clear()
 	projectiles.clear()
@@ -635,6 +691,9 @@ func clear_state() -> void:
 	snapshot_count = 0
 	missions = []
 	active_mission = ""
+	ship_classes = []
+	object_classes = []
+	factions = []
 	orders = []
 	waypoints = []
 	repair_teams = []
@@ -642,4 +701,3 @@ func clear_state() -> void:
 	communications_log = []
 	log_entries = []
 	autopilot = false
-	auto_fire = false

@@ -1,0 +1,10 @@
+id: station
+name: Station
+category: station
+description: Dockable structure and mission hub.
+radius: 150.0
+solid: true
+scannable: true
+sensor_signature: 100
+arrival_radius: 300.0
+color: "#b39d5a"

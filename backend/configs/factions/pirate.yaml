@@ -1,0 +1,5 @@
+id: pirate
+name: Pirate
+description: Hostile raiders and pirates.
+color: "#f24033"
+hostile_to: [player, civilian, neutral, hostile]

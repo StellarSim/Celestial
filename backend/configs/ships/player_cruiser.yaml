@@ -1,5 +1,5 @@
 id: player_cruiser
-name: Federation Cruiser
+name: Player Cruiser
 mass: 500000
 max_speed: 400
 acceleration: 180
