@@ -15,9 +15,6 @@ const ENGINE_GLOW_COLOR := Color(0.5, 0.7, 1.0)
 @onready var shield_mesh: MeshInstance3D = $ShieldMesh
 @onready var selection_indicator: Node3D = $SelectionIndicator
 
-var _target_position: Vector3 = Vector3.ZERO
-var _target_rotation: Quaternion = Quaternion.IDENTITY
-var _interpolation_speed: float = 10.0
 var _is_selected: bool = false
 var _shield_hit_time: float = 0.0
 var _damage_level: float = 0.0
@@ -41,7 +38,6 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	_interpolate_transform(delta)
 	_update_engine_glow(delta)
 	_update_shield_effect(delta)
 
@@ -105,18 +101,6 @@ func _create_selection_indicator() -> void:
 	mesh_inst.set_surface_override_material(0, mat)
 	
 	selection_indicator.add_child(mesh_inst)
-
-
-func set_target_transform(pos: Vector3, rot: Quaternion) -> void:
-	_target_position = pos
-	_target_rotation = rot
-
-
-func _interpolate_transform(delta: float) -> void:
-	var t := clampf(delta * _interpolation_speed, 0.0, 1.0)
-	
-	global_position = global_position.lerp(_target_position, t)
-	quaternion = quaternion.slerp(_target_rotation, t)
 
 
 func _update_engine_glow(_delta: float) -> void:
@@ -195,7 +179,6 @@ func update_from_state(state: GameState.ShipState) -> void:
 	ship_id = state.id
 	faction = state.faction
 	
-	set_target_transform(state.position.to_vector3(), state.rotation.to_quaternion())
 	set_damage_level(clampf(1.0 - state.hull_integrity / 100.0, 0.0, 1.0))
 	
 	# Update faction colors if changed

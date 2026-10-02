@@ -1,9 +1,9 @@
 id: enemy_frigate
 name: Hostile Frigate
 mass: 200000
-max_speed: 300
-acceleration: 75
-turn_rate: 1.2
+max_speed: 480
+acceleration: 270
+turn_rate: 2.25
 
 engines:
   - id: main_engine

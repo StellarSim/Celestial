@@ -265,12 +265,13 @@ func _update_time_display() -> void:
 
 func _update_ships_visual(_delta: float) -> void:
 	var t := GameState.get_interpolation_factor()
+	var ahead := GameState.get_extrapolation_ahead()
 	for ship_id in _ship_instances:
 		var instance: Node3D = _ship_instances[ship_id]
 		var ship := GameState.get_ship(ship_id)
 		if ship == null:
 			continue
-		instance.global_position = ship.get_interpolated_position(t)
+		instance.global_position = ship.get_interpolated_position(t, ahead)
 		instance.quaternion = ship.get_interpolated_rotation(t)
 	for obj_id in _object_instances:
 		var node: Node3D = _object_instances[obj_id]
@@ -368,9 +369,11 @@ func _sync_object_visuals() -> void:
 			node.global_position = Vector3(float(p.get("x", 0)), float(p.get("y", 0)), float(p.get("z", 0)))
 			continue
 		var marker := _create_object_visual(str(obj.get("type", "")))
+		objects_container.add_child(marker)
+		# Positioned only after being added, since a global transform on a node
+		# that is not in the tree yet has nothing to resolve against.
 		var pp: Dictionary = obj.get("position", {})
 		marker.global_position = Vector3(float(pp.get("x", 0)), float(pp.get("y", 0)), float(pp.get("z", 0)))
-		objects_container.add_child(marker)
 		_object_instances[oid] = marker
 	for oid in _object_instances.keys():
 		if not seen.has(oid):

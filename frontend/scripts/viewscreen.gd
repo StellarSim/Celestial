@@ -5,6 +5,7 @@ extends Node3D
 const SHIP_SCENE := preload("res://scenes/3d/ship_instance.tscn")
 const TORPEDO_SCENE := preload("res://scenes/3d/torpedo.tscn")
 const EXPLOSION_SCENE := preload("res://scenes/3d/explosion.tscn")
+const STAR_POINTS_SHADER := preload("res://shaders/star_points.gdshader")
 
 @onready var camera: Camera3D = $PlayerCamera
 @onready var camera_shake: Node3D = $PlayerCamera/CameraShake
@@ -32,8 +33,15 @@ const EXPLOSION_SCENE := preload("res://scenes/3d/explosion.tscn")
 
 # Ship visual instances keyed by ship_id
 var _ship_instances: Dictionary = {}
-# Projectile visual instances keyed by projectile_id  
+# Projectile visual instances keyed by projectile_id
 var _projectile_instances: Dictionary = {}
+
+# One material per star layer, so each can be given the current viewport size.
+var _star_materials: Array[ShaderMaterial] = []
+
+# Distance covered since connect, driving the nebula drift.
+var _travel := Vector3.ZERO
+@onready var _nebula_material: ShaderMaterial = $WorldEnvironment.environment.sky.sky_material
 
 # Camera shake
 var _shake_trauma: float = 0.0
@@ -58,7 +66,7 @@ func _process(delta: float) -> void:
 	_update_projectile_visuals(delta)
 	_update_hud()
 	_process_shake(delta)
-	
+
 	if debug_overlay.visible:
 		_update_debug_info()
 
@@ -96,31 +104,31 @@ func _sync_ship_visuals() -> void:
 
 func _create_starfield() -> void:
 	# Layered starfield: dim fill plus sparse brighter stars, with warm/cool
-	# tint variety. Unshaded so stars pop in front of the dim sky nebula.
-	_add_star_layer(1200, 2.5, 6.0, Color(1.0, 0.95, 0.88), 1.0)
-	_add_star_layer(500, 2.5, 6.5, Color(0.75, 0.85, 1.0), 1.2)
-	_add_star_layer(250, 5.0, 10.0, Color.WHITE, 1.8)
-	_add_star_layer(60, 8.0, 16.0, Color(0.92, 0.96, 1.0), 3.0)
+	# tint variety. The scale ranges are on-screen pixel radii, not world sizes,
+	# so a star stays a couple of pixels across no matter how far out it sits.
+	# Stars are static points. Speed is carried by the field of view instead.
+	_add_star_layer(1200, 0.8, 1.4, Color(1.0, 0.95, 0.88), 0.9)
+	_add_star_layer(500, 1.0, 1.8, Color(0.75, 0.85, 1.0), 1.1)
+	_add_star_layer(250, 1.4, 2.4, Color.WHITE, 1.6)
+	_add_star_layer(60, 2.0, 3.5, Color(0.92, 0.96, 1.0), 2.6)
 
 
 func _add_star_layer(count: int, scale_min: float, scale_max: float, tint: Color, emission_energy: float) -> void:
-	var star_mesh := SphereMesh.new()
-	star_mesh.radius = 1.0
-	star_mesh.height = 2.0
-	star_mesh.radial_segments = 4
-	star_mesh.rings = 2
+	var star_mesh := QuadMesh.new()
+	star_mesh.size = Vector2.ONE
 
-	var star_material := StandardMaterial3D.new()
-	star_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	star_material.albedo_color = tint
-	star_material.emission_enabled = true
-	star_material.emission = tint
-	star_material.emission_energy_multiplier = emission_energy
+	var star_material := ShaderMaterial.new()
+	star_material.shader = STAR_POINTS_SHADER
+	star_material.set_shader_parameter("tint", tint)
+	star_material.set_shader_parameter("energy", emission_energy)
 	star_mesh.material = star_material
+	_star_materials.append(star_material)
 
+	# Order matters: assigning the mesh resets the instance buffer, so the
+	# formats and the count have to be set after it.
 	var multi_mesh := MultiMesh.new()
-	multi_mesh.transform_format = MultiMesh.TRANSFORM_3D
 	multi_mesh.mesh = star_mesh
+	multi_mesh.transform_format = MultiMesh.TRANSFORM_3D
 	multi_mesh.instance_count = count
 
 	for i in multi_mesh.instance_count:
@@ -134,8 +142,10 @@ func _add_star_layer(count: int, scale_min: float, scale_max: float, tint: Color
 			distance * cos(phi)
 		)
 
-		var scale := randf_range(scale_min, scale_max)
-		var transform := Transform3D().scaled(Vector3(scale, scale, scale))
+		# The shader reads this scale as a pixel radius, so it is stored as the
+		# instance's basis length and not as a world size.
+		var radius := randf_range(scale_min, scale_max)
+		var transform := Transform3D().scaled(Vector3(radius, radius, radius))
 		transform.origin = pos
 		multi_mesh.set_instance_transform(i, transform)
 
@@ -155,52 +165,75 @@ func _update_camera(delta: float) -> void:
 	var player_ship := GameState.get_player_ship()
 	if player_ship == null:
 		return
-	
+
 	var t := GameState.get_interpolation_factor()
-	var target_pos := player_ship.get_interpolated_position(t)
+	var target_pos := player_ship.get_interpolated_position(t, GameState.get_extrapolation_ahead())
 	var target_rot := player_ship.get_interpolated_rotation(t)
-	
+
 	# First person: the camera is rigidly bolted to the ship, which is never
 	# rendered. Taking the basis straight from the ship rotation keeps the view
 	# banked with the hull; look_at against world up instead snapped the camera
 	# upside down every time the nose passed vertical.
-	camera.global_position = camera.global_position.lerp(target_pos, clampf(delta * 8.0, 0.0, 1.0))
+	# Position and rotation are applied together with no extra smoothing. The
+	# ship transform is already interpolated, so lagging the position behind it
+	# only made the world slide past a camera that was fighting to catch up.
+	camera.global_position = target_pos
 	camera.global_basis = Basis(target_rot)
 
+	# The star field keeps the viewport size so its pixel sizing stays correct at
+	# any window size.
+	var viewport_size := Vector2(get_viewport().get_visible_rect().size)
+	for material in _star_materials:
+		material.set_shader_parameter("viewport_px", viewport_size)
 
-func _update_ship_visuals(delta: float) -> void:
+	# The star shell is centred on the viewer rather than left at the world
+	# origin. At full throttle the ship covers the 30km shell in about a minute,
+	# and a static starfield would then run out and leave an empty sky.
+	starfield.global_position = camera.global_position
+
+	# Advance the nebula by distance actually covered, so the backdrop moves
+	# with the ship instead of drifting on a timer that ignores speed.
+	_travel += player_ship.velocity.to_vector3() * delta
+	_nebula_material.set_shader_parameter("travel", _travel)
+
+
+func _update_ship_visuals(_delta: float) -> void:
 	var t := GameState.get_interpolation_factor()
-	
+	var ahead := GameState.get_extrapolation_ahead()
+
 	for ship_id in _ship_instances:
 		var instance: Node3D = _ship_instances[ship_id]
 		var ship := GameState.get_ship(ship_id)
-		
+
 		if ship == null:
 			continue
-		
-		# Interpolate position and rotation
-		instance.global_position = ship.get_interpolated_position(t)
+
+		# Interpolate position and rotation. The node is placed directly rather
+		# than letting ShipInstance smooth toward the snapshot itself, since
+		# two smoothers on one transform pull the ship behind the camera.
+		instance.global_position = ship.get_interpolated_position(t, ahead)
 		instance.quaternion = ship.get_interpolated_rotation(t)
-		
+
 		# Update visual state (damage, engine glow, etc.)
 		if instance.has_method("update_from_state"):
 			instance.update_from_state(ship)
 
 
-func _update_projectile_visuals(delta: float) -> void:
+func _update_projectile_visuals(_delta: float) -> void:
 	var t := GameState.get_interpolation_factor()
+	var ahead := GameState.get_extrapolation_ahead()
 
 	for proj_id in _projectile_instances:
 		var instance: Node3D = _projectile_instances[proj_id]
 		if instance is BeamEffect3D:
 			continue  # Beams are static origin-to-target shots that fade themselves.
 		var proj: GameState.ProjectileState = GameState.projectiles.get(proj_id)
-		
+
 		if proj == null:
 			continue
-		
-		instance.global_position = proj.get_interpolated_position(t)
-		
+
+		instance.global_position = proj.get_interpolated_position(t, ahead)
+
 		# Orient projectile in direction of travel
 		var velocity: Vector3 = proj.velocity.to_vector3()
 		if velocity.length_squared() > 0.1:
@@ -211,20 +244,20 @@ func _update_hud() -> void:
 	var ship := GameState.get_player_ship()
 	if ship == null:
 		return
-	
+
 	# Ship info
 	ship_name_label.text = ship.name.to_upper() if not ship.name.is_empty() else "USS UNKNOWN"
 	ship_class_label.text = ship.ship_class.replace("_", " ").capitalize()
-	
+
 	# Velocity and heading
 	var velocity: Vector3 = ship.velocity.to_vector3()
 	var speed := velocity.length()
 	speed_label.text = "SPD: %.0f m/s" % speed
-	
+
 	var rotation := ship.rotation.to_quaternion()
 	var heading := NavUtils.heading_deg(rotation)
 	heading_label.text = "HDG: %03d°" % int(heading)
-	
+
 	# Shields
 	var max_per_facing := 250.0
 	if ship.max_shields > 0:
@@ -237,7 +270,7 @@ func _update_hud() -> void:
 	aft_shield.value = (aft_val / max_per_facing) * 100.0
 	port_shield.value = (port_val / max_per_facing) * 100.0
 	starboard_shield.value = (starboard_val / max_per_facing) * 100.0
-	
+
 	# Shield status
 	if ship.shields_enabled:
 		var shield_percent := 0.0
@@ -248,14 +281,14 @@ func _update_hud() -> void:
 	else:
 		shield_status.text = "OFFLINE"
 		shield_status.add_theme_color_override("font_color", Colors.STATUS_OFFLINE)
-	
+
 	# Hull
 	var hull_percent := 0.0
 	if ship.max_hull > 0:
 		hull_percent = (ship.hull_integrity / ship.max_hull) * 100.0
 	hull_value.text = "%d%%" % int(hull_percent)
 	hull_value.add_theme_color_override("font_color", Colors.get_health_color(hull_percent / 100.0))
-	
+
 	# Damage vignette based on hull
 	if hull_percent < 50:
 		damage_vignette.visible = true
@@ -266,16 +299,16 @@ func _update_hud() -> void:
 
 func _process_shake(delta: float) -> void:
 	_shake_trauma = maxf(0.0, _shake_trauma - _shake_decay * delta)
-	
+
 	if _shake_trauma > 0:
 		var shake := _shake_trauma * _shake_trauma  # Quadratic falloff
-		
+
 		camera_shake.position = Vector3(
 			randf_range(-1, 1) * _shake_max_offset.x * shake,
 			randf_range(-1, 1) * _shake_max_offset.y * shake,
 			randf_range(-1, 1) * _shake_max_offset.z * shake
 		)
-		
+
 		camera_shake.rotation = Vector3(
 			randf_range(-1, 1) * _shake_max_rotation.x * shake,
 			randf_range(-1, 1) * _shake_max_rotation.y * shake,
@@ -301,22 +334,22 @@ func _on_disconnected() -> void:
 func _on_ship_added(ship_id: String) -> void:
 	if _ship_instances.has(ship_id):
 		return
-	
+
 	var ship := GameState.get_ship(ship_id)
 	if ship == null:
 		return
-	
+
 	# Don't render player ship (we're looking from it)
 	if ship.is_player:
 		return
-	
+
 	var instance: Node3D
 	if ResourceLoader.exists("res://scenes/3d/ship_instance.tscn"):
 		instance = SHIP_SCENE.instantiate()
 	else:
 		# Fallback to simple mesh
 		instance = _create_placeholder_ship(ship)
-	
+
 	ships_container.add_child(instance)
 	instance.global_position = ship.position.to_vector3()
 	_ship_instances[ship_id] = instance
@@ -325,7 +358,7 @@ func _on_ship_added(ship_id: String) -> void:
 func _on_ship_removed(ship_id: String) -> void:
 	if not _ship_instances.has(ship_id):
 		return
-	
+
 	var instance: Node3D = _ship_instances[ship_id]
 	instance.queue_free()
 	_ship_instances.erase(ship_id)
@@ -334,7 +367,7 @@ func _on_ship_removed(ship_id: String) -> void:
 func _on_projectile_added(projectile_id: String) -> void:
 	if _projectile_instances.has(projectile_id):
 		return
-	
+
 	var proj = GameState.projectiles.get(projectile_id)
 	if proj == null:
 		return
@@ -372,7 +405,7 @@ func _spawn_beam(projectile_id: String, proj) -> void:
 func _on_projectile_removed(projectile_id: String) -> void:
 	if not _projectile_instances.has(projectile_id):
 		return
-	
+
 	var instance: Node3D = _projectile_instances[projectile_id]
 
 	if instance is BeamEffect3D:
@@ -382,7 +415,7 @@ func _on_projectile_removed(projectile_id: String) -> void:
 
 	# Spawn explosion at projectile location
 	_spawn_explosion(instance.global_position)
-	
+
 	instance.queue_free()
 	_projectile_instances.erase(projectile_id)
 
@@ -390,7 +423,7 @@ func _on_projectile_removed(projectile_id: String) -> void:
 func _on_alert_changed(level: String) -> void:
 	if _alert_tween:
 		_alert_tween.kill()
-	
+
 	match level:
 		"red":
 			alert_status.text = "RED ALERT"
@@ -414,11 +447,11 @@ func _start_alert_flash(color: Color) -> void:
 
 func _create_placeholder_ship(ship) -> Node3D:
 	var node := Node3D.new()
-	
+
 	# Simple box mesh for now
 	var mesh_instance := MeshInstance3D.new()
 	var box := BoxMesh.new()
-	
+
 	# Scale based on ship class
 	var dims := Vector3(15, 6, 40)
 	match ship.ship_class:
@@ -429,16 +462,16 @@ func _create_placeholder_ship(ship) -> Node3D:
 		"enemy_frigate":
 			dims = Vector3(12, 5, 30)
 	box.size = dims
-	
+
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color(0.4, 0.45, 0.5)
 	material.metallic = 0.7
 	material.roughness = 0.4
 	box.material = material
-	
+
 	mesh_instance.mesh = box
 	node.add_child(mesh_instance)
-	
+
 	# Add engine glow
 	var engine_light := OmniLight3D.new()
 	engine_light.light_color = Colors.ENGINE_GLOW
@@ -446,35 +479,35 @@ func _create_placeholder_ship(ship) -> Node3D:
 	engine_light.omni_range = 15.0
 	engine_light.position = Vector3(0, 0, box.size.z / 2 + 2)
 	node.add_child(engine_light)
-	
+
 	return node
 
 
 func _create_placeholder_projectile(proj) -> Node3D:
 	var node := Node3D.new()
-	
+
 	var mesh_instance := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
 	sphere.radius = 1.5
 	sphere.height = 3.0
-	
+
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Colors.TORPEDO
 	material.emission_enabled = true
 	material.emission = Colors.TORPEDO
 	material.emission_energy_multiplier = 3.0
 	sphere.material = material
-	
+
 	mesh_instance.mesh = sphere
 	node.add_child(mesh_instance)
-	
+
 	# Add light
 	var light := OmniLight3D.new()
 	light.light_color = Colors.TORPEDO
 	light.light_energy = 2.0
 	light.omni_range = 10.0
 	node.add_child(light)
-	
+
 	return node
 
 
@@ -491,12 +524,12 @@ func _spawn_explosion(position: Vector3) -> void:
 		light.omni_range = 50.0
 		light.global_position = position
 		effects_container.add_child(light)
-		
+
 		# Fade out and remove
 		var tween := create_tween()
 		tween.tween_property(light, "light_energy", 0.0, 0.5)
 		tween.tween_callback(light.queue_free)
-	
+
 	# Add screen shake for nearby explosions
 	var player_ship := GameState.get_player_ship()
 	if player_ship:

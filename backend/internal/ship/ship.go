@@ -23,7 +23,18 @@ const (
 	// turnAccel is the angular acceleration in rad/s^2 the ship uses to wind
 	// up to and unwind from a commanded turn rate. Higher is more responsive,
 	// lower is more inertia.
-	turnAccel = 0.7
+	turnAccel = 6.0
+)
+
+const (
+	// Drag is a function of throttle rather than a single constant. Under
+	// thrust it stays low so that MaxSpeed, not the drag terminal velocity,
+	// is what caps the ship, and the engines dominate the ramp. As the
+	// throttle closes it ramps up so the ship settles instead of coasting
+	// indefinitely. A single rate cannot give both a quick ramp and a
+	// decisive stop.
+	dragRateThrusting = 0.02
+	dragRateCoasting  = 2.0
 )
 
 // Canonical power breaker names.
@@ -416,8 +427,12 @@ func (s *Ship) updatePhysics(dt float64) {
 	s.Velocity.Y += accel.Y * dt
 	s.Velocity.Z += accel.Z * dt
 
-	// Frame-rate independent drag: velocity *= exp(-k*dt)
-	const dragRate = 0.35
+	// Frame-rate independent drag: velocity *= exp(-k*dt). The rate follows
+	// the throttle, so a ship under full thrust accelerates against almost no
+	// damping and is limited by MaxSpeed, while releasing the throttle brings
+	// damping up sharply and stops the ship in about a second.
+	throttleMag := math.Abs(s.Throttle)
+	dragRate := dragRateCoasting + (dragRateThrusting-dragRateCoasting)*throttleMag
 	damp := math.Exp(-dragRate * dt)
 	s.Velocity.X *= damp
 	s.Velocity.Y *= damp

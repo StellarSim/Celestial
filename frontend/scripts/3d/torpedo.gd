@@ -9,9 +9,7 @@ class_name TorpedoInstance3D
 @onready var engine_glow: OmniLight3D = $EngineGlow
 @onready var trail: GPUParticles3D = $Trail
 
-var _target_position: Vector3 = Vector3.ZERO
 var _velocity: Vector3 = Vector3.ZERO
-var _interpolation_speed: float = 15.0
 
 # Type-specific colors
 const TYPE_COLORS := {
@@ -27,8 +25,7 @@ func _ready() -> void:
 	_setup_trail_particles()
 
 
-func _process(delta: float) -> void:
-	_interpolate_position(delta)
+func _process(_delta: float) -> void:
 	_update_rotation()
 
 
@@ -73,17 +70,8 @@ func _setup_trail_particles() -> void:
 	trail.draw_pass_1 = sphere
 
 
-func set_target_position(pos: Vector3) -> void:
-	_target_position = pos
-
-
 func set_velocity(vel: Vector3) -> void:
 	_velocity = vel
-
-
-func _interpolate_position(delta: float) -> void:
-	var t := clampf(delta * _interpolation_speed, 0.0, 1.0)
-	global_position = global_position.lerp(_target_position, t)
 
 
 func _update_rotation() -> void:
@@ -95,7 +83,6 @@ func update_from_state(state: GameState.ProjectileState) -> void:
 	projectile_id = state.id
 	torpedo_type = state.type
 	
-	set_target_position(state.position.to_vector3())
 	set_velocity(state.velocity.to_vector3())
 	
 	_setup_type_appearance()

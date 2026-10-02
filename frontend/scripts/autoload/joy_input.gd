@@ -4,8 +4,8 @@ extends Node
 
 signal joypad_changed(connected: bool, joy_name: String)
 
-const DEADZONE := 0.15
-const CURVE := 2.0
+const DEADZONE := 0.08
+const CURVE := 1.3
 
 # Yoke layout: left stick X yaws, right stick X rolls and Y pitches, left
 # stick Y is the throttle. Roll matters for getting back onto an axis after a

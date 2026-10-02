@@ -8,7 +8,16 @@ uniform vec4 nebula_color_c : source_color = vec4(0.32, 0.09, 0.17, 1.0);
 uniform float nebula_scale : hint_range(0.5, 10.0) = 2.0;
 uniform float nebula_intensity : hint_range(0.0, 1.0) = 0.18;
 uniform float nebula_coverage : hint_range(0.0, 1.0) = 0.45;
-uniform float drift_speed : hint_range(0.0, 0.05) = 0.004;
+// Accumulated distance travelled in metres, fed in from the ship each frame.
+// Driving the drift from distance covered rather than TIME means the nebula
+// stills when the ship does instead of crawling along at a fixed rate
+// regardless of speed.
+uniform vec3 travel = vec3(0.0);
+
+// Converts metres travelled into noise-space offset. Small because the noise
+// features are around one unit across, so even a few units of drift is enough
+// to move the clouds noticeably.
+const float TRAVEL_TO_DRIFT = 0.00008;
 
 float hash13(vec3 p) {
 	p = fract(p * 0.1031);
@@ -52,7 +61,7 @@ float fbm(vec3 p) {
 
 void sky() {
 	vec3 dir = normalize(EYEDIR);
-	vec3 drift = vec3(TIME * drift_speed, TIME * drift_speed * 0.6, 0.0);
+	vec3 drift = travel * TRAVEL_TO_DRIFT;
 
 	// Large-scale mask: leaves big empty voids so coverage is never 100%.
 	float mask = fbm(dir * 1.15 + vec3(4.7) + drift * 0.5);

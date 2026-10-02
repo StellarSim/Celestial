@@ -371,11 +371,17 @@ class ShipState:
 				transporter_active = tp.get("active", false)
 				transporter_emergency = tp.get("emergency", false)
 	
-	func get_interpolated_position(t: float) -> Vector3:
-		return _prev_position.lerp(position.to_vector3(), t)
+	# Blends between the previous and newest snapshot. `ahead` is the time in
+	# seconds past the newest snapshot, so the renderer can project forward
+	# along the reported velocity instead of stalling until the next packet.
+	func get_interpolated_position(t: float, ahead: float) -> Vector3:
+		var current := position.to_vector3()
+		if ahead <= 0.0:
+			return _prev_position.lerp(current, t)
+		return current + velocity.to_vector3() * ahead
 	
 	func get_interpolated_rotation(t: float) -> Quaternion:
-		return _prev_rotation.slerp(rotation.to_quaternion(), t)
+		return _prev_rotation.slerp(rotation.to_quaternion(), clampf(t, 0.0, 1.0))
 
 
 class ProjectileState:
@@ -403,8 +409,13 @@ class ProjectileState:
 		if data.has("owner_id"): owner_id = data.owner_id
 		if data.has("target_id"): target_id = data.target_id
 	
-	func get_interpolated_position(t: float) -> Vector3:
-		return _prev_position.lerp(position.to_vector3(), t)
+	func get_interpolated_position(t: float, ahead: float) -> Vector3:
+		var current := position.to_vector3()
+		if ahead <= 0.0:
+			return _prev_position.lerp(current, t)
+		# Project along the reported velocity past the newest snapshot so the
+		# round does not visibly stall between packets.
+		return current + velocity.to_vector3() * ahead
 
 
 func _ready() -> void:
@@ -413,9 +424,24 @@ func _ready() -> void:
 		client_id = "client_" + str(randi())
 
 
+# Returns the blend position between the previous and newest snapshot, 0..1
+# within the snapshot window.
 func get_interpolation_factor() -> float:
-	var time_since_update := Time.get_ticks_msec() / 1000.0 - _last_update_time
+	var time_since_update := _time_since_update()
 	return clampf(time_since_update / _update_interval, 0.0, 1.0)
+
+
+# Seconds past the newest snapshot, for projecting positions forward along
+# their reported velocity. Saturating at 1.0 is what made the world visibly
+# stall at the end of every 50ms window. The overshoot is capped at half a
+# window so a dropped packet cannot fling ships across the map before
+# reconciliation catches up.
+func get_extrapolation_ahead() -> float:
+	return clampf(_time_since_update() - _update_interval, 0.0, _update_interval * 0.5)
+
+
+func _time_since_update() -> float:
+	return Time.get_ticks_msec() / 1000.0 - _last_update_time
 
 
 func apply_state_update(data: Dictionary) -> void:

@@ -37,9 +37,7 @@ extends StationPanel
 var _current_throttle: float = 0.0
 var _target_heading: float = -1.0
 var _turn_rate: float = 0.0
-var _joy_send_timer: float = 0.0
 var _joy_was_active: bool = false
-const JOY_SEND_INTERVAL := 0.1
 
 
 func _ready() -> void:
@@ -218,7 +216,11 @@ func _set_turn_rate(rate: float) -> void:
 	NetworkClient.send_action("flight", "set_turn", {"rate": rate})
 
 
-func _poll_joypad(delta: float) -> void:
+# Helm input is sent every frame. Rate limiting it to a fixed interval put a
+# quantisation floor under the whole control loop, so small stick movements
+# took up to a tenth of a second to reach the server and the ship felt like it
+# was drifting rather than answering the helm.
+func _poll_joypad(_delta: float) -> void:
 	if GameState.client_role != "flight":
 		return
 	if JoyInput.button_pressed(JoyInput.BTN_ALL_STOP):
@@ -228,14 +230,9 @@ func _poll_joypad(delta: float) -> void:
 	if not axes["active"]:
 		if _joy_was_active:
 			_joy_was_active = false
-			_joy_send_timer = 0.0
 			_send_rotation(0.0, 0.0, 0.0)
 		return
 	_joy_was_active = true
-	_joy_send_timer += delta
-	if _joy_send_timer < JOY_SEND_INTERVAL:
-		return
-	_joy_send_timer = 0.0
 	var throttle: float = clampf(float(axes["throttle"]), -1.0, 1.0)
 	_set_throttle_no_send(throttle * 100.0)
 	NetworkClient.send_action("flight", "set_throttle", {"throttle": throttle})

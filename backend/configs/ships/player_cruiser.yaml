@@ -1,9 +1,9 @@
 id: player_cruiser
 name: Federation Cruiser
 mass: 500000
-max_speed: 250
-acceleration: 50
-turn_rate: 0.8
+max_speed: 400
+acceleration: 180
+turn_rate: 1.5
 
 engines:
   - id: main_engine_1
