@@ -11,7 +11,7 @@ const ENGINE_GLOW_COLOR := Color(0.5, 0.7, 1.0)
 
 @onready var hull_mesh: MeshInstance3D = $HullMesh
 @onready var engine_pivot: Node3D = $EnginePivot
-@onready var engine_glow: OmniLight3D = $EnginePivot/EngineGlow
+@onready var engine_glow: OmniLight3D = %EngineGlow
 @onready var shield_mesh: MeshInstance3D = $ShieldMesh
 @onready var selection_indicator: Node3D = $SelectionIndicator
 

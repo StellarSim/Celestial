@@ -37,6 +37,7 @@ layout_mode = 2
 theme_override_constants/separation = 30
 
 [node name="AlertIndicator" type="ColorRect" parent="MainLayout/Header/HeaderContent"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
 color = Color(0.2, 0.8, 0.4, 1)
@@ -45,11 +46,13 @@ color = Color(0.2, 0.8, 0.4, 1)
 layout_mode = 2
 
 [node name="ShipName" type="Label" parent="MainLayout/Header/HeaderContent/ShipInfo"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "USS ENDEAVOUR"
 
 [node name="ShipClass" type="Label" parent="MainLayout/Header/HeaderContent/ShipInfo"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
 theme_override_font_sizes/font_size = 14
@@ -70,6 +73,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="TimeLabel" type="Label" parent="MainLayout/Header/HeaderContent"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "00:00:00"
@@ -80,6 +84,7 @@ size_flags_vertical = 3
 split_offset = -400
 
 [node name="TacticalMap" type="Control" parent="MainLayout/ContentArea"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -93,6 +98,7 @@ grow_vertical = 2
 color = Color(0.02, 0.03, 0.05, 1)
 
 [node name="GridOverlay" type="Control" parent="MainLayout/ContentArea/TacticalMap"]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -101,6 +107,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="ShipsLayer" type="Control" parent="MainLayout/ContentArea/TacticalMap"]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -109,6 +116,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="RangeCircles" type="Control" parent="MainLayout/ContentArea/TacticalMap"]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -129,14 +137,17 @@ grow_horizontal = 0
 grow_vertical = 0
 
 [node name="ZoomOutBtn" type="Button" parent="MainLayout/ContentArea/TacticalMap/MapControls"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "-"
 
 [node name="ZoomLabel" type="Label" parent="MainLayout/ContentArea/TacticalMap/MapControls"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "1x"
 
 [node name="ZoomInBtn" type="Button" parent="MainLayout/ContentArea/TacticalMap/MapControls"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "+"
 
@@ -167,6 +178,7 @@ layout_mode = 2
 text = "Hull"
 
 [node name="HullBar" type="ProgressBar" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection/HullRow"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 value = 95.0
@@ -180,6 +192,7 @@ layout_mode = 2
 text = "Shields"
 
 [node name="ShieldsBar" type="ProgressBar" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection/ShieldsRow"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 value = 80.0
@@ -193,6 +206,7 @@ layout_mode = 2
 text = "Power"
 
 [node name="PowerBar" type="ProgressBar" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection/PowerRow"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 value = 90.0
@@ -209,6 +223,7 @@ theme_override_font_sizes/font_size = 16
 text = "CONTACTS"
 
 [node name="ContactsList" type="ItemList" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/ContactsSection"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -231,6 +246,7 @@ layout_mode = 2
 text = "Bow:"
 
 [node name="BowStatus" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
 text = "100%"
@@ -240,6 +256,7 @@ layout_mode = 2
 text = "Stern:"
 
 [node name="SternStatus" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
 text = "100%"
@@ -249,6 +266,7 @@ layout_mode = 2
 text = "Port:"
 
 [node name="PortStatus" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
 text = "100%"
@@ -258,6 +276,7 @@ layout_mode = 2
 text = "Starboard:"
 
 [node name="StarboardStatus" type="Label" parent="MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
 text = "100%"
@@ -274,11 +293,13 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="StatusDot" type="ColorRect" parent="MainLayout/Footer/FooterContent/ConnectionStatus"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(10, 10)
 layout_mode = 2
 color = Color(0.3, 0.8, 0.4, 1)
 
 [node name="StatusText" type="Label" parent="MainLayout/Footer/FooterContent/ConnectionStatus"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
 theme_override_font_sizes/font_size = 12

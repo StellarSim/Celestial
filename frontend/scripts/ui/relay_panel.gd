@@ -1,29 +1,29 @@
 extends StationPanel
 ## Relay station panel - sector map, waypoint management, and probes.
 
-@onready var tactical_map: Control = $MainSplit/MapSection/MapContent/TacticalMap
-@onready var zoom_out_btn: Button = $MainSplit/MapSection/MapContent/MapHeader/ZoomOut
-@onready var zoom_level_label: Label = $MainSplit/MapSection/MapContent/MapHeader/ZoomLevel
-@onready var zoom_in_btn: Button = $MainSplit/MapSection/MapContent/MapHeader/ZoomIn
-@onready var center_btn: Button = $MainSplit/MapSection/MapContent/MapControls/CenterPlayer
-@onready var show_waypoints_btn: CheckButton = $MainSplit/MapSection/MapContent/MapControls/ShowWaypoints
-@onready var show_grid_btn: CheckButton = $MainSplit/MapSection/MapContent/MapControls/ShowGrid
+@onready var tactical_map: Control = %TacticalMap
+@onready var zoom_out_btn: Button = %ZoomOut
+@onready var zoom_level_label: Label = %ZoomLevel
+@onready var zoom_in_btn: Button = %ZoomIn
+@onready var center_btn: Button = %CenterPlayer
+@onready var show_waypoints_btn: CheckButton = %ShowWaypoints
+@onready var show_grid_btn: CheckButton = %ShowGrid
 
-@onready var waypoint_list: ItemList = $MainSplit/RightSection/WaypointSection/WaypointContent/WaypointList
-@onready var add_waypoint_btn: Button = $MainSplit/RightSection/WaypointSection/WaypointContent/WaypointActions/AddWaypoint
-@onready var remove_waypoint_btn: Button = $MainSplit/RightSection/WaypointSection/WaypointContent/WaypointActions/RemoveWaypoint
-@onready var send_to_flight_btn: Button = $MainSplit/RightSection/WaypointSection/WaypointContent/WaypointActions/SendToFlight
+@onready var waypoint_list: ItemList = %WaypointList
+@onready var add_waypoint_btn: Button = %AddWaypoint
+@onready var remove_waypoint_btn: Button = %RemoveWaypoint
+@onready var send_to_flight_btn: Button = %SendToFlight
 
-@onready var selected_name: Label = $MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedName
-@onready var dist_value: Label = $MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedDetails/DistValue
-@onready var bearing_value: Label = $MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedDetails/BearingValue
-@onready var type_value: Label = $MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedDetails/TypeValue
-@onready var faction_value: Label = $MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedDetails/FactionValue
-@onready var mark_target_btn: Button = $MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedActions/MarkTarget
-@onready var set_waypoint_btn: Button = $MainSplit/RightSection/SelectedInfo/SelectedContent/SelectedActions/SetWaypoint
+@onready var selected_name: Label = %SelectedName
+@onready var dist_value: Label = %DistValue
+@onready var bearing_value: Label = %BearingValue
+@onready var type_value: Label = %TypeValue
+@onready var faction_value: Label = %FactionValue
+@onready var mark_target_btn: Button = %MarkTarget
+@onready var set_waypoint_btn: Button = %SetWaypoint
 
-@onready var probe_count: Label = $MainSplit/RightSection/ProbeSection/ProbeContent/ProbeInventory/ProbeCount
-@onready var launch_probe_btn: Button = $MainSplit/RightSection/ProbeSection/ProbeContent/LaunchProbe
+@onready var probe_count: Label = %ProbeCount
+@onready var launch_probe_btn: Button = %LaunchProbe
 
 var _zoom_level: float = 1.0
 var _map_center: Vector2 = Vector2.ZERO

@@ -4,25 +4,25 @@ extends StationPanel
 ## Torpedo flow per tube is LOAD then ARM then FIRE. ARM is the latching
 ## safety catch, so a tube must be armed before it will launch.
 
-@onready var target_list: ItemList = $MainSplit/LeftSection/TargetingSection/TargetingContent/TargetList
-@onready var lock_btn: Button = $MainSplit/LeftSection/TargetingSection/TargetingContent/TargetActions/LockTarget
-@onready var clear_btn: Button = $MainSplit/LeftSection/TargetingSection/TargetingContent/TargetActions/ClearTarget
-@onready var next_btn: Button = $MainSplit/LeftSection/TargetingSection/TargetingContent/TargetActions/NextTarget
+@onready var target_list: ItemList = %TargetList
+@onready var lock_btn: Button = %LockTarget
+@onready var clear_btn: Button = %ClearTarget
+@onready var next_btn: Button = %NextTarget
 
-@onready var target_name: Label = $MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetName
-@onready var range_value: Label = $MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetDetails/RangeValue
-@onready var bearing_value: Label = $MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetDetails/BearingValue
-@onready var shield_value: Label = $MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetDetails/ShieldValue
-@onready var hull_value: Label = $MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetDetails/HullValue
-@onready var in_range_value: Label = $MainSplit/LeftSection/TargetInfo/TargetInfoContent/TargetDetails/InRangeValue
+@onready var target_name: Label = %TargetName
+@onready var range_value: Label = %RangeValue
+@onready var bearing_value: Label = %BearingValue
+@onready var shield_value: Label = %ShieldValue
+@onready var hull_value: Label = %HullValue
+@onready var in_range_value: Label = %InRangeValue
 
-@onready var feedback_label: Label = $MainSplit/RightSection/FeedbackBanner/FeedbackLabel
-@onready var beam_banks: VBoxContainer = $MainSplit/RightSection/WeaponBanks/WeaponContent/BeamSection/BeamBanks
-@onready var torpedo_tubes: VBoxContainer = $MainSplit/RightSection/WeaponBanks/WeaponContent/TorpedoSection/TorpedoTubes
+@onready var feedback_label: Label = %FeedbackLabel
+@onready var beam_banks: VBoxContainer = %BeamBanks
+@onready var torpedo_tubes: VBoxContainer = %TorpedoTubes
 
-@onready var total_count: Label = $MainSplit/RightSection/TorpedoInventory/InventoryContent/InventoryGrid/TotalCount
+@onready var total_count: Label = %TotalCount
 
-@onready var fire_all_btn: Button = $MainSplit/RightSection/FireControls/FireContent/FireAll
+@onready var fire_all_btn: Button = %FireAll
 
 var _locked_target_id: String = ""
 var _pending_selection: String = ""

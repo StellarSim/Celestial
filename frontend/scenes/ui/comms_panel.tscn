@@ -47,10 +47,12 @@ layout_mode = 2
 text = "Filter:"
 
 [node name="FilterSelect" type="OptionButton" parent="MainSplit/LeftSection/ContactsSection/ContactsContent/ContactFilter"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="ContactList" type="ItemList" parent="MainSplit/LeftSection/ContactsSection/ContactsContent"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -59,11 +61,13 @@ layout_mode = 2
 theme_override_constants/separation = 5
 
 [node name="HailContact" type="Button" parent="MainSplit/LeftSection/ContactsSection/ContactsContent/ContactActions"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "HAIL"
 
 [node name="ScanContact" type="Button" parent="MainSplit/LeftSection/ContactsSection/ContactsContent/ContactActions"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "SCAN"
@@ -81,6 +85,7 @@ text = "FREQUENCY CONTROL"
 horizontal_alignment = 1
 
 [node name="FrequencySlider" type="HSlider" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent"]
+unique_name_in_owner = true
 layout_mode = 2
 min_value = 100.0
 max_value = 999.0
@@ -95,6 +100,7 @@ layout_mode = 2
 text = "Frequency:"
 
 [node name="FreqValue" type="Label" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent/FrequencyDisplay"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "500.0 MHz"
@@ -105,14 +111,17 @@ layout_mode = 2
 columns = 3
 
 [node name="EmergencyFreq" type="Button" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent/PresetFrequencies"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "EMERGENCY"
 
 [node name="MilitaryFreq" type="Button" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent/PresetFrequencies"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "MILITARY"
 
 [node name="CivilianFreq" type="Button" parent="MainSplit/LeftSection/FrequencySection/FrequencyContent/PresetFrequencies"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "CIVILIAN"
 
@@ -134,6 +143,7 @@ text = "COMMUNICATIONS LOG"
 horizontal_alignment = 1
 
 [node name="CommLogText" type="RichTextLabel" parent="MainSplit/RightSection/CommLog/CommLogContent"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 bbcode_enabled = true
@@ -156,18 +166,22 @@ layout_mode = 2
 columns = 2
 
 [node name="IdentifyBtn" type="Button" parent="MainSplit/RightSection/TransmitSection/TransmitContent/MessagePresets"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "IDENTIFY"
 
 [node name="RequestDockBtn" type="Button" parent="MainSplit/RightSection/TransmitSection/TransmitContent/MessagePresets"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "REQUEST DOCK"
 
 [node name="MaydayBtn" type="Button" parent="MainSplit/RightSection/TransmitSection/TransmitContent/MessagePresets"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "MAYDAY"
 
 [node name="SurrenderBtn" type="Button" parent="MainSplit/RightSection/TransmitSection/TransmitContent/MessagePresets"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "SURRENDER"
 
@@ -175,11 +189,13 @@ text = "SURRENDER"
 layout_mode = 2
 
 [node name="MessageInput" type="LineEdit" parent="MainSplit/RightSection/TransmitSection/TransmitContent/CustomMessage"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Enter message..."
 
 [node name="SendBtn" type="Button" parent="MainSplit/RightSection/TransmitSection/TransmitContent/CustomMessage"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "SEND"
 
@@ -200,6 +216,7 @@ text = "Signal Strength"
 horizontal_alignment = 1
 
 [node name="SignalBar" type="ProgressBar" parent="MainSplit/RightSection/TransmitStatus/StatusContent/SignalStrength"]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="JammingStatus" type="VBoxContainer" parent="MainSplit/RightSection/TransmitStatus/StatusContent"]
@@ -212,6 +229,7 @@ text = "Jamming"
 horizontal_alignment = 1
 
 [node name="JammingValue" type="Label" parent="MainSplit/RightSection/TransmitStatus/StatusContent/JammingStatus"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "NONE DETECTED"
 horizontal_alignment = 1

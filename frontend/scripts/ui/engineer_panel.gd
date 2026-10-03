@@ -4,26 +4,26 @@ extends StationPanel
 const BREAKERS := ["reactor", "engines", "shields", "weapons", "sensors", "comms", "life_support", "navigation"]
 const SECTIONS := ["forward", "aft", "port", "starboard"]
 
-@onready var generation_value: Label = $MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/GenerationPanel/GenerationValue
-@onready var consumption_value: Label = $MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/ConsumptionPanel/ConsumptionValue
-@onready var available_value: Label = $MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/AvailablePanel/AvailableValue
+@onready var generation_value: Label = %GenerationValue
+@onready var consumption_value: Label = %ConsumptionValue
+@onready var available_value: Label = %AvailableValue
 
-@onready var breaker_grid: GridContainer = $MainSplit/RightSection/PowerSection/PowerContent/BreakerGrid
+@onready var breaker_grid: GridContainer = %BreakerGrid
 
-@onready var bow_section: Button = $MainSplit/LeftSection/DamageSection/DamageContent/ShipDiagram/BowSection
-@onready var stern_section: Button = $MainSplit/LeftSection/DamageSection/DamageContent/ShipDiagram/SternSection
-@onready var port_section: Button = $MainSplit/LeftSection/DamageSection/DamageContent/ShipDiagram/PortSection
-@onready var starboard_section: Button = $MainSplit/LeftSection/DamageSection/DamageContent/ShipDiagram/StarboardSection
+@onready var bow_section: Button = %BowSection
+@onready var stern_section: Button = %SternSection
+@onready var port_section: Button = %PortSection
+@onready var starboard_section: Button = %StarboardSection
 
-@onready var repair_btn: Button = $MainSplit/LeftSection/DamageSection/DamageContent/RepairActions/RepairBtn
-@onready var seal_breach_btn: Button = $MainSplit/LeftSection/DamageSection/DamageContent/RepairActions/SealBreachBtn
-@onready var extinguish_btn: Button = $MainSplit/LeftSection/DamageSection/DamageContent/RepairActions/ExtinguishBtn
+@onready var repair_btn: Button = %RepairBtn
+@onready var seal_breach_btn: Button = %SealBreachBtn
+@onready var extinguish_btn: Button = %ExtinguishBtn
 
-@onready var damage_log: ItemList = $MainSplit/LeftSection/DamageLog/DamageLogContent/LogList
+@onready var damage_log: ItemList = %LogList
 
-@onready var engine_health_bar: ProgressBar = $MainSplit/RightSection/EngineSection/EngineContent/EngineHealth/EngineHealthBar
-@onready var engine_temp_bar: ProgressBar = $MainSplit/RightSection/EngineSection/EngineContent/EngineTemp/EngineTempBar
-@onready var thrust_value: Label = $MainSplit/RightSection/EngineSection/EngineContent/ThrustOutput/ThrustValue
+@onready var engine_health_bar: ProgressBar = %EngineHealthBar
+@onready var engine_temp_bar: ProgressBar = %EngineTempBar
+@onready var thrust_value: Label = %ThrustValue
 
 var _selected_section: String = ""
 var _breaker_toggles: Dictionary = {}

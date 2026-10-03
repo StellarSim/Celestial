@@ -1,38 +1,38 @@
 extends StationPanel
 ## Flight control station - throttle, steering, and navigation.
 
-@onready var throttle_slider: VSlider = $MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer/ThrottleSlider
-@onready var throttle_value_label: Label = $MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer/ThrottleInfo/ThrottleValue
-@onready var throttle_mode_label: Label = $MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer/ThrottleInfo/ThrottleMode
-@onready var speed_value: Label = $MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer/ThrottleInfo/SpeedDisplay/SpeedValue
+@onready var throttle_slider: VSlider = %ThrottleSlider
+@onready var throttle_value_label: Label = %ThrottleValue
+@onready var throttle_mode_label: Label = %ThrottleMode
+@onready var speed_value: Label = %SpeedValue
 
-@onready var full_reverse_btn: Button = $MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle/FullReverse
-@onready var half_reverse_btn: Button = $MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle/HalfReverse
-@onready var all_stop_btn: Button = $MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle/AllStop
-@onready var half_forward_btn: Button = $MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle/HalfForward
-@onready var full_forward_btn: Button = $MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle/FullForward
+@onready var full_reverse_btn: Button = %FullReverse
+@onready var half_reverse_btn: Button = %HalfReverse
+@onready var all_stop_btn: Button = %AllStop
+@onready var half_forward_btn: Button = %HalfForward
+@onready var full_forward_btn: Button = %FullForward
 
-@onready var compass: Control = $MainSplit/LeftSection/SteeringSection/SteeringContent/CompassContainer/Compass
-@onready var heading_value: Label = $MainSplit/LeftSection/SteeringSection/SteeringContent/HeadingInfo/CurrentHeading/HeadingValue
-@onready var target_heading_value: Label = $MainSplit/LeftSection/SteeringSection/SteeringContent/HeadingInfo/TargetHeading/TargetValue
+@onready var compass: Control = %Compass
+@onready var heading_value: Label = %HeadingValue
+@onready var target_heading_value: Label = %TargetValue
 
-@onready var hard_port_btn: Button = $MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls/HardPort
-@onready var port_btn: Button = $MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls/Port
-@onready var steady_btn: Button = $MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls/SteadyOn
-@onready var starboard_btn: Button = $MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls/Starboard
-@onready var hard_starboard_btn: Button = $MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls/HardStarboard
+@onready var hard_port_btn: Button = %HardPort
+@onready var port_btn: Button = %Port
+@onready var steady_btn: Button = %SteadyOn
+@onready var starboard_btn: Button = %Starboard
+@onready var hard_starboard_btn: Button = %HardStarboard
 
-@onready var pos_value: Label = $MainSplit/RightSection/NavStatus/NavContent/Position/PosValue
-@onready var vel_value: Label = $MainSplit/RightSection/NavStatus/NavContent/Velocity/VelValue
-@onready var bearing_value: Label = $MainSplit/RightSection/NavStatus/NavContent/Bearing/BearingValue
+@onready var pos_value: Label = %PosValue
+@onready var vel_value: Label = %VelValue
+@onready var bearing_value: Label = %BearingValue
 
-@onready var waypoint_list: ItemList = $MainSplit/RightSection/WaypointSection/WaypointContent/WaypointList
-@onready var navigate_btn: Button = $MainSplit/RightSection/WaypointSection/WaypointContent/WaypointActions/NavigateTo
-@onready var clear_nav_btn: Button = $MainSplit/RightSection/WaypointSection/WaypointContent/WaypointActions/ClearNav
+@onready var waypoint_list: ItemList = %WaypointList
+@onready var navigate_btn: Button = %NavigateTo
+@onready var clear_nav_btn: Button = %ClearNav
 
-@onready var autopilot_status: Label = $MainSplit/RightSection/AutopilotSection/AutopilotContent/AutopilotStatus/StatusValue
-@onready var autopilot_engage_btn: Button = $MainSplit/RightSection/AutopilotSection/AutopilotContent/AutopilotControls/EngageBtn
-@onready var autopilot_mode: OptionButton = $MainSplit/RightSection/AutopilotSection/AutopilotContent/AutopilotControls/ModeSelect
+@onready var autopilot_status: Label = %StatusValue
+@onready var autopilot_engage_btn: Button = %EngageBtn
+@onready var autopilot_mode: OptionButton = %ModeSelect
 
 var _current_throttle: float = 0.0
 var _target_heading: float = -1.0

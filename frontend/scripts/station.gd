@@ -24,28 +24,28 @@ const STATION_NAMES := {
 	"first_officer": "FIRST OFFICER",
 }
 
-@onready var station_label: Label = $MainLayout/TopBar/TopBarContent/StationLabel
-@onready var ship_name_label: Label = $MainLayout/TopBar/TopBarContent/ShipInfo/ShipName
-@onready var ship_class_label: Label = $MainLayout/TopBar/TopBarContent/ShipInfo/ShipClass
-@onready var hull_bar: ProgressBar = $MainLayout/TopBar/TopBarContent/StatusPanel/HullStatus/HullBar
-@onready var shields_bar: ProgressBar = $MainLayout/TopBar/TopBarContent/StatusPanel/ShieldsStatus/ShieldsBar
-@onready var power_bar: ProgressBar = $MainLayout/TopBar/TopBarContent/StatusPanel/PowerStatus/PowerBar
-@onready var time_label: Label = $MainLayout/TopBar/TopBarContent/TimeLabel
-@onready var alert_indicator: ColorRect = $MainLayout/TopBar/TopBarContent/AlertIndicator
-@onready var station_content: Control = $MainLayout/ContentArea/StationContent
-@onready var connection_status_dot: ColorRect = $MainLayout/BottomBar/BottomBarContent/ConnectionStatus/StatusDot
-@onready var connection_status_text: Label = $MainLayout/BottomBar/BottomBarContent/ConnectionStatus/StatusText
+@onready var station_label: Label = %StationLabel
+@onready var ship_name_label: Label = %ShipName
+@onready var ship_class_label: Label = %ShipClass
+@onready var hull_bar: ProgressBar = %HullBar
+@onready var shields_bar: ProgressBar = %ShieldsBar
+@onready var power_bar: ProgressBar = %PowerBar
+@onready var time_label: Label = %TimeLabel
+@onready var alert_indicator: ColorRect = %AlertIndicator
+@onready var station_content: Control = %StationContent
+@onready var connection_status_dot: ColorRect = %StatusDot
+@onready var connection_status_text: Label = %StatusText
 
 @onready var debug_overlay: PanelContainer = $DebugOverlay
 @onready var disconnect_overlay: ColorRect = $DisconnectOverlay
 @onready var pause_overlay: ColorRect = $PauseOverlay
 @onready var alert_overlay: ColorRect = $AlertOverlay
 
-@onready var fps_label: Label = $DebugOverlay/DebugContent/FPSLabel
-@onready var latency_label: Label = $DebugOverlay/DebugContent/LatencyLabel
-@onready var ships_label: Label = $DebugOverlay/DebugContent/ShipsLabel
-@onready var state_label: Label = $DebugOverlay/DebugContent/StateLabel
-@onready var paused_label: Label = $DebugOverlay/DebugContent/PausedLabel
+@onready var fps_label: Label = %FPSLabel
+@onready var latency_label: Label = %LatencyLabel
+@onready var ships_label: Label = %ShipsLabel
+@onready var state_label: Label = %StateLabel
+@onready var paused_label: Label = %PausedLabel
 
 var _current_panel: Control = null
 var _alert_tween: Tween = null
@@ -79,8 +79,8 @@ func _connect_signals() -> void:
 	GameState.paused_changed.connect(_on_paused_changed)
 	GameState.alert_level_changed.connect(_on_alert_changed)
 
-	$MainLayout/BottomBar/BottomBarContent/AlertButtons/RedAlertBtn.pressed.connect(_on_red_alert_pressed)
-	$MainLayout/BottomBar/BottomBarContent/AlertButtons/YellowAlertBtn.pressed.connect(_on_yellow_alert_pressed)
+	%RedAlertBtn.pressed.connect(_on_red_alert_pressed)
+	%YellowAlertBtn.pressed.connect(_on_yellow_alert_pressed)
 
 
 func _load_station_panel() -> void:

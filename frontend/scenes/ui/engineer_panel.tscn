@@ -60,6 +60,7 @@ grow_vertical = 2
 color = Color(0.1, 0.15, 0.2, 1)
 
 [node name="BowSection" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/ShipDiagram"]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -76,6 +77,7 @@ text = "BOW
 100%"
 
 [node name="SternSection" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/ShipDiagram"]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -92,6 +94,7 @@ text = "STERN
 100%"
 
 [node name="PortSection" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/ShipDiagram"]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -107,6 +110,7 @@ grow_vertical = 2
 text = "PORT 100%"
 
 [node name="StarboardSection" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/ShipDiagram"]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -126,18 +130,21 @@ layout_mode = 2
 theme_override_constants/separation = 15
 
 [node name="RepairBtn" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/RepairActions"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "REPAIR"
 
 [node name="SealBreachBtn" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/RepairActions"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "SEAL BREACH"
 
 [node name="ExtinguishBtn" type="Button" parent="MainSplit/LeftSection/DamageSection/DamageContent/RepairActions"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -157,6 +164,7 @@ theme_override_font_sizes/font_size = 14
 text = "DAMAGE LOG"
 
 [node name="LogList" type="ItemList" parent="MainSplit/LeftSection/DamageLog/DamageLogContent"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -193,6 +201,7 @@ theme_override_font_sizes/font_size = 12
 text = "GENERATION"
 
 [node name="GenerationValue" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/GenerationPanel"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.8, 0.5, 1)
 theme_override_font_sizes/font_size = 24
@@ -208,6 +217,7 @@ theme_override_font_sizes/font_size = 12
 text = "CONSUMPTION"
 
 [node name="ConsumptionValue" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/ConsumptionPanel"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.7, 0.3, 1)
 theme_override_font_sizes/font_size = 24
@@ -223,12 +233,14 @@ theme_override_font_sizes/font_size = 12
 text = "AVAILABLE"
 
 [node name="AvailableValue" type="Label" parent="MainSplit/RightSection/PowerSection/PowerContent/PowerOverview/AvailablePanel"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.7, 0.9, 1)
 theme_override_font_sizes/font_size = 24
 text = "150 MW"
 
 [node name="BreakerGrid" type="GridContainer" parent="MainSplit/RightSection/PowerSection/PowerContent"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 columns = 2
@@ -368,6 +380,7 @@ layout_mode = 2
 text = "Health"
 
 [node name="EngineHealthBar" type="ProgressBar" parent="MainSplit/RightSection/EngineSection/EngineContent/EngineHealth"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 value = 100.0
@@ -381,6 +394,7 @@ layout_mode = 2
 text = "Temperature"
 
 [node name="EngineTempBar" type="ProgressBar" parent="MainSplit/RightSection/EngineSection/EngineContent/EngineTemp"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 value = 45.0
@@ -394,5 +408,6 @@ layout_mode = 2
 text = "Thrust"
 
 [node name="ThrustValue" type="Label" parent="MainSplit/RightSection/EngineSection/EngineContent/ThrustOutput"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "0%"

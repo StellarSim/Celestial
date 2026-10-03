@@ -8,28 +8,28 @@ const EXPLOSION_SCENE := preload("res://scenes/3d/explosion.tscn")
 const STAR_POINTS_SHADER := preload("res://shaders/star_points.gdshader")
 
 @onready var camera: Camera3D = $PlayerCamera
-@onready var camera_shake: Node3D = $PlayerCamera/CameraShake
+@onready var camera_shake: Node3D = %CameraShake
 @onready var ships_container: Node3D = $Ships
 @onready var projectiles_container: Node3D = $Projectiles
 @onready var effects_container: Node3D = $Effects
 @onready var starfield: Node3D = $Starfield
 
 # HUD elements
-@onready var ship_name_label: Label = $UI/HUD/TopHUD/LeftInfo/ShipName
-@onready var ship_class_label: Label = $UI/HUD/TopHUD/LeftInfo/ShipClass
-@onready var alert_status: Label = $UI/HUD/TopHUD/AlertStatus
-@onready var heading_label: Label = $UI/HUD/TopHUD/RightInfo/Heading
-@onready var speed_label: Label = $UI/HUD/TopHUD/RightInfo/Speed
-@onready var fore_shield: ProgressBar = $UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid/ForeFacing
-@onready var aft_shield: ProgressBar = $UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid/AftFacing
-@onready var port_shield: ProgressBar = $UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid/PortFacing
-@onready var starboard_shield: ProgressBar = $UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid/StarboardFacing
-@onready var hull_value: Label = $UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid/HullDisplay/HullValue
-@onready var shield_status: Label = $UI/HUD/BottomHUD/ShieldsDisplay/ShieldStatus
-@onready var debug_overlay: PanelContainer = $UI/HUD/DebugOverlay
-@onready var disconnect_overlay: ColorRect = $UI/HUD/DisconnectOverlay
-@onready var alert_overlay: ColorRect = $UI/HUD/AlertOverlay
-@onready var damage_vignette: ColorRect = $UI/HUD/DamageOverlay/VignetteEffect
+@onready var ship_name_label: Label = %ShipName
+@onready var ship_class_label: Label = %ShipClass
+@onready var alert_status: Label = %AlertStatus
+@onready var heading_label: Label = %Heading
+@onready var speed_label: Label = %Speed
+@onready var fore_shield: ProgressBar = %ForeFacing
+@onready var aft_shield: ProgressBar = %AftFacing
+@onready var port_shield: ProgressBar = %PortFacing
+@onready var starboard_shield: ProgressBar = %StarboardFacing
+@onready var hull_value: Label = %HullValue
+@onready var shield_status: Label = %ShieldStatus
+@onready var debug_overlay: PanelContainer = %DebugOverlay
+@onready var disconnect_overlay: ColorRect = %DisconnectOverlay
+@onready var alert_overlay: ColorRect = %AlertOverlay
+@onready var damage_vignette: ColorRect = %VignetteEffect
 
 # Ship visual instances keyed by ship_id
 var _ship_instances: Dictionary = {}
@@ -539,7 +539,7 @@ func _spawn_explosion(position: Vector3) -> void:
 
 
 func _update_debug_info() -> void:
-	$UI/HUD/DebugOverlay/DebugContent/FPSLabel.text = "FPS: %d" % Engine.get_frames_per_second()
-	$UI/HUD/DebugOverlay/DebugContent/ShipsLabel.text = "Ships: %d" % _ship_instances.size()
-	$UI/HUD/DebugOverlay/DebugContent/ProjectilesLabel.text = "Projectiles: %d" % _projectile_instances.size()
-	$UI/HUD/DebugOverlay/DebugContent/CameraLabel.text = "Cam: %.0f, %.0f, %.0f" % [camera.global_position.x, camera.global_position.y, camera.global_position.z]
+	%FPSLabel.text = "FPS: %d" % Engine.get_frames_per_second()
+	%ShipsLabel.text = "Ships: %d" % _ship_instances.size()
+	%ProjectilesLabel.text = "Projectiles: %d" % _projectile_instances.size()
+	%CameraLabel.text = "Cam: %.0f, %.0f, %.0f" % [camera.global_position.x, camera.global_position.y, camera.global_position.z]

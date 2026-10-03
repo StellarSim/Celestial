@@ -45,6 +45,7 @@ size_flags_vertical = 3
 theme_override_constants/separation = 20
 
 [node name="ThrottleSlider" type="VSlider" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -59,12 +60,14 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="ThrottleValue" type="Label" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer/ThrottleInfo"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 36
 text = "0%"
 horizontal_alignment = 1
 
 [node name="ThrottleMode" type="Label" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer/ThrottleInfo"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "ALL STOP"
 horizontal_alignment = 1
@@ -77,6 +80,7 @@ layout_mode = 2
 text = "Current Speed:"
 
 [node name="SpeedValue" type="Label" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/ThrottleSliderContainer/ThrottleInfo/SpeedDisplay"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "0 m/s"
@@ -87,26 +91,31 @@ layout_mode = 2
 theme_override_constants/separation = 5
 
 [node name="FullReverse" type="Button" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "FULL REV"
 
 [node name="HalfReverse" type="Button" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "½ REV"
 
 [node name="AllStop" type="Button" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "STOP"
 
 [node name="HalfForward" type="Button" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "½ FWD"
 
 [node name="FullForward" type="Button" parent="MainSplit/LeftSection/ThrottleSection/ThrottleContent/QuickThrottle"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "FULL FWD"
@@ -129,6 +138,7 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="Compass" type="Control" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/CompassContainer"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 200)
 layout_mode = 2
 
@@ -145,6 +155,7 @@ text = "CURRENT"
 horizontal_alignment = 1
 
 [node name="HeadingValue" type="Label" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/HeadingInfo/CurrentHeading"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "000°"
@@ -160,6 +171,7 @@ text = "TARGET"
 horizontal_alignment = 1
 
 [node name="TargetValue" type="Label" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/HeadingInfo/TargetHeading"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "---°"
@@ -170,26 +182,31 @@ layout_mode = 2
 theme_override_constants/separation = 10
 
 [node name="HardPort" type="Button" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "◀◀ PORT"
 
 [node name="Port" type="Button" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "◀ PORT"
 
 [node name="SteadyOn" type="Button" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "STEADY"
 
 [node name="Starboard" type="Button" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "STBD ▶"
 
 [node name="HardStarboard" type="Button" parent="MainSplit/LeftSection/SteeringSection/SteeringContent/TurnControls"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "STBD ▶▶"
@@ -218,6 +235,7 @@ layout_mode = 2
 text = "Position:"
 
 [node name="PosValue" type="Label" parent="MainSplit/RightSection/NavStatus/NavContent/Position"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "X: 0 Y: 0 Z: 0"
@@ -231,6 +249,7 @@ layout_mode = 2
 text = "Velocity:"
 
 [node name="VelValue" type="Label" parent="MainSplit/RightSection/NavStatus/NavContent/Velocity"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "0 m/s"
@@ -244,6 +263,7 @@ layout_mode = 2
 text = "Bearing:"
 
 [node name="BearingValue" type="Label" parent="MainSplit/RightSection/NavStatus/NavContent/Bearing"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "0°"
@@ -263,6 +283,7 @@ text = "WAYPOINTS"
 horizontal_alignment = 1
 
 [node name="WaypointList" type="ItemList" parent="MainSplit/RightSection/WaypointSection/WaypointContent"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -271,11 +292,13 @@ layout_mode = 2
 theme_override_constants/separation = 5
 
 [node name="NavigateTo" type="Button" parent="MainSplit/RightSection/WaypointSection/WaypointContent/WaypointActions"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "NAVIGATE TO"
 
 [node name="ClearNav" type="Button" parent="MainSplit/RightSection/WaypointSection/WaypointContent/WaypointActions"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "CLEAR NAV"
@@ -300,6 +323,7 @@ layout_mode = 2
 text = "Status:"
 
 [node name="StatusValue" type="Label" parent="MainSplit/RightSection/AutopilotSection/AutopilotContent/AutopilotStatus"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "DISENGAGED"
@@ -310,11 +334,13 @@ layout_mode = 2
 theme_override_constants/separation = 10
 
 [node name="EngageBtn" type="Button" parent="MainSplit/RightSection/AutopilotSection/AutopilotContent/AutopilotControls"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "ENGAGE"
 toggle_mode = true
 
 [node name="ModeSelect" type="OptionButton" parent="MainSplit/RightSection/AutopilotSection/AutopilotContent/AutopilotControls"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3

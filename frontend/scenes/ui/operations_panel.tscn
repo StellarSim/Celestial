@@ -48,6 +48,7 @@ layout_mode = 2
 text = "Short Range:"
 
 [node name="ShortRangeValue" type="Label" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorStatus"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "ONLINE"
 horizontal_alignment = 2
@@ -57,6 +58,7 @@ layout_mode = 2
 text = "Long Range:"
 
 [node name="LongRangeValue" type="Label" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorStatus"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "ONLINE"
 horizontal_alignment = 2
@@ -66,6 +68,7 @@ layout_mode = 2
 text = "Resolution:"
 
 [node name="ResolutionValue" type="Label" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorStatus"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "100%"
 horizontal_alignment = 2
@@ -75,28 +78,33 @@ layout_mode = 2
 theme_override_constants/separation = 5
 
 [node name="PassiveBtn" type="Button" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorModes"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "PASSIVE"
 toggle_mode = true
 
 [node name="ActiveBtn" type="Button" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorModes"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "ACTIVE"
 toggle_mode = true
 
 [node name="DeepScanBtn" type="Button" parent="MainSplit/LeftSection/SensorSection/SensorContent/SensorModes"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "DEEP SCAN"
 toggle_mode = true
 
 [node name="ScanProgress" type="ProgressBar" parent="MainSplit/LeftSection/SensorSection/SensorContent"]
+unique_name_in_owner = true
 layout_mode = 2
 show_percentage = false
 
 [node name="ContactList" type="ItemList" parent="MainSplit/LeftSection/SensorSection/SensorContent"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -113,6 +121,7 @@ text = "SHIELD CONTROL"
 horizontal_alignment = 1
 
 [node name="ShieldDiagram" type="Control" parent="MainSplit/LeftSection/ShieldSection/ShieldContent"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 
@@ -121,11 +130,13 @@ layout_mode = 2
 theme_override_constants/separation = 10
 
 [node name="ShieldsUp" type="Button" parent="MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldControls"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "SHIELDS UP"
 
 [node name="ShieldsDown" type="Button" parent="MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldControls"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "SHIELDS DOWN"
@@ -138,12 +149,14 @@ layout_mode = 2
 text = "Frequency:"
 
 [node name="FreqSlider" type="HSlider" parent="MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldFrequency"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 max_value = 999.0
 value = 500.0
 
 [node name="RotateBtn" type="Button" parent="MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldFrequency"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "ROTATE"
 
@@ -165,6 +178,7 @@ text = "SHIP SYSTEMS"
 horizontal_alignment = 1
 
 [node name="SystemsList" type="VBoxContainer" parent="MainSplit/RightSection/SystemsSection/SystemsContent"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -296,6 +310,7 @@ layout_mode = 2
 text = "Status:"
 
 [node name="StatusValue" type="Label" parent="MainSplit/RightSection/TransporterSection/TransporterContent/TransporterStatus"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "READY"
@@ -306,16 +321,19 @@ layout_mode = 2
 theme_override_constants/separation = 10
 
 [node name="BeamUpBtn" type="Button" parent="MainSplit/RightSection/TransporterSection/TransporterContent/TransporterControls"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "BEAM UP"
 
 [node name="BeamDownBtn" type="Button" parent="MainSplit/RightSection/TransporterSection/TransporterContent/TransporterControls"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "BEAM DOWN"
 
 [node name="EmergencyBtn" type="Button" parent="MainSplit/RightSection/TransporterSection/TransporterContent/TransporterControls"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "EMERGENCY"

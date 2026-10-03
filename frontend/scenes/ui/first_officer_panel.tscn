@@ -48,6 +48,7 @@ layout_mode = 2
 text = "Total Crew:"
 
 [node name="TotalValue" type="Label" parent="MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "150"
 horizontal_alignment = 2
@@ -57,6 +58,7 @@ layout_mode = 2
 text = "Active Duty:"
 
 [node name="ActiveValue" type="Label" parent="MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "142"
 horizontal_alignment = 2
@@ -66,6 +68,7 @@ layout_mode = 2
 text = "Injured:"
 
 [node name="InjuredValue" type="Label" parent="MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "5"
 horizontal_alignment = 2
@@ -75,11 +78,13 @@ layout_mode = 2
 text = "Casualties:"
 
 [node name="CasualtiesValue" type="Label" parent="MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "3"
 horizontal_alignment = 2
 
 [node name="DepartmentList" type="ItemList" parent="MainSplit/LeftSection/CrewSection/CrewContent"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -96,6 +101,7 @@ text = "REPAIR TEAMS"
 horizontal_alignment = 1
 
 [node name="TeamList" type="VBoxContainer" parent="MainSplit/LeftSection/RepairTeams/RepairContent"]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="Team1" type="HBoxContainer" parent="MainSplit/LeftSection/RepairTeams/RepairContent/TeamList"]
@@ -169,6 +175,7 @@ text = "SHIP STATUS OVERVIEW"
 horizontal_alignment = 1
 
 [node name="OverallStatus" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "OPERATIONAL"
@@ -183,6 +190,7 @@ layout_mode = 2
 text = "Hull:"
 
 [node name="HullValue" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent/StatusSummary"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "100%"
 horizontal_alignment = 2
@@ -192,6 +200,7 @@ layout_mode = 2
 text = "Shields:"
 
 [node name="ShieldsValue" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent/StatusSummary"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "100%"
 horizontal_alignment = 2
@@ -201,6 +210,7 @@ layout_mode = 2
 text = "Power:"
 
 [node name="PowerValue" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent/StatusSummary"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "100%"
 horizontal_alignment = 2
@@ -210,6 +220,7 @@ layout_mode = 2
 text = "Ammunition:"
 
 [node name="AmmoValue" type="Label" parent="MainSplit/RightSection/StatusSection/StatusContent/StatusSummary"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "FULL"
 horizontal_alignment = 2
@@ -228,6 +239,7 @@ text = "DAMAGE REPORT"
 horizontal_alignment = 1
 
 [node name="DamageList" type="ItemList" parent="MainSplit/RightSection/DamageReport/DamageContent"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -245,6 +257,7 @@ text = "CAPTAIN'S LOG"
 horizontal_alignment = 1
 
 [node name="LogText" type="RichTextLabel" parent="MainSplit/RightSection/LogSection/LogContent"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 bbcode_enabled = true
@@ -255,11 +268,13 @@ layout_mode = 2
 theme_override_constants/separation = 10
 
 [node name="AddEntry" type="Button" parent="MainSplit/RightSection/LogSection/LogContent/LogActions"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "ADD ENTRY"
 
 [node name="ExportLog" type="Button" parent="MainSplit/RightSection/LogSection/LogContent/LogActions"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "EXPORT"

@@ -1,30 +1,30 @@
 extends StationPanel
 ## Captain's panel - ship overview, alerts, mission status, and command.
 
-@onready var ship_name: Label = $MainSplit/LeftSection/ShipStatus/StatusContent/ShipName
-@onready var hull_bar: ProgressBar = $MainSplit/LeftSection/ShipStatus/StatusContent/StatusGrid/HullBar
-@onready var shields_bar: ProgressBar = $MainSplit/LeftSection/ShipStatus/StatusContent/StatusGrid/ShieldsBar
-@onready var power_bar: ProgressBar = $MainSplit/LeftSection/ShipStatus/StatusContent/StatusGrid/PowerBar
-@onready var crew_value: Label = $MainSplit/LeftSection/ShipStatus/StatusContent/StatusGrid/CrewValue
+@onready var ship_name: Label = %ShipName
+@onready var hull_bar: ProgressBar = %HullBar
+@onready var shields_bar: ProgressBar = %ShieldsBar
+@onready var power_bar: ProgressBar = %PowerBar
+@onready var crew_value: Label = %CrewValue
 
-@onready var green_alert_btn: Button = $MainSplit/LeftSection/AlertSection/AlertContent/AlertButtons/GreenAlert
-@onready var yellow_alert_btn: Button = $MainSplit/LeftSection/AlertSection/AlertContent/AlertButtons/YellowAlert
-@onready var red_alert_btn: Button = $MainSplit/LeftSection/AlertSection/AlertContent/AlertButtons/RedAlert
-@onready var current_alert: Label = $MainSplit/LeftSection/AlertSection/AlertContent/CurrentAlert
+@onready var green_alert_btn: Button = %GreenAlert
+@onready var yellow_alert_btn: Button = %YellowAlert
+@onready var red_alert_btn: Button = %RedAlert
+@onready var current_alert: Label = %CurrentAlert
 
-@onready var orders_list: ItemList = $MainSplit/LeftSection/Orders/OrdersContent/OrdersList
-@onready var add_order_btn: Button = $MainSplit/LeftSection/Orders/OrdersContent/OrderActions/AddOrder
-@onready var clear_orders_btn: Button = $MainSplit/LeftSection/Orders/OrdersContent/OrderActions/ClearOrders
+@onready var orders_list: ItemList = %OrdersList
+@onready var add_order_btn: Button = %AddOrder
+@onready var clear_orders_btn: Button = %ClearOrders
 
-@onready var mission_name: Label = $MainSplit/RightSection/MissionSection/MissionContent/MissionName
-@onready var objective_list: ItemList = $MainSplit/RightSection/MissionSection/MissionContent/ObjectiveList
+@onready var mission_name: Label = %MissionName
+@onready var objective_list: ItemList = %ObjectiveList
 
-@onready var comm_log: RichTextLabel = $MainSplit/RightSection/CommSection/CommContent/CommLog
-@onready var hail_btn: Button = $MainSplit/RightSection/CommSection/CommContent/QuickComm/HailBtn
-@onready var broadcast_btn: Button = $MainSplit/RightSection/CommSection/CommContent/QuickComm/BroadcastBtn
+@onready var comm_log: RichTextLabel = %CommLog
+@onready var hail_btn: Button = %HailBtn
+@onready var broadcast_btn: Button = %BroadcastBtn
 
-@onready var self_destruct_btn: Button = $MainSplit/RightSection/SelfDestruct/SelfDestructContent/SelfDestructBtn
-@onready var abort_btn: Button = $MainSplit/RightSection/SelfDestruct/SelfDestructContent/AbortBtn
+@onready var self_destruct_btn: Button = %SelfDestructBtn
+@onready var abort_btn: Button = %AbortBtn
 
 var _orders: Array[String] = []
 

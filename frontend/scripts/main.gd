@@ -133,7 +133,7 @@ func _connect_signals() -> void:
 	sfx_slider.value_changed.connect(_on_sfx_changed)
 	music_slider.value_changed.connect(_on_music_changed)
 	
-	$ConnectionOverlay/ConnectionContent/CancelButton.pressed.connect(_on_cancel_connection)
+	%CancelButton.pressed.connect(_on_cancel_connection)
 
 
 func _update_ui_state() -> void:
@@ -271,7 +271,7 @@ func _update_debug_info() -> void:
 
 
 func _create_star_background() -> void:
-	var stars_container := $Background/Stars
+	var stars_container := %Stars
 	var viewport_size := get_viewport_rect().size
 	
 	for i in 150:

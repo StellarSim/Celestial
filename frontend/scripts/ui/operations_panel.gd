@@ -3,28 +3,28 @@ extends StationPanel
 
 const SYSTEMS := ["reactor", "engines", "weapons", "shields", "sensors", "life_support"]
 
-@onready var short_range_value: Label = $MainSplit/LeftSection/SensorSection/SensorContent/SensorStatus/ShortRangeValue
-@onready var long_range_value: Label = $MainSplit/LeftSection/SensorSection/SensorContent/SensorStatus/LongRangeValue
-@onready var resolution_value: Label = $MainSplit/LeftSection/SensorSection/SensorContent/SensorStatus/ResolutionValue
+@onready var short_range_value: Label = %ShortRangeValue
+@onready var long_range_value: Label = %LongRangeValue
+@onready var resolution_value: Label = %ResolutionValue
 
-@onready var passive_btn: Button = $MainSplit/LeftSection/SensorSection/SensorContent/SensorModes/PassiveBtn
-@onready var active_btn: Button = $MainSplit/LeftSection/SensorSection/SensorContent/SensorModes/ActiveBtn
-@onready var deep_scan_btn: Button = $MainSplit/LeftSection/SensorSection/SensorContent/SensorModes/DeepScanBtn
-@onready var scan_progress: ProgressBar = $MainSplit/LeftSection/SensorSection/SensorContent/ScanProgress
-@onready var contact_list: ItemList = $MainSplit/LeftSection/SensorSection/SensorContent/ContactList
+@onready var passive_btn: Button = %PassiveBtn
+@onready var active_btn: Button = %ActiveBtn
+@onready var deep_scan_btn: Button = %DeepScanBtn
+@onready var scan_progress: ProgressBar = %ScanProgress
+@onready var contact_list: ItemList = %ContactList
 
-@onready var shield_diagram: Control = $MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldDiagram
-@onready var shields_up_btn: Button = $MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldControls/ShieldsUp
-@onready var shields_down_btn: Button = $MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldControls/ShieldsDown
-@onready var shield_freq_slider: HSlider = $MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldFrequency/FreqSlider
-@onready var rotate_btn: Button = $MainSplit/LeftSection/ShieldSection/ShieldContent/ShieldFrequency/RotateBtn
+@onready var shield_diagram: Control = %ShieldDiagram
+@onready var shields_up_btn: Button = %ShieldsUp
+@onready var shields_down_btn: Button = %ShieldsDown
+@onready var shield_freq_slider: HSlider = %FreqSlider
+@onready var rotate_btn: Button = %RotateBtn
 
-@onready var systems_list: VBoxContainer = $MainSplit/RightSection/SystemsSection/SystemsContent/SystemsList
+@onready var systems_list: VBoxContainer = %SystemsList
 
-@onready var transporter_status: Label = $MainSplit/RightSection/TransporterSection/TransporterContent/TransporterStatus/StatusValue
-@onready var beam_up_btn: Button = $MainSplit/RightSection/TransporterSection/TransporterContent/TransporterControls/BeamUpBtn
-@onready var beam_down_btn: Button = $MainSplit/RightSection/TransporterSection/TransporterContent/TransporterControls/BeamDownBtn
-@onready var emergency_btn: Button = $MainSplit/RightSection/TransporterSection/TransporterContent/TransporterControls/EmergencyBtn
+@onready var transporter_status: Label = %StatusValue
+@onready var beam_up_btn: Button = %BeamUpBtn
+@onready var beam_down_btn: Button = %BeamDownBtn
+@onready var emergency_btn: Button = %EmergencyBtn
 
 var _sensor_mode: String = "passive"
 var _shields_enabled: bool = true

@@ -8,29 +8,29 @@ const PRESET_FREQUENCIES := {
 	"civilian": 156.8
 }
 
-@onready var filter_select: OptionButton = $MainSplit/LeftSection/ContactsSection/ContactsContent/ContactFilter/FilterSelect
-@onready var contact_list: ItemList = $MainSplit/LeftSection/ContactsSection/ContactsContent/ContactList
-@onready var hail_btn: Button = $MainSplit/LeftSection/ContactsSection/ContactsContent/ContactActions/HailContact
-@onready var scan_btn: Button = $MainSplit/LeftSection/ContactsSection/ContactsContent/ContactActions/ScanContact
+@onready var filter_select: OptionButton = %FilterSelect
+@onready var contact_list: ItemList = %ContactList
+@onready var hail_btn: Button = %HailContact
+@onready var scan_btn: Button = %ScanContact
 
-@onready var frequency_slider: HSlider = $MainSplit/LeftSection/FrequencySection/FrequencyContent/FrequencySlider
-@onready var freq_value: Label = $MainSplit/LeftSection/FrequencySection/FrequencyContent/FrequencyDisplay/FreqValue
-@onready var emergency_freq_btn: Button = $MainSplit/LeftSection/FrequencySection/FrequencyContent/PresetFrequencies/EmergencyFreq
-@onready var military_freq_btn: Button = $MainSplit/LeftSection/FrequencySection/FrequencyContent/PresetFrequencies/MilitaryFreq
-@onready var civilian_freq_btn: Button = $MainSplit/LeftSection/FrequencySection/FrequencyContent/PresetFrequencies/CivilianFreq
+@onready var frequency_slider: HSlider = %FrequencySlider
+@onready var freq_value: Label = %FreqValue
+@onready var emergency_freq_btn: Button = %EmergencyFreq
+@onready var military_freq_btn: Button = %MilitaryFreq
+@onready var civilian_freq_btn: Button = %CivilianFreq
 
-@onready var comm_log: RichTextLabel = $MainSplit/RightSection/CommLog/CommLogContent/CommLogText
+@onready var comm_log: RichTextLabel = %CommLogText
 
-@onready var identify_btn: Button = $MainSplit/RightSection/TransmitSection/TransmitContent/MessagePresets/IdentifyBtn
-@onready var request_dock_btn: Button = $MainSplit/RightSection/TransmitSection/TransmitContent/MessagePresets/RequestDockBtn
-@onready var mayday_btn: Button = $MainSplit/RightSection/TransmitSection/TransmitContent/MessagePresets/MaydayBtn
-@onready var surrender_btn: Button = $MainSplit/RightSection/TransmitSection/TransmitContent/MessagePresets/SurrenderBtn
+@onready var identify_btn: Button = %IdentifyBtn
+@onready var request_dock_btn: Button = %RequestDockBtn
+@onready var mayday_btn: Button = %MaydayBtn
+@onready var surrender_btn: Button = %SurrenderBtn
 
-@onready var message_input: LineEdit = $MainSplit/RightSection/TransmitSection/TransmitContent/CustomMessage/MessageInput
-@onready var send_btn: Button = $MainSplit/RightSection/TransmitSection/TransmitContent/CustomMessage/SendBtn
+@onready var message_input: LineEdit = %MessageInput
+@onready var send_btn: Button = %SendBtn
 
-@onready var signal_bar: ProgressBar = $MainSplit/RightSection/TransmitStatus/StatusContent/SignalStrength/SignalBar
-@onready var jamming_value: Label = $MainSplit/RightSection/TransmitStatus/StatusContent/JammingStatus/JammingValue
+@onready var signal_bar: ProgressBar = %SignalBar
+@onready var jamming_value: Label = %JammingValue
 
 var _selected_contact_id: String = ""
 var _current_frequency: float = 500.0

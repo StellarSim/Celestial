@@ -3,24 +3,24 @@ extends StationPanel
 
 const DEPARTMENTS := ["Bridge", "Engineering", "Security", "Medical", "Science", "Operations"]
 
-@onready var total_crew: Label = $MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary/TotalValue
-@onready var active_crew: Label = $MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary/ActiveValue
-@onready var injured_crew: Label = $MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary/InjuredValue
-@onready var casualties: Label = $MainSplit/LeftSection/CrewSection/CrewContent/CrewSummary/CasualtiesValue
-@onready var department_list: ItemList = $MainSplit/LeftSection/CrewSection/CrewContent/DepartmentList
+@onready var total_crew: Label = %TotalValue
+@onready var active_crew: Label = %ActiveValue
+@onready var injured_crew: Label = %InjuredValue
+@onready var casualties: Label = %CasualtiesValue
+@onready var department_list: ItemList = %DepartmentList
 
-@onready var team_list: VBoxContainer = $MainSplit/LeftSection/RepairTeams/RepairContent/TeamList
+@onready var team_list: VBoxContainer = %TeamList
 
-@onready var overall_status: Label = $MainSplit/RightSection/StatusSection/StatusContent/OverallStatus
-@onready var hull_value: Label = $MainSplit/RightSection/StatusSection/StatusContent/StatusSummary/HullValue
-@onready var shields_value: Label = $MainSplit/RightSection/StatusSection/StatusContent/StatusSummary/ShieldsValue
-@onready var power_value: Label = $MainSplit/RightSection/StatusSection/StatusContent/StatusSummary/PowerValue
-@onready var ammo_value: Label = $MainSplit/RightSection/StatusSection/StatusContent/StatusSummary/AmmoValue
+@onready var overall_status: Label = %OverallStatus
+@onready var hull_value: Label = %HullValue
+@onready var shields_value: Label = %ShieldsValue
+@onready var power_value: Label = %PowerValue
+@onready var ammo_value: Label = %AmmoValue
 
-@onready var damage_list: ItemList = $MainSplit/RightSection/DamageReport/DamageContent/DamageList
-@onready var log_text: RichTextLabel = $MainSplit/RightSection/LogSection/LogContent/LogText
-@onready var add_entry_btn: Button = $MainSplit/RightSection/LogSection/LogContent/LogActions/AddEntry
-@onready var export_btn: Button = $MainSplit/RightSection/LogSection/LogContent/LogActions/ExportLog
+@onready var damage_list: ItemList = %DamageList
+@onready var log_text: RichTextLabel = %LogText
+@onready var add_entry_btn: Button = %AddEntry
+@onready var export_btn: Button = %ExportLog
 
 var _total_crew := 150
 var _injured := 0

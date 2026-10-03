@@ -2,29 +2,29 @@ extends Control
 ## Rear tactical display showing 2D tactical map and ship status overview.
 ## Can mirror data from other stations or show tactical overview.
 
-@onready var ship_name_label: Label = $MainLayout/Header/HeaderContent/ShipInfo/ShipName
-@onready var ship_class_label: Label = $MainLayout/Header/HeaderContent/ShipInfo/ShipClass
-@onready var time_label: Label = $MainLayout/Header/HeaderContent/TimeLabel
-@onready var alert_indicator: ColorRect = $MainLayout/Header/HeaderContent/AlertIndicator
+@onready var ship_name_label: Label = %ShipName
+@onready var ship_class_label: Label = %ShipClass
+@onready var time_label: Label = %TimeLabel
+@onready var alert_indicator: ColorRect = %AlertIndicator
 
-@onready var hull_bar: ProgressBar = $MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection/HullRow/HullBar
-@onready var shields_bar: ProgressBar = $MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection/ShieldsRow/ShieldsBar
-@onready var power_bar: ProgressBar = $MainLayout/ContentArea/SidePanel/SidePanelContent/StatusSection/PowerRow/PowerBar
+@onready var hull_bar: ProgressBar = %HullBar
+@onready var shields_bar: ProgressBar = %ShieldsBar
+@onready var power_bar: ProgressBar = %PowerBar
 
-@onready var contacts_list: ItemList = $MainLayout/ContentArea/SidePanel/SidePanelContent/ContactsSection/ContactsList
+@onready var contacts_list: ItemList = %ContactsList
 
-@onready var bow_status: Label = $MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid/BowStatus
-@onready var stern_status: Label = $MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid/SternStatus
-@onready var port_status: Label = $MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid/PortStatus
-@onready var starboard_status: Label = $MainLayout/ContentArea/SidePanel/SidePanelContent/DamageSection/DamageGrid/StarboardStatus
+@onready var bow_status: Label = %BowStatus
+@onready var stern_status: Label = %SternStatus
+@onready var port_status: Label = %PortStatus
+@onready var starboard_status: Label = %StarboardStatus
 
-@onready var tactical_map: Control = $MainLayout/ContentArea/TacticalMap
-@onready var ships_layer: Control = $MainLayout/ContentArea/TacticalMap/ShipsLayer
-@onready var grid_overlay: Control = $MainLayout/ContentArea/TacticalMap/GridOverlay
-@onready var range_circles: Control = $MainLayout/ContentArea/TacticalMap/RangeCircles
+@onready var tactical_map: Control = %TacticalMap
+@onready var ships_layer: Control = %ShipsLayer
+@onready var grid_overlay: Control = %GridOverlay
+@onready var range_circles: Control = %RangeCircles
 
-@onready var connection_dot: ColorRect = $MainLayout/Footer/FooterContent/ConnectionStatus/StatusDot
-@onready var connection_text: Label = $MainLayout/Footer/FooterContent/ConnectionStatus/StatusText
+@onready var connection_dot: ColorRect = %StatusDot
+@onready var connection_text: Label = %StatusText
 @onready var alert_overlay: ColorRect = $AlertOverlay
 @onready var scanline_overlay: ColorRect = $ScanlineOverlay
 @onready var disconnect_overlay: ColorRect = $DisconnectOverlay
@@ -66,8 +66,8 @@ func _connect_signals() -> void:
 	GameState.ship_removed.connect(_on_ship_removed)
 	GameState.alert_level_changed.connect(_on_alert_changed)
 	
-	$MainLayout/ContentArea/TacticalMap/MapControls/ZoomInBtn.pressed.connect(_on_zoom_in)
-	$MainLayout/ContentArea/TacticalMap/MapControls/ZoomOutBtn.pressed.connect(_on_zoom_out)
+	%ZoomInBtn.pressed.connect(_on_zoom_in)
+	%ZoomOutBtn.pressed.connect(_on_zoom_out)
 
 
 func _setup_scanlines() -> void:
@@ -307,13 +307,13 @@ func _start_alert_flash(color: Color) -> void:
 
 func _on_zoom_in() -> void:
 	zoom_level = minf(zoom_level * 1.5, 5.0)
-	$MainLayout/ContentArea/TacticalMap/MapControls/ZoomLabel.text = "%.1fx" % zoom_level
+	%ZoomLabel.text = "%.1fx" % zoom_level
 	grid_overlay.queue_redraw()
 	range_circles.queue_redraw()
 
 
 func _on_zoom_out() -> void:
 	zoom_level = maxf(zoom_level / 1.5, 0.1)
-	$MainLayout/ContentArea/TacticalMap/MapControls/ZoomLabel.text = "%.1fx" % zoom_level
+	%ZoomLabel.text = "%.1fx" % zoom_level
 	grid_overlay.queue_redraw()
 	range_circles.queue_redraw()

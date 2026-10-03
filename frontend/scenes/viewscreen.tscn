@@ -48,6 +48,7 @@ current = true
 far = 50000.0
 
 [node name="CameraShake" type="Node3D" parent="PlayerCamera" unique_id=427760007]
+unique_name_in_owner = true
 
 [node name="SunLight" type="DirectionalLight3D" parent="." unique_id=1900854769]
 transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 100, 0)
@@ -91,12 +92,14 @@ theme_override_constants/separation = 20
 layout_mode = 2
 
 [node name="ShipName" type="Label" parent="UI/HUD/TopHUD/LeftInfo" unique_id=2066469583]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
 theme_override_font_sizes/font_size = 24
 text = "USS ENDEAVOUR"
 
 [node name="ShipClass" type="Label" parent="UI/HUD/TopHUD/LeftInfo" unique_id=920038463]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
 theme_override_font_sizes/font_size = 14
@@ -107,6 +110,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="AlertStatus" type="Label" parent="UI/HUD/TopHUD" unique_id=197410418]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.8, 0.4, 1)
 theme_override_font_sizes/font_size = 20
@@ -120,6 +124,7 @@ size_flags_horizontal = 3
 layout_mode = 2
 
 [node name="Heading" type="Label" parent="UI/HUD/TopHUD/RightInfo" unique_id=1886885511]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 0.7, 0.8, 1)
 theme_override_font_sizes/font_size = 16
@@ -127,6 +132,7 @@ text = "HDG: 000°"
 horizontal_alignment = 2
 
 [node name="Speed" type="Label" parent="UI/HUD/TopHUD/RightInfo" unique_id=1799826662]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 0.7, 0.8, 1)
 theme_override_font_sizes/font_size = 16
@@ -166,6 +172,7 @@ custom_minimum_size = Vector2(60, 20)
 layout_mode = 2
 
 [node name="ForeFacing" type="ProgressBar" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid" unique_id=269349302]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 16)
 layout_mode = 2
 value = 100.0
@@ -176,6 +183,7 @@ custom_minimum_size = Vector2(60, 20)
 layout_mode = 2
 
 [node name="PortFacing" type="ProgressBar" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid" unique_id=420536970]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 16)
 layout_mode = 2
 value = 100.0
@@ -193,12 +201,14 @@ text = "HULL"
 horizontal_alignment = 1
 
 [node name="HullValue" type="Label" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid/HullDisplay" unique_id=571623625]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "100%"
 horizontal_alignment = 1
 
 [node name="StarboardFacing" type="ProgressBar" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid" unique_id=262141959]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 16)
 layout_mode = 2
 value = 100.0
@@ -209,6 +219,7 @@ custom_minimum_size = Vector2(60, 20)
 layout_mode = 2
 
 [node name="AftFacing" type="ProgressBar" parent="UI/HUD/BottomHUD/ShieldsDisplay/ShieldGrid" unique_id=1957021422]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 16)
 layout_mode = 2
 value = 100.0
@@ -219,6 +230,7 @@ custom_minimum_size = Vector2(60, 20)
 layout_mode = 2
 
 [node name="ShieldStatus" type="Label" parent="UI/HUD/BottomHUD/ShieldsDisplay" unique_id=1442802627]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.8, 0.9, 1)
 theme_override_font_sizes/font_size = 12
@@ -226,6 +238,7 @@ text = "ONLINE"
 horizontal_alignment = 1
 
 [node name="AlertOverlay" type="ColorRect" parent="UI/HUD" unique_id=324555837]
+unique_name_in_owner = true
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -256,6 +269,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="VignetteEffect" type="ColorRect" parent="UI/HUD/DamageOverlay" unique_id=128479759]
+unique_name_in_owner = true
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -267,6 +281,7 @@ mouse_filter = 2
 color = Color(0.5, 0.1, 0.1, 0.3)
 
 [node name="DebugOverlay" type="PanelContainer" parent="UI/HUD" unique_id=1703565842]
+unique_name_in_owner = true
 visible = false
 layout_mode = 1
 anchors_preset = 1
@@ -280,22 +295,27 @@ grow_horizontal = 0
 layout_mode = 2
 
 [node name="FPSLabel" type="Label" parent="UI/HUD/DebugOverlay/DebugContent" unique_id=1230691458]
+unique_name_in_owner = true
 layout_mode = 2
 text = "FPS: 60"
 
 [node name="ShipsLabel" type="Label" parent="UI/HUD/DebugOverlay/DebugContent" unique_id=393553319]
+unique_name_in_owner = true
 layout_mode = 2
 text = "Ships: 0"
 
 [node name="ProjectilesLabel" type="Label" parent="UI/HUD/DebugOverlay/DebugContent" unique_id=311871270]
+unique_name_in_owner = true
 layout_mode = 2
 text = "Projectiles: 0"
 
 [node name="CameraLabel" type="Label" parent="UI/HUD/DebugOverlay/DebugContent" unique_id=339572005]
+unique_name_in_owner = true
 layout_mode = 2
 text = "Camera: 0, 0, 0"
 
 [node name="DisconnectOverlay" type="ColorRect" parent="UI/HUD" unique_id=941679622]
+unique_name_in_owner = true
 visible = false
 layout_mode = 1
 anchors_preset = 15
